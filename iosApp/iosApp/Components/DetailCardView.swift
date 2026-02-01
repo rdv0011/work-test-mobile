@@ -20,61 +20,48 @@ struct DetailCardView: View {
     let data: DetailCardData
     
     var body: some View {
-        let tokensTypographyFontFamilies = DesignTokens.TypographyFontFamilies.shared
-        let tokensTypographyFontSizes = DesignTokens.TypographyFontSizes.shared
-        let tokensColorsBackground = DesignTokens.ColorsBackground.shared
-        let tokensColorsText = DesignTokens.ColorsText.shared
-        let tokensSpacing = DesignTokens.Spacing.shared
-        let tokensBorderRadius = DesignTokens.BorderRadius.shared
-        let tokensSizesCardDetail = DesignTokens.SizesCardDetail.shared
-        let tokensElevation = DesignTokens.Elevation.shared
-        
         VStack(alignment: .leading, spacing: 0) {
-            // Title - headline1 (24pt Helvetica)
             Text(data.title)
-                .font(Font.custom(tokensTypographyFontFamilies.helvetica, size: CGFloat(tokensTypographyFontSizes.headline1)))
-                .foregroundColor(Color(hex: tokensColorsText.dark))
+                .font(.headline1)
+                .foregroundColor(.text.dark)
                 .lineLimit(1)
                 .accessibilityLabel("Title: \(data.title)")
-                .padding(.top, CGFloat(tokensSpacing.lg))
-                .padding(.horizontal, CGFloat(tokensSpacing.lg))
+                .padding(.top, .spacingUI.lg)
+                .padding(.horizontal, .spacingUI.lg)
             
             Spacer(minLength: 8)
             
-            // Subtitle - headline2 (16pt Helvetica)
             Text(data.subtitle)
-                .font(Font.custom(tokensTypographyFontFamilies.helvetica, size: CGFloat(tokensTypographyFontSizes.headline2)))
-                .foregroundColor(Color(hex: tokensColorsText.subtitle))
+                .font(.headline2)
+                .foregroundColor(.text.subtitle)
                 .lineLimit(1)
                 .accessibilityLabel("Subtitle: \(data.subtitle)")
-                .padding(.horizontal, CGFloat(tokensSpacing.lg))
+                .padding(.horizontal, .spacingUI.lg)
             
             Spacer(minLength: 8)
             
-            // Status - title1 (18pt Helvetica) with color from data
             HStack(spacing: 8) {
-                // Color indicator dot
                 Circle()
                     .fill(Color(hex: data.statusColor))
                     .frame(width: 10, height: 10)
                     .accessibilityHidden(true)
                 
                 Text(data.statusText)
-                    .font(Font.custom(tokensTypographyFontFamilies.helvetica, size: CGFloat(tokensTypographyFontSizes.title1)))
+                    .font(.title1)
                     .foregroundColor(Color(hex: data.statusColor))
                     .lineLimit(1)
             }
             .accessibilityLabel("Status: \(data.statusText)")
             .accessibilityValue(data.contentDescription)
-            .padding(.horizontal, CGFloat(tokensSpacing.lg))
-            .padding(.bottom, CGFloat(tokensSpacing.lg))
+            .padding(.horizontal, .spacingUI.lg)
+            .padding(.bottom, .spacingUI.lg)
             
             Spacer(minLength: 0)
         }
-        .frame(width: CGFloat(tokensSizesCardDetail.width), height: CGFloat(tokensSizesCardDetail.height))
-        .background(Color(hex: tokensColorsBackground.card))
-        .cornerRadius(CGFloat(tokensBorderRadius.md))
-        .shadow(color: Color(hex: tokensElevation.card).opacity(0.1), radius: 2, x: 0, y: 2)
+        .frame(width: .cardDetailWidth, height: .cardDetailHeight)
+        .background(Color.background.card)
+        .cornerRadius(.borderRadiusUI.md)
+        .cardElevation()
         .accessibilityElement(children: .combine)
     }
 }
@@ -82,7 +69,6 @@ struct DetailCardView: View {
 // MARK: - Preview
 #Preview {
     VStack(spacing: 16) {
-        // Open status
         DetailCardView(
             data: DetailCardData(
                 title: "Pizza Palace",
@@ -93,7 +79,6 @@ struct DetailCardView: View {
             )
         )
         
-        // Closed status
         DetailCardView(
             data: DetailCardData(
                 title: "Sushi Spot",

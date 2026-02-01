@@ -3,7 +3,6 @@ package io.umain.munchies.android.features.restaurantdetail
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -20,24 +19,18 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import io.umain.munchies.android.ui.theme.MunchiesTheme
 import io.umain.munchies.android.ui.components.DetailCardCompose
+import io.umain.munchies.android.ui.components.DetailCardData
 import io.umain.munchies.core.TextId
 import io.umain.munchies.designtokens.DesignTokens
 import io.umain.munchies.localization.tr
 import io.umain.munchies.navigation.AppCoordinator
-import io.umain.munchies.ui.DetailCardColors
-import io.umain.munchies.ui.DetailCardData
-import io.umain.munchies.ui.DetailCardDimensions
-import io.umain.munchies.ui.DetailCardTypography
 import java.time.LocalDateTime
 import java.time.LocalTime
 
@@ -164,12 +157,9 @@ fun RestaurantDetailScreen(
                         statusText = statusText,
                         statusColor = statusColor
                     ),
-                    dimensions = DetailCardDimensions(),
-                    colors = DetailCardColors(),
-                    typography = DetailCardTypography(),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(DetailCardDimensions().height.dp)
+                        .height(DesignTokens.Sizes.Card.Detail.height.dp)
                 )
                 
                 Column(

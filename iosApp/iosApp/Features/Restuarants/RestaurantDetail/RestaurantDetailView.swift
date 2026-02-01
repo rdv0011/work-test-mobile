@@ -66,15 +66,11 @@ struct RestaurantDetailView: View {
     let coordinator: AppCoordinator
     
     var body: some View {
-        let tokensTypographyFontFamilies = DesignTokens.TypographyFontFamilies.shared
-        let tokensTypographyFontSizes = DesignTokens.TypographyFontSizes.shared
         let tokesnColorsAccent = DesignTokens.ColorsAccent.shared
-        let tokensSpacing = DesignTokens.Spacing.shared
-        let tokensColorsText = DesignTokens.ColorsText.shared
         let details = getRestaurantDetail(restaurantId)
         let isOpen = isRestaurantOpen(opensAt: details.opensAt, closesAt: details.closesAt)
         let statusColor = isOpen ? tokesnColorsAccent.positive : tokesnColorsAccent.negative
-        let statusText = isOpen ? tr(TextId.RestaurantStatusOpen.shared) : tr(TextId.RestaurantStatusClosed.shared)
+        let statusText: String = isOpen ? tr(.restaurantStatusOpen) : tr(.restaurantStatusClosed)
         
         VStack(spacing: 0) {
             // Restaurant image
@@ -104,7 +100,7 @@ struct RestaurantDetailView: View {
             
             // Content section
             ScrollView {
-                VStack(alignment: .leading, spacing: CGFloat(tokensSpacing.lg)) {
+                VStack(alignment: .leading, spacing: .spacingUI.lg) {
                     // Detail card
                     DetailCardView(
                         data: DetailCardData(
@@ -117,28 +113,28 @@ struct RestaurantDetailView: View {
                     )
                     
                     // Hours of operation
-                    VStack(alignment: .leading, spacing: CGFloat(tokensSpacing.sm)) {
+                    VStack(alignment: .leading, spacing: .spacingUI.sm) {
                         Text("Hours of Operation")
-                            .font(Font.custom(tokensTypographyFontFamilies.helvetica, size: CGFloat(tokensTypographyFontSizes.title1)))
-                            .foregroundColor(Color(hex: tokensColorsText.dark))
+                            .font(.title1)
+                            .foregroundColor(.text.dark)
                         
                         HStack {
                             Text("Opens: \(details.opensAt)")
-                                .font(Font.custom(tokensTypographyFontFamilies.helvetica, size: CGFloat(tokensTypographyFontSizes.title2)))
+                                .font(.title2)
                             Spacer()
                             Text("Closes: \(details.closesAt)")
-                                .font(Font.custom(tokensTypographyFontFamilies.helvetica, size: CGFloat(tokensTypographyFontSizes.title2)))
+                                .font(.title2)
                         }
-                        .foregroundColor(Color(hex: tokensColorsText.subtitle))
+                        .foregroundColor(.text.subtitle)
                     }
-                    .padding(CGFloat(tokensSpacing.lg))
+                    .padding(.spacingUI.lg)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .padding(.horizontal, CGFloat(tokensSpacing.lg))
-                .padding(.vertical, CGFloat(tokensSpacing.lg))
+                .padding(.horizontal, .spacingUI.lg)
+                .padding(.vertical, .spacingUI.lg)
             }
         }
-        .navigationTitle(tr(TextId.RestaurantDetailTitle()))
+        .navigationTitle(tr(.restaurantDetailTitle))
         .navigationBarBackButtonHidden(false)
         .onAppear {
             logInfo(tag: "RestaurantDetail", message: "Viewing restaurant detail: \(restaurantId)")

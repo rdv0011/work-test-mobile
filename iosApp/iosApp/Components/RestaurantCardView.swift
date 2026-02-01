@@ -23,16 +23,8 @@ struct RestaurantCardView: View {
     var onTap: (() -> Void)? = nil
     
     var body: some View {
-        let tokensTypographyFontFamilies = DesignTokens.TypographyFontFamilies.shared
-        let tokensTypographyFontSizes = DesignTokens.TypographyFontSizes.shared
-        let tokensColorsText = DesignTokens.ColorsText.shared
-        let tokensColorsAccent = DesignTokens.ColorsAccent.shared
-        let tokensColorsBackground = DesignTokens.ColorsBackground.shared
-        let tokensSpacing = DesignTokens.Spacing.shared
-        let tokensBorderRadius = DesignTokens.BorderRadius.shared
-        let tokensSizesCardRestaurant = DesignTokens.SizesCardRestaurant.shared
-        let tagGap = CGFloat(tokensSpacing.xs)
-        let padding = CGFloat(tokensSpacing.sm)
+        let tagGap = CGFloat(DesignTokens.Spacing.shared.xs)
+        let padding = CGFloat(DesignTokens.Spacing.shared.sm)
         
         VStack(alignment: .leading, spacing: 0) {
             // Image section - top 132pt with rounded corners
@@ -44,14 +36,14 @@ struct RestaurantCardView: View {
                         ProgressView()
                             .tint(Color.gray)
                     }
-                    .frame(height: CGFloat(tokensSizesCardRestaurant.imageHeight))
+                    .frame(height: .cardRestaurantImageHeight)
                     .accessibilityLabel("Loading restaurant image")
                     
                 case .success(let image):
                     image
                         .resizable()
                         .scaledToFill()
-                        .frame(height: CGFloat(tokensSizesCardRestaurant.imageHeight))
+                        .frame(height: .cardRestaurantImageHeight)
                         .clipped()
                         .accessibilityLabel("Restaurant image for \(data.restaurantName)")
                     
@@ -62,7 +54,7 @@ struct RestaurantCardView: View {
                             .font(.system(size: 24))
                             .foregroundColor(.gray)
                     }
-                    .frame(height: CGFloat(tokensSizesCardRestaurant.imageHeight))
+                    .frame(height: .cardRestaurantImageHeight)
                     .accessibilityLabel("Failed to load restaurant image")
                     
                 @unknown default:
@@ -74,8 +66,8 @@ struct RestaurantCardView: View {
             VStack(alignment: .leading, spacing: 4) {
                 // Restaurant name (title1)
                 Text(data.restaurantName)
-                    .font(Font.custom(tokensTypographyFontFamilies.helvetica, size: CGFloat(tokensTypographyFontSizes.title1)))
-                    .foregroundColor(Color(hex: tokensColorsText.dark))
+                    .font(.title1)
+                    .foregroundColor(.text.dark)
                     .lineLimit(1)
                     .accessibilityLabel("Restaurant name: \(data.restaurantName)")
                 
@@ -84,9 +76,8 @@ struct RestaurantCardView: View {
                     HStack(spacing: tagGap) {
                         ForEach(data.tags, id: \.self) { tag in
                             Text(tag)
-                                .font(Font.custom(tokensTypographyFontFamilies.helvetica, size: CGFloat(tokensTypographyFontSizes.subtitle1))
-                                    .weight(.bold))
-                                .foregroundColor(Color(hex: tokensColorsText.subtitle))
+                                .font(.subtitle1)
+                                .foregroundColor(.text.subtitle)
                                 .lineLimit(1)
                         }
                     }
@@ -98,23 +89,21 @@ struct RestaurantCardView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "clock.fill")
                             .font(.system(size: 8))
-                            .foregroundColor(Color(hex: tokensColorsText.footer))
+                            .foregroundColor(.text.footer)
                         
                         Text(data.deliveryTime)
-                            .font(Font.custom(tokensTypographyFontFamilies.inter, size: CGFloat(tokensTypographyFontSizes.footer1))
-                                .weight(.medium))
-                            .foregroundColor(Color(hex: tokensColorsText.footer))
+                            .font(.footer1)
+                            .foregroundColor(.text.footer)
                     }
                     
                     HStack(spacing: 4) {
                         Image(systemName: "location.fill")
                             .font(.system(size: 8))
-                            .foregroundColor(Color(hex: tokensColorsText.footer))
+                            .foregroundColor(.text.footer)
                         
                         Text(data.distance)
-                            .font(Font.custom(tokensTypographyFontFamilies.inter, size: CGFloat(tokensTypographyFontSizes.footer1))
-                                .weight(.medium))
-                            .foregroundColor(Color(hex: tokensColorsText.footer))
+                            .font(.footer1)
+                            .foregroundColor(.text.footer)
                     }
                     
                     Spacer()
@@ -123,12 +112,11 @@ struct RestaurantCardView: View {
                     HStack(spacing: 2) {
                         Image(systemName: "star.fill")
                             .font(.system(size: 10))
-                            .foregroundColor(Color(hex: tokensColorsAccent.star))
+                            .foregroundColor(.accent.star)
                         
                         Text(String(format: "%.1f", data.rating))
-                            .font(Font.custom(tokensTypographyFontFamilies.inter, size: CGFloat(tokensTypographyFontSizes.footer1))
-                                .weight(.medium))
-                            .foregroundColor(Color(hex: tokensColorsText.footer))
+                            .font(.footer1)
+                            .foregroundColor(.text.footer)
                     }
                 }
                 .accessibilityLabel("Delivery: \(data.deliveryTime), Distance: \(data.distance), Rating: \(String(format: "%.1f", data.rating))")
@@ -137,9 +125,9 @@ struct RestaurantCardView: View {
             
             Spacer(minLength: 0)
         }
-        .frame(width: CGFloat(tokensSizesCardRestaurant.width), height: CGFloat(tokensSizesCardRestaurant.height))
-        .background(Color(hex: tokensColorsBackground.card))
-        .cornerRadius(CGFloat(tokensBorderRadius.md), corners: [.topLeft, .topRight])
+        .frame(width: .cardRestaurantWidth, height: .cardRestaurantHeight)
+        .background(Color.background.card)
+        .cornerRadius(.borderRadiusUI.md, corners: [.topLeft, .topRight])
         .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 2)
         .contentShape(Rectangle())
         .onTapGesture {

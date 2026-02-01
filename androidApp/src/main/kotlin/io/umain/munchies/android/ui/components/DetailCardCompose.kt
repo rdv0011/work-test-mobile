@@ -13,52 +13,58 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import io.umain.munchies.ui.DetailCardColors
-import io.umain.munchies.ui.DetailCardData
-import io.umain.munchies.ui.DetailCardDimensions
-import io.umain.munchies.ui.DetailCardTypography
 import androidx.core.graphics.toColorInt
+import io.umain.munchies.designtokens.DesignTokens
+
+data class DetailCardData(
+    val title: String,
+    val subtitle: String,
+    val statusText: String,
+    val statusColor: String,
+    val contentDescription: String = "Restaurant status: $statusText"
+)
 
 @Composable
 fun DetailCardCompose(
     data: DetailCardData,
-    dimensions: DetailCardDimensions,
-    colors: DetailCardColors,
-    typography: DetailCardTypography,
     modifier: Modifier = Modifier
 ) {
+    val titleStyle = DesignTokens.Typography.TextStyles.headline1
+    val subtitleStyle = DesignTokens.Typography.TextStyles.headline2
+    val statusStyle = DesignTokens.Typography.TextStyles.title1
+    
     Card(
         modifier = modifier
             .semantics { contentDescription = data.contentDescription },
-        shape = RoundedCornerShape(dimensions.cornerRadius.dp),
+        shape = RoundedCornerShape(DesignTokens.BorderRadius.md.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(colors.backgroundColor.toColorInt())
+            containerColor = Color(DesignTokens.Colors.Background.card.toColorInt())
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Text(
             text = data.title,
             style = TextStyle(
-                fontWeight = FontWeight(typography.titleStyle.fontWeight),
-                fontSize = typography.titleStyle.fontSize.sp
+                fontWeight = FontWeight(titleStyle.fontWeight),
+                fontSize = titleStyle.fontSize.sp
             ),
-            color = Color(colors.titleColor.toColorInt())
+            color = Color(DesignTokens.Colors.Text.dark.toColorInt())
         )
         
         Text(
             text = data.subtitle,
             style = TextStyle(
-                fontWeight = FontWeight(typography.subtitleStyle.fontWeight),
-                fontSize = typography.subtitleStyle.fontSize.sp
+                fontWeight = FontWeight(subtitleStyle.fontWeight),
+                fontSize = subtitleStyle.fontSize.sp
             ),
-            color = Color(colors.subtitleColor.toColorInt())
+            color = Color(DesignTokens.Colors.Text.subtitle.toColorInt())
         )
         
         Text(
             text = data.statusText,
             style = TextStyle(
-                fontWeight = FontWeight(typography.statusStyle.fontWeight),
-                fontSize = typography.statusStyle.fontSize.sp
+                fontWeight = FontWeight(statusStyle.fontWeight),
+                fontSize = statusStyle.fontSize.sp
             ),
             color = Color(data.statusColor.toColorInt())
         )

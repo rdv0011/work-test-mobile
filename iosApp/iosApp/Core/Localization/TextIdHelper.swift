@@ -12,3 +12,20 @@ extension TextId {
         return tr(self)
     }
 }
+
+extension TextId {
+    static var appTitle: TextId { TextId.AppTitle() }
+    static var restaurantListTitle: TextId { TextId.RestaurantListTitle() }
+    static var restaurantDetailTitle: TextId { TextId.RestaurantDetailTitle() }
+    static var filterAll: TextId { TextId.FilterAll() }
+    static var restaurantStatusOpen: TextId { TextId.RestaurantStatusOpen() }
+    static var restaurantStatusClosed: TextId { TextId.RestaurantStatusClosed() }
+    static var accessibilityRestaurantCard: TextId { TextId.AccessibilityRestaurantCard() }
+    static var accessibilityFilterChip: TextId { TextId.AccessibilityFilterChip() }
+    static var accessibilityFilterSelected: TextId { TextId.AccessibilityFilterSelected() }
+    static var accessibilityBackButton: TextId { TextId.AccessibilityBackButton() }
+    static var errorLoading: TextId { TextId.ErrorLoading() }
+    static var errorNetwork: TextId { TextId.ErrorNetwork() }
+    static var loading: TextId { TextId.Loading() }
+}
+

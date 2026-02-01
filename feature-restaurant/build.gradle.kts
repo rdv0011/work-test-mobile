@@ -31,7 +31,6 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 api(project(":core"))
-                api(project(":ui-models"))
             }
         }
         val commonTest by getting {

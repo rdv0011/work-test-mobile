@@ -24,15 +24,9 @@ import io.umain.munchies.designtokens.DesignTokens
 import io.umain.munchies.localization.tr
 import io.umain.munchies.navigation.AppCoordinator
 import io.umain.munchies.android.ui.components.FilterChipCompose
+import io.umain.munchies.android.ui.components.FilterChipData
 import io.umain.munchies.android.ui.components.RestaurantCardCompose
-import io.umain.munchies.ui.FilterChipColors
-import io.umain.munchies.ui.FilterChipData
-import io.umain.munchies.ui.FilterChipDimensions
-import io.umain.munchies.ui.FilterChipTypography
-import io.umain.munchies.ui.RestaurantCardColors
-import io.umain.munchies.ui.RestaurantCardData
-import io.umain.munchies.ui.RestaurantCardDimensions
-import io.umain.munchies.ui.RestaurantCardTypography
+import io.umain.munchies.android.ui.components.RestaurantCardData
 
 private val exampleRestaurants = listOf(
     RestaurantCardData(
@@ -139,9 +133,6 @@ fun RestaurantListScreen(
                     val isSelected = selectedFilterIds.value.contains(filter.id)
                     FilterChipCompose(
                         data = filter.copy(isSelected = isSelected),
-                        dimensions = FilterChipDimensions(),
-                        colors = FilterChipColors(),
-                        typography = FilterChipTypography(),
                         onSelect = { selected ->
                             val newSelectedIds = selectedFilterIds.value.toMutableSet()
                             if (selected) {
@@ -156,7 +147,7 @@ fun RestaurantListScreen(
                             selectedFilterIds.value = newSelectedIds
                         },
                         modifier = Modifier
-                            .height(FilterChipDimensions().height.dp)
+                            .height(DesignTokens.Sizes.Filter.height.dp)
                     )
                 }
             }
@@ -175,15 +166,12 @@ fun RestaurantListScreen(
                 items(filteredRestaurants) { restaurant ->
                     RestaurantCardCompose(
                         data = restaurant,
-                        dimensions = RestaurantCardDimensions(),
-                        colors = RestaurantCardColors(),
-                        typography = RestaurantCardTypography(),
                         onTap = {
                             coordinator.navigateToRestaurantDetail(restaurant.restaurantName)
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(RestaurantCardDimensions().height.dp)
+                            .height(DesignTokens.Sizes.Card.Restaurant.height.dp)
                     )
                 }
             }

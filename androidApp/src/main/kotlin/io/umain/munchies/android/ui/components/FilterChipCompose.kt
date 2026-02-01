@@ -15,44 +15,48 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import io.umain.munchies.ui.FilterChipColors
-import io.umain.munchies.ui.FilterChipData
-import io.umain.munchies.ui.FilterChipDimensions
-import io.umain.munchies.ui.FilterChipTypography
 import androidx.core.graphics.toColorInt
+import io.umain.munchies.designtokens.DesignTokens
+
+data class FilterChipData(
+    val id: String,
+    val label: String,
+    val iconUrl: String,
+    val isSelected: Boolean = false,
+    val contentDescription: String = "Filter: $label"
+)
 
 @Composable
 fun FilterChipCompose(
     data: FilterChipData,
-    dimensions: FilterChipDimensions,
-    colors: FilterChipColors,
-    typography: FilterChipTypography,
     onSelect: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val backgroundColor = if (data.isSelected) {
-        Color(colors.selectedBackground.toColorInt())
+        Color(DesignTokens.Colors.Accent.selected.toColorInt())
     } else {
-        Color(colors.unselectedBackground.toColorInt())
+        Color(DesignTokens.Colors.Background.filterDefault.toColorInt())
     }
     
     val textColor = if (data.isSelected) {
-        Color(colors.selectedTextColor.toColorInt())
+        Color(DesignTokens.Colors.Text.light.toColorInt())
     } else {
-        Color(colors.unselectedTextColor.toColorInt())
+        Color(DesignTokens.Colors.Text.picto.toColorInt())
     }
+    
+    val textStyle = DesignTokens.Typography.TextStyles.title2
     
     Text(
         text = data.label,
         style = TextStyle(
-            fontWeight = FontWeight(typography.labelStyle.fontWeight),
-            fontSize = typography.labelStyle.fontSize.sp
+            fontWeight = FontWeight(textStyle.fontWeight),
+            fontSize = textStyle.fontSize.sp
         ),
         color = textColor,
         modifier = modifier
             .background(
                 color = backgroundColor,
-                shape = RoundedCornerShape(dimensions.cornerRadius.dp)
+                shape = RoundedCornerShape(DesignTokens.BorderRadius.full.dp)
             )
             .clickable { onSelect(!data.isSelected) }
             .semantics {

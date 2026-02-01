@@ -65,29 +65,24 @@ struct RestaurantListView: View {
     }
     
     var body: some View {
-        let tokensTypographyFontFamilies = DesignTokens.TypographyFontFamilies.shared
-        let tokensTypographyFontSizes = DesignTokens.TypographyFontSizes.shared
-        let tokensColorsText = DesignTokens.ColorsText.shared
-        let tokensSpacing = DesignTokens.Spacing.shared
-        
         VStack(spacing: 0) {
             // Header
-            VStack(alignment: .leading, spacing: CGFloat(tokensSpacing.sm)) {
-                Text(tr(TextId.AppTitle()))
-                    .font(Font.custom(tokensTypographyFontFamilies.helvetica, size: CGFloat(tokensTypographyFontSizes.headline1)))
-                    .foregroundColor(Color(hex: tokensColorsText.dark))
+            VStack(alignment: .leading, spacing: .spacingUI.sm) {
+                Text(tr(.appTitle))
+                    .font(.headline1)
+                    .foregroundColor(.text.dark)
                 
-                Text(tr(TextId.RestaurantListTitle()))
-                    .font(Font.custom(tokensTypographyFontFamilies.helvetica, size: CGFloat(tokensTypographyFontSizes.title1)))
-                    .foregroundColor(Color(hex: tokensColorsText.dark))
+                Text(tr(.restaurantListTitle))
+                    .font(.title1)
+                    .foregroundColor(.text.dark)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, CGFloat(tokensSpacing.lg))
-            .padding(.vertical, CGFloat(tokensSpacing.lg))
+            .padding(.horizontal, .spacingUI.lg)
+            .padding(.vertical, .spacingUI.lg)
             
             // Filter chips
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: CGFloat(tokensSpacing.md)) {
+                HStack(spacing: .spacingUI.md) {
                     ForEach(exampleFilters, id: \.self) { filter in
                         let isSelected = selectedFilterLabels.contains(filter.label)
                         FilterChipView(
@@ -109,21 +104,21 @@ struct RestaurantListView: View {
                         )
                     }
                 }
-                .padding(.horizontal, CGFloat(tokensSpacing.lg))
+                .padding(.horizontal, .spacingUI.lg)
             }
-            .padding(.bottom, CGFloat(tokensSpacing.lg))
+            .padding(.bottom, .spacingUI.lg)
             
             // Restaurant list
             if filteredRestaurants.isEmpty {
                 VStack {
                     Text("No restaurants found")
-                        .font(Font.custom(tokensTypographyFontFamilies.helvetica, size: CGFloat(tokensTypographyFontSizes.title2)))
-                        .foregroundColor(Color(hex: tokensColorsText.subtitle))
+                        .font(.title2)
+                        .foregroundColor(.text.subtitle)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             } else {
                 ScrollView {
-                    VStack(spacing: CGFloat(tokensSpacing.lg)) {
+                    VStack(spacing: .spacingUI.lg) {
                         ForEach(filteredRestaurants, id: \.restaurantName) { restaurant in
                             RestaurantCardView(data: restaurant) {
                                 logInfo(tag: "RestaurantList", message: "Tapped restaurant: \(restaurant.restaurantName)")
@@ -131,12 +126,12 @@ struct RestaurantListView: View {
                             }
                         }
                     }
-                    .padding(.horizontal, CGFloat(tokensSpacing.lg))
-                    .padding(.bottom, CGFloat(tokensSpacing.lg))
+                    .padding(.horizontal, .spacingUI.lg)
+                    .padding(.bottom, .spacingUI.lg)
                 }
             }
         }
-        .navigationTitle(tr(TextId.RestaurantListTitle()))
+        .navigationTitle(tr(.restaurantListTitle))
         .onAppear {
             logInfo(tag: "RestaurantList", message: "Restaurant list view appeared")
         }
