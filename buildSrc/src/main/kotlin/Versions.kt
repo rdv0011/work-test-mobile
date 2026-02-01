@@ -15,6 +15,7 @@ object Versions {
     const val composeMaterial3 = "1.2.0"
     const val activityCompose = "1.8.2"
     const val lifecycleRuntimeCompose = "2.7.0"
+    const val navigationCompose = "2.7.6"
     
     // Kotlin Libraries
     const val coroutines = "1.7.3"

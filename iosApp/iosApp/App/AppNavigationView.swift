@@ -2,30 +2,33 @@ import SwiftUI
 import shared
 
 struct AppNavigationView: View {
-    @StateObject private var navigationState: NavigationStateObserver
+    @StateObject private var navigator: NavigationCoordinator
     
     init(coordinator: AppCoordinator) {
-        _navigationState = StateObject(wrappedValue: NavigationStateObserver(coordinator: coordinator))
+        _navigator = StateObject(wrappedValue: NavigationCoordinator(coordinator: coordinator))
     }
     
     var body: some View {
-        NavigationView {
-            destinationView
+        NavigationStack(path: $navigator.path) {
+            RestaurantListView(coordinator: navigator.coordinator)
+                .navigationDestination(for: Route.self) { route in
+                    destinationView(for: route)
+                }
         }
     }
     
     @ViewBuilder
-    private var destinationView: some View {
-        switch navigationState.currentDestination {
-        case is Destination.RestaurantList:
-            RestaurantListView(coordinator: navigationState.coordinator)
-        case let detail as Destination.RestaurantDetail:
+    private func destinationView(for route: Route) -> some View {
+        switch route {
+        case .restaurantDetail(let restaurantId):
             RestaurantDetailView(
-                restaurantId: detail.restaurantId,
-                coordinator: navigationState.coordinator
+                restaurantId: restaurantId,
+                coordinator: navigator.coordinator
             )
-        default:
-            Text("Unknown destination")
         }
     }
+}
+
+enum Route: Hashable {
+    case restaurantDetail(String)
 }

@@ -1,38 +1,35 @@
 package io.umain.munchies.navigation
 
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+
+sealed class NavigationEvent {
+    data class Push(val destination: Destination) : NavigationEvent()
+    data object Pop : NavigationEvent()
+    data object PopToRoot : NavigationEvent()
+}
 
 class AppCoordinator {
     
-    private val _navigationStack = MutableStateFlow<List<Destination>>(
-        listOf(Destination.RestaurantList)
+    private val _navigationEvents = MutableSharedFlow<NavigationEvent>(
+        extraBufferCapacity = 10
     )
-    val navigationStack: StateFlow<List<Destination>> = _navigationStack.asStateFlow()
+    val navigationEvents: SharedFlow<NavigationEvent> = _navigationEvents.asSharedFlow()
     
-    private val _currentDestination = MutableStateFlow<Destination>(Destination.RestaurantList)
-    val currentDestination: StateFlow<Destination> = _currentDestination.asStateFlow()
-    
-    fun navigateToRestaurantDetail(restaurantId: String) {
-        val destination = Destination.RestaurantDetail(restaurantId)
-        _navigationStack.value = _navigationStack.value + destination
-        _currentDestination.value = destination
+    fun navigateTo(destination: Destination) {
+        _navigationEvents.tryEmit(NavigationEvent.Push(destination))
     }
     
-    fun navigateBack(): Boolean {
-        if (_navigationStack.value.size <= 1) {
-            return false
-        }
-        
-        val newStack = _navigationStack.value.dropLast(1)
-        _navigationStack.value = newStack
-        _currentDestination.value = newStack.last()
-        return true
+    fun navigateToRestaurantDetail(restaurantId: String) {
+        navigateTo(Destination.RestaurantDetail(restaurantId))
+    }
+    
+    fun navigateBack() {
+        _navigationEvents.tryEmit(NavigationEvent.Pop)
     }
     
     fun navigateToRoot() {
-        _navigationStack.value = listOf(Destination.RestaurantList)
-        _currentDestination.value = Destination.RestaurantList
+        _navigationEvents.tryEmit(NavigationEvent.PopToRoot)
     }
 }

@@ -54,6 +54,7 @@ dependencies {
     implementation("androidx.compose.material3:material3:${Versions.composeMaterial3}")
     implementation("androidx.activity:activity-compose:${Versions.activityCompose}")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:${Versions.lifecycleRuntimeCompose}")
+    implementation("androidx.navigation:navigation-compose:${Versions.navigationCompose}")
     implementation("io.insert-koin:koin-android:${Versions.koin}")
     implementation("io.insert-koin:koin-androidx-compose:${Versions.koin}")
 }
