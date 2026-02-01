@@ -19,6 +19,6 @@ dependencyResolutionManagement {
 include(":androidApp")
 include(":design-tokens")
 include(":core")
-include(":ui-components")
+include(":ui-models")
 include(":feature-restaurant")
 include(":ios-aggregator")

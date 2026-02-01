@@ -22,7 +22,7 @@ object DesignTokens {
         object Background {
             const val primary = "#F8F8F8"
             const val card = "#FFFFFF"
-            const val filterDefault = "rgba(255, 255, 255, 0.4)"
+            const val filterDefault = "#FFFFFF66"
         }
         
         object Accent {
@@ -135,8 +135,8 @@ object DesignTokens {
     }
     
     object Elevation {
-        const val card = "0px 4px 4px rgba(0, 0, 0, 0.1)"
-        const val filter = "0px 4px 10px rgba(0, 0, 0, 0.04)"
+        const val card = "#0000001A"
+        const val filter = "#0000000A"
     }
     
     object Sizes {

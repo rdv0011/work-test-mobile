@@ -32,7 +32,7 @@ kotlin {
             // Export all modules for iOS
             export(project(":design-tokens"))
             export(project(":core"))
-            export(project(":ui-components"))
+            export(project(":ui-models"))
             export(project(":feature-restaurant"))
             
             // Export Koin and Coroutines for iOS interop
@@ -49,7 +49,7 @@ kotlin {
                 // Aggregate all modules
                 api(project(":design-tokens"))
                 api(project(":core"))
-                api(project(":ui-components"))
+                api(project(":ui-models"))
                 api(project(":feature-restaurant"))
             }
         }

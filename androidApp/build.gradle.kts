@@ -48,7 +48,7 @@ android {
 dependencies {
     implementation(project(":design-tokens"))
     implementation(project(":core"))
-    implementation(project(":ui-components"))
+    implementation(project(":ui-models"))
     implementation(project(":feature-restaurant"))
     implementation("androidx.compose.ui:ui:${Versions.compose}")
     implementation("androidx.compose.ui:ui-tooling:${Versions.compose}")
@@ -60,4 +60,5 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:${Versions.navigationCompose}")
     implementation("io.insert-koin:koin-android:${Versions.koin}")
     implementation("io.insert-koin:koin-androidx-compose:${Versions.koin}")
+    implementation("io.coil-kt:coil-compose:${Versions.coil}")
 }

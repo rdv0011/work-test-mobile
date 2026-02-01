@@ -26,4 +26,7 @@ object Versions {
     
     // Koin
     const val koin = "3.5.3"
+    
+    // Image loading
+    const val coil = "2.5.0"
 }
