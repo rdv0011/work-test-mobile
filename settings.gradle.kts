@@ -17,4 +17,7 @@ dependencyResolutionManagement {
 }
 
 include(":androidApp")
-include(":shared")
+include(":core")
+include(":ui-components")
+include(":feature-restaurant")
+include(":ios-aggregator")

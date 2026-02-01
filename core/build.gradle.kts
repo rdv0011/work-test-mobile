@@ -4,8 +4,6 @@ plugins {
     id("com.android.library")
 }
 
-import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
-
 kotlin {
     applyDefaultHierarchyTemplate()
     
@@ -17,9 +15,6 @@ kotlin {
         }
     }
     
-    val xcframeworkName = "shared"
-    val xcf = XCFramework(xcframeworkName)
-    
     val iosTargets = listOf(
         iosArm64(),
         iosSimulatorArm64()
@@ -27,11 +22,8 @@ kotlin {
     
     iosTargets.forEach { target ->
         target.binaries.framework {
-            baseName = xcframeworkName
+            baseName = "core"
             isStatic = true
-            export("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}")
-            export("io.insert-koin:koin-core:${Versions.koin}")
-            xcf.add(this)
         }
     }
 
@@ -43,7 +35,6 @@ kotlin {
                 implementation("io.ktor:ktor-client-core:${Versions.ktor}")
                 implementation("io.ktor:ktor-client-content-negotiation:${Versions.ktor}")
                 implementation("io.ktor:ktor-serialization-kotlinx-json:${Versions.ktor}")
-                implementation("io.ktor:ktor-client-mock:${Versions.ktor}")
                 api("io.insert-koin:koin-core:${Versions.koin}")
             }
         }
@@ -71,7 +62,7 @@ kotlin {
 }
 
 android {
-    namespace = "io.umain.munchies.shared"
+    namespace = "io.umain.munchies.core"
     compileSdk = Versions.compileSdk
     defaultConfig {
         minSdk = Versions.minSdk

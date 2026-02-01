@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- macOS with Xcode 14.0 or later
+- macOS with Xcode 16.0 or later
 - Xcode Command Line Tools installed  
 - JDK 17 or later for Gradle
 
@@ -10,15 +10,15 @@
 
 ### Step 1: Build the XCFramework
 
-From the project root:
+From the project root, build the aggregated XCFramework from the `ios-aggregator` module:
 
 ```bash
-./gradlew :shared:assembleXCFramework
+./gradlew :ios-aggregator:assembleSharedXCFramework
 ```
 
-This builds the KMP shared module as an XCFramework with support for both iOS device and simulator.
+This builds all KMP modules (core, ui-components, feature-restaurant) aggregated into a single XCFramework with support for both iOS device and simulator.
 
-Output: `shared/build/XCFrameworks/release/shared.xcframework`
+Output: `ios-aggregator/build/XCFrameworks/release/shared.xcframework`
 
 ### Step 2: Open in Xcode
 
@@ -32,8 +32,10 @@ open iosApp/iosApp.xcodeproj
 2. Select the `iosApp` target
 3. Go to "General" tab → "Frameworks, Libraries, and Embedded Content"
 4. Click "+" → "Add Other..." → "Add Package Dependency..."
-5. Enter local path: `../shared` (or click "Add Local..." and navigate to shared folder)
-6. Click "Add Package" → Select "shared" library → "Add Package"
+5. Click "Add Local..." and navigate to `ios-aggregator` folder (not the old `shared` folder)
+6. Select the `ios-aggregator` directory → "Open"
+7. Xcode will find `Package.swift` → Click "Add Package"
+8. Select "shared" library → "Add Package" (this imports the XCFramework)
 
 ### Step 4: Build and Run
 
@@ -41,19 +43,20 @@ Press `Cmd+R` to build and run on simulator or device.
 
 ## XCFramework Details
 
-- **Location**: `shared/build/XCFrameworks/release/shared.xcframework`
+- **Location**: `ios-aggregator/build/XCFrameworks/release/shared.xcframework`
 - **Architectures**: 
-  - Device: arm64
-  - Simulator: arm64 (Apple Silicon) + x86_64 (Intel)
+   - Device: arm64
+   - Simulator: arm64 (Apple Silicon) + x86_64 (Intel)
 - **iOS Target**: 15.0+
-- **SPM Manifest**: `shared/Package.swift` (points to XCFramework binary)
+- **SPM Manifest**: `ios-aggregator/Package.swift` (points to XCFramework binary)
+- **Module Contents**: Exports `:core`, `:ui-components`, `:feature-restaurant`
 
 ## Gradle Commands
 
 ```bash
-./gradlew :shared:assembleXCFramework                  # Build both debug & release
-./gradlew :shared:assembleSharedDebugXCFramework       # Debug only
-./gradlew :shared:assembleSharedReleaseXCFramework     # Release only
+./gradlew :ios-aggregator:assembleSharedXCFramework              # Build both debug & release
+./gradlew :ios-aggregator:assembleSharedDebugXCFramework        # Debug only
+./gradlew :ios-aggregator:assembleSharedReleaseXCFramework      # Release only (recommended)
 ```
 
 ## Troubleshooting
@@ -62,12 +65,12 @@ Press `Cmd+R` to build and run on simulator or device.
 
 1. Verify XCFramework exists:
    ```bash
-   ls shared/build/XCFrameworks/release/shared.xcframework/
+   ls ios-aggregator/build/XCFrameworks/release/shared.xcframework/
    ```
 
 2. Rebuild if missing:
    ```bash
-   ./gradlew :shared:assembleXCFramework
+   ./gradlew :ios-aggregator:assembleSharedXCFramework
    ```
 
 3. In Xcode: Product → Clean Build Folder (Cmd+Shift+K)
@@ -97,7 +100,8 @@ To automatically rebuild the XCFramework when building in Xcode:
 
 ```bash
 cd "$SRCROOT/.."
-./gradlew :shared:assembleSharedReleaseXCFramework
+./gradlew :ios-aggregator:assembleSharedReleaseXCFramework
 ```
 
 4. Move it **before** "Compile Sources"
+

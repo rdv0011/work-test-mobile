@@ -46,7 +46,9 @@ android {
 }
 
 dependencies {
-    implementation(project(":shared"))
+    implementation(project(":core"))
+    implementation(project(":ui-components"))
+    implementation(project(":feature-restaurant"))
     implementation("androidx.compose.ui:ui:${Versions.compose}")
     implementation("androidx.compose.ui:ui-tooling:${Versions.compose}")
     implementation("androidx.compose.ui:ui-tooling-preview:${Versions.compose}")
