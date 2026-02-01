@@ -1,11 +1,13 @@
 package io.umain.munchies.localization
 
 import android.content.Context
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import java.util.Locale
 
-actual class PlatformTranslationService actual constructor() : TranslationService {
+actual class PlatformTranslationService actual constructor() : TranslationService, KoinComponent {
     
-    private val context: Context = getApplicationContext()
+    private val context: Context by inject()
     
     override fun translate(key: TranslationKey, vararg args: Any): String {
         val resourceId = getResourceIdForKey(key)
@@ -28,22 +30,5 @@ actual class PlatformTranslationService actual constructor() : TranslationServic
     private fun getResourceIdForKey(key: String): Int {
         val resourceName = key.replace(".", "_")
         return context.resources.getIdentifier(resourceName, "string", context.packageName)
-    }
-    
-    companion object {
-        private lateinit var appContext: Context
-        
-        fun init(context: Context) {
-            appContext = context.applicationContext
-        }
-        
-        private fun getApplicationContext(): Context {
-            if (!::appContext.isInitialized) {
-                throw IllegalStateException(
-                    "PlatformTranslationService not initialized. Call PlatformTranslationService.init(context) first."
-                )
-            }
-            return appContext
-        }
     }
 }

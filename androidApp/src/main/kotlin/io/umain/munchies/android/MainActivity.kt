@@ -12,8 +12,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import io.umain.munchies.di.initKoin
-import io.umain.munchies.localization.PlatformTranslationService
+import io.umain.munchies.localization.tr
 import io.umain.munchies.navigation.AppCoordinator
 import io.umain.munchies.navigation.Destination
 import org.koin.android.ext.android.inject
@@ -44,11 +43,11 @@ fun AppNavigation(coordinator: AppCoordinator) {
     
     when (currentDestination) {
         is Destination.RestaurantList -> {
-            Text("Restaurant List Screen")
+            Text(tr("restaurant.list.title"))
         }
         is Destination.RestaurantDetail -> {
             val restaurantId = (currentDestination as Destination.RestaurantDetail).restaurantId
-            Text("Restaurant Detail Screen: $restaurantId")
+            Text("${tr("restaurant.detail.title")}: $restaurantId")
         }
     }
 }

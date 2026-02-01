@@ -1,5 +1,8 @@
 package io.umain.munchies.localization
 
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
+
 typealias TranslationKey = String
 
 interface TranslationService {
@@ -9,22 +12,22 @@ interface TranslationService {
 
 expect class PlatformTranslationService() : TranslationService
 
-private lateinit var translationServiceInstance: TranslationService
-
-fun initTranslationService(service: TranslationService = PlatformTranslationService()) {
-    translationServiceInstance = service
+object TranslationHelper : KoinComponent {
+    private val translationService: TranslationService by inject()
+    
+    fun translate(key: TranslationKey, vararg args: Any): String {
+        return translationService.translate(key, *args)
+    }
+    
+    fun getCurrentLocale(): String {
+        return translationService.getCurrentLocale()
+    }
 }
 
 fun tr(key: TranslationKey, vararg args: Any): String {
-    if (!::translationServiceInstance.isInitialized) {
-        initTranslationService()
-    }
-    return translationServiceInstance.translate(key, *args)
+    return TranslationHelper.translate(key, *args)
 }
 
 fun getCurrentLocale(): String {
-    if (!::translationServiceInstance.isInitialized) {
-        initTranslationService()
-    }
-    return translationServiceInstance.getCurrentLocale()
+    return TranslationHelper.getCurrentLocale()
 }
