@@ -12,7 +12,7 @@ kotlin {
     androidTarget {
         compilations.all {
             kotlinOptions {
-                jvmTarget = "17"
+                jvmTarget = Versions.jvmTarget
             }
         }
     }
@@ -29,8 +29,8 @@ kotlin {
         target.binaries.framework {
             baseName = xcframeworkName
             isStatic = true
-            export("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
-            export("io.insert-koin:koin-core:3.5.3")
+            export("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}")
+            export("io.insert-koin:koin-core:${Versions.koin}")
             xcf.add(this)
         }
     }
@@ -38,29 +38,29 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
-                implementation("io.ktor:ktor-client-core:2.3.7")
-                implementation("io.ktor:ktor-client-content-negotiation:2.3.7")
-                implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.7")
-                implementation("io.ktor:ktor-client-mock:2.3.7")
-                api("io.insert-koin:koin-core:3.5.3")
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.serialization}")
+                implementation("io.ktor:ktor-client-core:${Versions.ktor}")
+                implementation("io.ktor:ktor-client-content-negotiation:${Versions.ktor}")
+                implementation("io.ktor:ktor-serialization-kotlinx-json:${Versions.ktor}")
+                implementation("io.ktor:ktor-client-mock:${Versions.ktor}")
+                api("io.insert-koin:koin-core:${Versions.koin}")
             }
         }
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
-                implementation("io.ktor:ktor-client-mock:2.3.7")
+                implementation("io.ktor:ktor-client-mock:${Versions.ktor}")
             }
         }
         val androidMain by getting {
             dependencies {
-                implementation("io.ktor:ktor-client-android:2.3.7")
+                implementation("io.ktor:ktor-client-android:${Versions.ktor}")
             }
         }
         val iosMain by getting {
             dependencies {
-                implementation("io.ktor:ktor-client-darwin:2.3.7")
+                implementation("io.ktor:ktor-client-darwin:${Versions.ktor}")
             }
         }
     }
@@ -72,9 +72,9 @@ kotlin {
 
 android {
     namespace = "io.umain.munchies.shared"
-    compileSdk = 34
+    compileSdk = Versions.compileSdk
     defaultConfig {
-        minSdk = 24
+        minSdk = Versions.minSdk
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

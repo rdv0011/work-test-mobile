@@ -1,9 +1,9 @@
 plugins {
-    kotlin("multiplatform").version("1.9.22").apply(false)
-    kotlin("android").version("1.9.22").apply(false)
-    id("com.android.application").version("8.2.2").apply(false)
-    id("com.android.library").version("8.2.2").apply(false)
-    kotlin("plugin.serialization").version("1.9.22").apply(false)
+    kotlin("multiplatform").version(Versions.kotlin).apply(false)
+    kotlin("android").version(Versions.kotlin).apply(false)
+    id("com.android.application").version(Versions.androidGradlePlugin).apply(false)
+    id("com.android.library").version(Versions.androidGradlePlugin).apply(false)
+    kotlin("plugin.serialization").version(Versions.kotlin).apply(false)
 }
 
 tasks.register("clean", Delete::class) {
