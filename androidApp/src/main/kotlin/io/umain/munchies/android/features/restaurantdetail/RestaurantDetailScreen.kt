@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import io.umain.munchies.android.ui.theme.MunchiesTheme
+import io.umain.munchies.core.TextId
 import io.umain.munchies.localization.tr
 import io.umain.munchies.navigation.AppCoordinator
 
@@ -37,7 +38,7 @@ fun RestaurantDetailScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = tr("restaurant.detail.title"),
+                text = tr(TextId.RestaurantDetailTitle),
                 style = MaterialTheme.typography.headlineLarge
             )
             
@@ -50,11 +51,11 @@ fun RestaurantDetailScreen(
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
-                    text = tr("restaurant.status.open"),
+                    text = tr(TextId.RestaurantStatusOpen),
                     color = Color.Green
                 )
                 Text(
-                    text = tr("restaurant.status.closed"),
+                    text = tr(TextId.RestaurantStatusClosed),
                     color = Color.Red
                 )
             }
@@ -64,7 +65,7 @@ fun RestaurantDetailScreen(
                     coordinator.navigateBack()
                 }
             ) {
-                Text(tr("accessibility.back.button"))
+                Text(tr(TextId.AccessibilityBackButton))
             }
         }
     }

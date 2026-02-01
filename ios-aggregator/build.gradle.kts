@@ -30,6 +30,7 @@ kotlin {
             isStatic = true
             
             // Export all modules for iOS
+            export(project(":design-tokens"))
             export(project(":core"))
             export(project(":ui-components"))
             export(project(":feature-restaurant"))
@@ -46,6 +47,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 // Aggregate all modules
+                api(project(":design-tokens"))
                 api(project(":core"))
                 api(project(":ui-components"))
                 api(project(":feature-restaurant"))

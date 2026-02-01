@@ -1,18 +1,19 @@
 package io.umain.munchies.localization
 
+import io.umain.munchies.core.TextId
+import io.umain.munchies.core.mapTextIdToLocalizableKey
 import platform.Foundation.NSBundle
 import platform.Foundation.NSLocale
-import platform.Foundation.NSString
 import platform.Foundation.currentLocale
 import platform.Foundation.languageCode
-import platform.Foundation.localizedStringWithFormat
 
 actual class PlatformTranslationService actual constructor() : TranslationService {
     
-    override fun translate(key: TranslationKey, vararg args: Any): String {
+    override fun translate(textId: TextId, vararg args: Any): String {
+        val localizableKey = mapTextIdToLocalizableKey(textId)
         val localizedString = NSBundle.mainBundle.localizedStringForKey(
-            key = key,
-            value = key,
+            key = localizableKey,
+            value = localizableKey,
             table = null
         )
         

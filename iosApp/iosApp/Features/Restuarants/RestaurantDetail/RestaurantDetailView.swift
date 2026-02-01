@@ -13,7 +13,7 @@ struct RestaurantDetailView: View {
     
     var body: some View {
         VStack {
-            Text(tr("restaurant.detail.title"))
+            Text(tr(TextIdRestaurantDetailTitle))
                 .font(.largeTitle)
                 .padding()
             
@@ -21,20 +21,20 @@ struct RestaurantDetailView: View {
                 .font(.headline)
             
             HStack(spacing: 20) {
-                Text(tr("restaurant.status.open"))
+                Text(tr(TextIdRestaurantStatusOpen))
                     .foregroundColor(.green)
-                Text(tr("restaurant.status.closed"))
+                Text(tr(TextIdRestaurantStatusClosed))
                     .foregroundColor(.red)
             }
             .padding()
             
-            Button(tr("accessibility.back.button")) {
+            Button(tr(TextIdAccessibilityBackButton)) {
                 logInfo(tag: "RestaurantDetail", message: "Navigating back from restaurant: \(restaurantId)")
                 _ = coordinator.navigateBack()
             }
             .padding()
         }
-        .navigationTitle(tr("restaurant.detail.title"))
+        .navigationTitle(tr(TextIdRestaurantDetailTitle))
         .onAppear {
             logInfo(tag: "RestaurantDetail", message: "Viewing restaurant detail: \(restaurantId)")
         }

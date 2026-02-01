@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import io.umain.munchies.android.ui.theme.MunchiesTheme
+import io.umain.munchies.core.TextId
 import io.umain.munchies.localization.tr
 import io.umain.munchies.navigation.AppCoordinator
 
@@ -34,12 +35,12 @@ fun RestaurantListScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = tr("app.title"),
+                text = tr(TextId.AppTitle),
                 style = MaterialTheme.typography.headlineLarge
             )
             
             Text(
-                text = tr("restaurant.list.title"),
+                text = tr(TextId.RestaurantListTitle),
                 style = MaterialTheme.typography.titleMedium
             )
             

@@ -12,11 +12,11 @@ struct RestaurantListView: View {
     
     var body: some View {
         VStack {
-            Text(tr("app.title"))
+            Text(tr(TextIdAppTitle))
                 .font(.largeTitle)
                 .padding()
             
-            Text(tr("restaurant.list.title"))
+            Text(tr(TextIdRestaurantListTitle))
                 .font(.headline)
             
             Button("View Restaurant Detail") {
@@ -25,7 +25,7 @@ struct RestaurantListView: View {
             }
             .padding()
         }
-        .navigationTitle(tr("restaurant.list.title"))
+        .navigationTitle(tr(TextIdRestaurantListTitle))
         .onAppear {
             logInfo(tag: "RestaurantList", message: "Restaurant list view appeared")
         }

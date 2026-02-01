@@ -46,6 +46,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":design-tokens"))
     implementation(project(":core"))
     implementation(project(":ui-components"))
     implementation(project(":feature-restaurant"))

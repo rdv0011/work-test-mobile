@@ -1,6 +1,8 @@
 package io.umain.munchies.localization
 
 import android.content.Context
+import io.umain.munchies.core.TextId
+import io.umain.munchies.core.mapTextIdToStringResource
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.util.Locale
@@ -9,8 +11,8 @@ actual class PlatformTranslationService actual constructor() : TranslationServic
     
     private val context: Context by inject()
     
-    override fun translate(key: TranslationKey, vararg args: Any): String {
-        val resourceId = getResourceIdForKey(key)
+    override fun translate(textId: TextId, vararg args: Any): String {
+        val resourceId = mapTextIdToStringResource(textId)
         
         return if (resourceId != 0) {
             if (args.isEmpty()) {
@@ -19,16 +21,11 @@ actual class PlatformTranslationService actual constructor() : TranslationServic
                 context.getString(resourceId, *args)
             }
         } else {
-            key
+            textId::class.simpleName ?: "unknown"
         }
     }
     
     override fun getCurrentLocale(): String {
         return Locale.getDefault().language
-    }
-    
-    private fun getResourceIdForKey(key: String): Int {
-        val resourceName = key.replace(".", "_")
-        return context.resources.getIdentifier(resourceName, "string", context.packageName)
     }
 }

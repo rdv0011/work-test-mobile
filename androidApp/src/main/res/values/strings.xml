@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App -->
+    <string name="app_title">Munchies</string>
+    
+    <!-- Restaurant List -->
+    <string name="restaurant_list_title">Restaurants</string>
+    <string name="filter_all">All Restaurants</string>
+    
+    <!-- Restaurant Detail -->
+    <string name="restaurant_detail_title">Restaurant Details</string>
+    <string name="restaurant_status_open">Open</string>
+    <string name="restaurant_status_closed">Closed</string>
+    
+    <!-- Accessibility -->
+    <string name="accessibility_restaurant_card">Restaurant card for %s</string>
+    <string name="accessibility_filter_chip">Filter by %s</string>
+    <string name="accessibility_filter_selected">Filter %s selected</string>
+    <string name="accessibility_back_button">Back</string>
+    
+    <!-- Error & Loading States -->
+    <string name="error_loading">Failed to load data</string>
+    <string name="error_network">Network error</string>
+    <string name="loading">Loading…</string>
+</resources>

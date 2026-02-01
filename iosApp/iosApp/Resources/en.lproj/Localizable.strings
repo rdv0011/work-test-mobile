@@ -1,0 +1,22 @@
+/* App */
+"app.title" = "Munchies";
+
+/* Restaurant List */
+"restaurant.list.title" = "Restaurants";
+"filter.all" = "All Restaurants";
+
+/* Restaurant Detail */
+"restaurant.detail.title" = "Restaurant Details";
+"restaurant.status.open" = "Open";
+"restaurant.status.closed" = "Closed";
+
+/* Accessibility */
+"accessibility.restaurant.card" = "Restaurant card for %@";
+"accessibility.filter.chip" = "Filter by %@";
+"accessibility.filter.selected" = "Filter %@ selected";
+"accessibility.back.button" = "Back";
+
+/* Errors & Loading */
+"error.loading" = "Failed to load data";
+"error.network" = "Network error";
+"loading" = "Loading…";
