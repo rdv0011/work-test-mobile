@@ -11,6 +11,7 @@ actual val platformModule = module {
     single<TranslationService> { 
         PlatformTranslationService()
     }
+    single { io.umain.munchies.network.provideHttpClientEngine() }
 }
 
 private lateinit var koinApplication: KoinApplication
@@ -24,3 +25,5 @@ fun initKoinIos(): KoinApplication {
 fun getKoin(): Koin = koinApplication.koin
 
 fun getAppCoordinator(): AppCoordinator = koinApplication.koin.get()
+
+fun getKoinHttpClient() = koinApplication.koin.get<io.ktor.client.HttpClient>()

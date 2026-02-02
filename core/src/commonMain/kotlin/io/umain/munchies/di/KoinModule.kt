@@ -9,6 +9,8 @@ import org.koin.dsl.module
 
 val commonModule = module {
     single { AppCoordinator() }
+    // Network HttpClient provider (lazy)
+    single { io.umain.munchies.network.createHttpClient(get()) }
 }
 
 expect val platformModule: Module

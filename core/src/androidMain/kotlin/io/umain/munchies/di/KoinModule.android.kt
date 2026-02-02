@@ -8,4 +8,5 @@ actual val platformModule = module {
     single<TranslationService> { 
         PlatformTranslationService()
     }
+    single { io.umain.munchies.network.provideHttpClientEngine() }
 }

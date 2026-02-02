@@ -32,6 +32,9 @@ kotlin {
             dependencies {
                 api(project(":core"))
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${'$'}{Versions.serialization}")
+                implementation("io.ktor:ktor-client-core:${'$'}{Versions.ktor}")
+                implementation("io.ktor:ktor-client-content-negotiation:${'$'}{Versions.ktor}")
+                implementation("io.ktor:ktor-serialization-kotlinx-json:${'$'}{Versions.ktor}")
             }
         }
         val commonTest by getting {
