@@ -19,7 +19,10 @@ class NavigationCoordinator: ObservableObject {
     
     private func observeNavigationEvents() {
         coordinator.navigationEvents.collect(
-            collector: NavigationEventCollector(navigator: self),
+            collector: EventCollector(callback: { [weak self] event in
+                guard let self = self else { return }
+                self.handle(event: event)
+            }),
             completionHandler: { error in
                 if let error = error {
                     logError(tag: "Navigation", message: "Navigation collection error: \(error)")
