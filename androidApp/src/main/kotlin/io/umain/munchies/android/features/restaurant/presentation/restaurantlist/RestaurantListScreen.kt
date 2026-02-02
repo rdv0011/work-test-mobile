@@ -1,7 +1,8 @@
-package io.umain.munchies.android.features.restaurantlist
+package io.umain.munchies.android.features.restaurant.presentation.restaurantlist
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -13,11 +14,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.collectAsState
-import org.koin.compose.koinInject
-import io.umain.munchies.feature.restaurant.presentation.RestaurantListViewModel
 import io.umain.munchies.feature.restaurant.presentation.state.RestaurantListUiState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -32,7 +31,6 @@ import io.umain.munchies.android.ui.components.FilterChipData
 import io.umain.munchies.android.ui.components.RestaurantCardCompose
 import io.umain.munchies.android.ui.components.RestaurantCardData
 import org.koin.androidx.compose.koinViewModel
-import io.umain.munchies.android.features.restaurantlist.RestaurantListAndroidViewModel
 
 private val exampleRestaurants = listOf(
     RestaurantCardData(
@@ -89,7 +87,7 @@ fun RestaurantListScreen(
     val uiState by viewModel.uiState.collectAsState(initial = RestaurantListUiState.Loading)
     val selectedFilterIds by viewModel.selectedFilters.collectAsState(initial = emptySet())
     // Trigger load once
-    androidx.compose.runtime.LaunchedEffect(Unit) { viewModel.load() }
+    LaunchedEffect(Unit) { viewModel.load() }
 
     val filteredRestaurants = when (val state = uiState) {
         is RestaurantListUiState.Success -> state.restaurants.map {
@@ -159,7 +157,7 @@ fun RestaurantListScreen(
                     .weight(1f)
                     .padding(top = DesignTokens.Spacing.lg.dp),
                 verticalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.md.dp),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                contentPadding = PaddingValues(
                     horizontal = DesignTokens.Spacing.lg.dp,
                     vertical = DesignTokens.Spacing.sm.dp
                 )

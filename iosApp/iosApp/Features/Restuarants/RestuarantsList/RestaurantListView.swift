@@ -7,66 +7,26 @@
 import SwiftUI
 import shared
 
-// Example restaurant data for testing
-private let exampleRestaurants: [RestaurantCardData] = [
-    RestaurantCardData(
-        restaurantName: "Burger Palace",
-        tags: ["Burgers", "Fast Food", "American"],
-        deliveryTime: "25-35 min",
-        distance: "2.4 km",
-        rating: 4.8,
-        imageUrl: "https://via.placeholder.com/343x132?text=Burger+Palace",
-        contentDescription: "Restaurant: Burger Palace"
-    ),
-    RestaurantCardData(
-        restaurantName: "Sushi Paradise",
-        tags: ["Japanese", "Sushi", "Seafood"],
-        deliveryTime: "30-45 min",
-        distance: "3.1 km",
-        rating: 4.6,
-        imageUrl: "https://via.placeholder.com/343x132?text=Sushi+Paradise",
-        contentDescription: "Restaurant: Sushi Paradise"
-    ),
-    RestaurantCardData(
-        restaurantName: "Pizza Pizzeria",
-        tags: ["Italian", "Pizza", "Pasta"],
-        deliveryTime: "20-30 min",
-        distance: "1.8 km",
-        rating: 4.7,
-        imageUrl: "https://via.placeholder.com/343x132?text=Pizza+Pizzeria",
-        contentDescription: "Restaurant: Pizza Pizzeria"
-    )
-]
-
-// Example filter data for testing
-private let exampleFilters: [FilterChipData] = [
-    FilterChipData(id: "1", label: "All", iconUrl: "https://via.placeholder.com/48x48?text=All", isSelected: true, contentDescription: "All restaurants"),
-    FilterChipData(id: "2", label: "Fast Food", iconUrl: "https://via.placeholder.com/48x48?text=Fast", isSelected: false, contentDescription: "Fast Food restaurants"),
-    FilterChipData(id: "3", label: "Asian", iconUrl: "https://via.placeholder.com/48x48?text=Asian", isSelected: false, contentDescription: "Asian cuisine restaurants")
-]
-
 struct RestaurantListView: View {
     let coordinator: AppCoordinator
-    @State private var selectedFilterLabels: Set<String> = ["All"]
-    // Shared view model from KMP
-    private var sharedViewModel: RestaurantListViewModel? {
-        // Call into the shared module helper to get the shared ViewModel instance
-        // Koin must be initialized in App init (initKoinIos()) before this is called
-        return io.umain.munchies.feature.restaurant.di.getRestaurantListViewModelIos()
-    }
-    
+    @StateObject private var holder = RestaurantListViewModelHolder(viewModel: io.umain.munchies.feature.restaurant.di.getRestaurantListViewModelIos())
+    @State private var uiState: RestaurantListUiState? = nil
+
     private var filteredRestaurants: [RestaurantCardData] {
-        if selectedFilterLabels.contains("All") {
-            return exampleRestaurants
-        } else {
-            return exampleRestaurants.filter { restaurant in
-                restaurant.tags.contains { tag in
-                    selectedFilterLabels.contains { selectedLabel in
-                        tag.localizedCaseInsensitiveContains(selectedLabel) ||
-                        selectedLabel.localizedCaseInsensitiveContains(tag)
-                    }
-                }
-            }
+        // Convert shared domain restaurants to UI data
+        guard let sharedState = uiState as? RestaurantListUiStateSuccess else {
+            return []
+        }
+        return sharedState.restaurants.map { r in
+            RestaurantCardData(
+                restaurantName: r.name,
+                tags: r.filterIds.map { $0 },
+                deliveryTime: "",
+                distance: "",
+                rating: Double(r.rating),
+                imageUrl: r.imageUrl,
+                contentDescription: "Restaurant: \(r.name)"
+            )
         }
     }
     
@@ -86,33 +46,7 @@ struct RestaurantListView: View {
             .padding(.horizontal, .spacingUI.lg)
             .padding(.vertical, .spacingUI.lg)
             
-            // Filter chips
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: .spacingUI.md) {
-                    ForEach(exampleFilters, id: \.self) { filter in
-                        let isSelected = selectedFilterLabels.contains(filter.label)
-                        FilterChipView(
-                            data: filter.doCopy(id: filter.id, label: filter.label, iconUrl: filter.iconUrl, isSelected: isSelected, contentDescription: filter.contentDescription),
-                            onSelectionChanged: { selected in
-                                var updated = selectedFilterLabels
-                                if selected {
-                                    updated.remove("All")
-                                    updated.insert(filter.label)
-                                } else {
-                                    updated.remove(filter.label)
-                                    if updated.isEmpty {
-                                        updated.insert("All")
-                                    }
-                                }
-                                selectedFilterLabels = updated
-                                logInfo(tag: "RestaurantList", message: "Filter selected: \(filter.label), selected: \(selected)")
-                            }
-                        )
-                    }
-                }
-                .padding(.horizontal, .spacingUI.lg)
-            }
-            .padding(.bottom, .spacingUI.lg)
+            // (Filters removed) Filter chips will be provided from shared uiState in a follow-up change.
             
             // Restaurant list
             if filteredRestaurants.isEmpty {
@@ -140,8 +74,12 @@ struct RestaurantListView: View {
         .navigationTitle(tr(.restaurantListTitle))
         .onAppear {
             logInfo(tag: "RestaurantList", message: "Restaurant list view appeared")
-            // Trigger shared ViewModel load if available
-            sharedViewModel?.load()
+        }
+        .task {
+            // Collect the Kotlin Flow/StateFlow exposed by the shared ViewModel and assign to Swift state
+            for await state in holder.viewModel.uiState {
+                self.uiState = state
+            }
         }
     }
 }

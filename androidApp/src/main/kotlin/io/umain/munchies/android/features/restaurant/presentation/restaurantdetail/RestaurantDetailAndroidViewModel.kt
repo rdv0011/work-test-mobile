@@ -1,4 +1,4 @@
-package io.umain.munchies.android.features.restaurantdetail
+package io.umain.munchies.android.features.restaurant.presentation.restaurantdetail
 
 import androidx.lifecycle.ViewModel
 import io.umain.munchies.feature.restaurant.presentation.RestaurantDetailViewModel as SharedRestaurantDetailViewModel

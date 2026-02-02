@@ -15,7 +15,7 @@ val featureRestaurantModule = module {
         RestaurantRepositoryImpl(api)
     }
     // Shared ViewModels (platform-agnostic)
-    single { io.umain.munchies.feature.restaurant.presentation.RestaurantListViewModel(get()) }
+    factory { io.umain.munchies.feature.restaurant.presentation.RestaurantListViewModel(get()) }
     factory { io.umain.munchies.feature.restaurant.presentation.RestaurantDetailViewModel(get()) }
 
 }

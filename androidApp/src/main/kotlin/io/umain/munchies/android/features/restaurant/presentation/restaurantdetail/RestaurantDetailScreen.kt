@@ -1,4 +1,4 @@
-package io.umain.munchies.android.features.restaurantdetail
+package io.umain.munchies.android.features.restaurant.presentation.restaurantdetail
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -20,7 +20,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import org.koin.androidx.compose.koinViewModel
-import io.umain.munchies.android.features.restaurantdetail.RestaurantDetailAndroidViewModel
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview

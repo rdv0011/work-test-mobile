@@ -5,42 +5,6 @@
 //  Created by Dmitry Rybakov on 2026-01-31.
 //
 import SwiftUI
-import shared
-
-// Example restaurant details for testing
-private let restaurantDetails: [String: (name: String, description: String, imageUrl: String, opensAt: String, closesAt: String)] = [
-    "Burger Palace": (
-        name: "Burger Palace",
-        description: "Delicious handcrafted burgers with premium toppings",
-        imageUrl: "https://via.placeholder.com/343x200?text=Burger+Palace",
-        opensAt: "11:00",
-        closesAt: "23:00"
-    ),
-    "Sushi Paradise": (
-        name: "Sushi Paradise",
-        description: "Fresh daily sushi and authentic Japanese cuisine",
-        imageUrl: "https://via.placeholder.com/343x200?text=Sushi+Paradise",
-        opensAt: "12:00",
-        closesAt: "22:00"
-    ),
-    "Pizza Pizzeria": (
-        name: "Pizza Pizzeria",
-        description: "Wood-fired pizzas with authentic Italian ingredients",
-        imageUrl: "https://via.placeholder.com/343x200?text=Pizza+Pizzeria",
-        opensAt: "10:00",
-        closesAt: "23:30"
-    )
-]
-
-private func getRestaurantDetail(_ restaurantId: String) -> (name: String, description: String, imageUrl: String, opensAt: String, closesAt: String) {
-    return restaurantDetails[restaurantId] ?? (
-        name: restaurantId,
-        description: "Restaurant details unavailable",
-        imageUrl: "https://via.placeholder.com/343x200?text=Restaurant",
-        opensAt: "09:00",
-        closesAt: "23:00"
-    )
-}
 
 private func isRestaurantOpen(opensAt: String, closesAt: String) -> Bool {
     let dateFormatter = DateFormatter()
@@ -64,21 +28,40 @@ private func isRestaurantOpen(opensAt: String, closesAt: String) -> Bool {
 struct RestaurantDetailView: View {
     let restaurantId: String
     let coordinator: AppCoordinator
-    // placeholder for shared view model, will be resolved when KMP framework is present
-    private var sharedViewModel: RestaurantDetailViewModel? {
-        return io.umain.munchies.feature.restaurant.di.getRestaurantDetailViewModelIos()
-    }
+    // Use holder pattern to collect uiState from shared ViewModel
+    @StateObject private var holder = RestaurantDetailViewModelHolder(viewModel: io.umain.munchies.feature.restaurant.di.getRestaurantDetailViewModelIos())
+    @State private var uiState: RestaurantDetailUiState? = nil
     
     var body: some View {
         let tokesnColorsAccent = DesignTokens.ColorsAccent.shared
-        let details = getRestaurantDetail(restaurantId)
-        let isOpen = isRestaurantOpen(opensAt: details.opensAt, closesAt: details.closesAt)
-        let statusColor = isOpen ? tokesnColorsAccent.positive : tokesnColorsAccent.negative
-        let statusText: String = isOpen ? tr(.restaurantStatusOpen) : tr(.restaurantStatusClosed)
+
+        // Prepare data from shared view model if available, otherwise fallback to minimal placeholders
+        let detailsName: String
+        let detailsDescription: String
+        let detailsImageUrl: String
+        var statusText: String = ""
+        var statusColor = tokesnColorsAccent.positive
+
+        if let restaurant = viewModelAdapter.restaurant {
+            detailsName = restaurant.name
+            detailsDescription = restaurant.description
+            detailsImageUrl = restaurant.imageUrl
+            // Map status if available
+            statusText = restaurant.status == io_umain_munchies_feature_restaurant_domain_model_RestaurantStatus.OPEN ? tr(.restaurantStatusOpen) : tr(.restaurantStatusClosed)
+            // statusColor left as positive/negative based on status
+            statusColor = restaurant.status == io_umain_munchies_feature_restaurant_domain_model_RestaurantStatus.OPEN ? tokesnColorsAccent.positive : tokesnColorsAccent.negative
+        } else {
+            detailsName = restaurantId
+            detailsDescription = ""
+            detailsImageUrl = "https://via.placeholder.com/343x200?text=Restaurant"
+            // fallback: show unknown/closed
+            statusText = tr(.restaurantStatusClosed)
+            statusColor = tokesnColorsAccent.negative
+        }
         
         VStack(spacing: 0) {
             // Restaurant image
-            AsyncImage(url: URL(string: details.imageUrl)) { phase in
+            AsyncImage(url: URL(string: detailsImageUrl)) { phase in
                 switch phase {
                 case .empty:
                     ProgressView()
@@ -108,8 +91,8 @@ struct RestaurantDetailView: View {
                     // Detail card
                     DetailCardView(
                         data: DetailCardData(
-                            title: details.name,
-                            subtitle: details.description,
+                            title: detailsName,
+                            subtitle: detailsDescription,
                             statusText: statusText,
                             statusColor: statusColor,
                             contentDescription: ""
@@ -123,10 +106,10 @@ struct RestaurantDetailView: View {
                             .foregroundColor(.text.dark)
                         
                         HStack {
-                            Text("Opens: \(details.opensAt)")
+                            Text("Opens: --:--")
                                 .font(.title2)
                             Spacer()
-                            Text("Closes: \(details.closesAt)")
+                            Text("Closes: --:--")
                                 .font(.title2)
                         }
                         .foregroundColor(.text.subtitle)
@@ -142,6 +125,13 @@ struct RestaurantDetailView: View {
         .navigationBarBackButtonHidden(false)
         .onAppear {
             logInfo(tag: "RestaurantDetail", message: "Viewing restaurant detail: \(restaurantId)")
+            // trigger loading the restaurant
+            holder.viewModel.load(restaurantId: restaurantId)
+        }
+        .task {
+            for await state in holder.viewModel.uiState {
+                self.uiState = state
+            }
         }
     }
 }

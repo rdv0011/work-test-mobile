@@ -8,8 +8,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import io.umain.munchies.android.features.restaurantdetail.RestaurantDetailScreen
-import io.umain.munchies.android.features.restaurantlist.RestaurantListScreen
+import io.umain.munchies.android.features.restaurant.presentation.restaurantdetail.RestaurantDetailScreen
+import io.umain.munchies.android.features.restaurant.presentation.restaurantlist.RestaurantListScreen
 import io.umain.munchies.navigation.AppCoordinator
 import io.umain.munchies.navigation.Destination
 import io.umain.munchies.navigation.NavigationEvent
