@@ -14,7 +14,8 @@ val featureRestaurantModule = module {
         val api = KtorRestaurantApi(client, baseUrl)
         RestaurantRepositoryImpl(api)
     }
-    // ViewModels
+    // Shared ViewModels (platform-agnostic)
     single { io.umain.munchies.feature.restaurant.presentation.RestaurantListViewModel(get()) }
     factory { io.umain.munchies.feature.restaurant.presentation.RestaurantDetailViewModel(get()) }
+
 }

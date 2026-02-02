@@ -60,5 +60,7 @@ dependencies {
     implementation("io.insert-koin:koin-android:${Versions.koin}")
     // Koin Compose helpers for getting ViewModels and DI in Compose
     implementation("io.insert-koin:koin-androidx-compose:${Versions.koin}")
+    // Koin AndroidX ViewModel DSL (for viewModel { } definitions)
+    implementation("io.insert-koin:koin-androidx-viewmodel:${Versions.koin}")
     implementation("io.coil-kt:coil-compose:${Versions.coil}")
 }

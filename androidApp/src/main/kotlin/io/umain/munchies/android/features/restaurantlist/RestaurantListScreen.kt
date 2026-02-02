@@ -14,11 +14,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.collectAsState
-import org.koin.androidx.compose.koinInject
+import org.koin.compose.koinInject
 import io.umain.munchies.feature.restaurant.presentation.RestaurantListViewModel
 import io.umain.munchies.feature.restaurant.presentation.state.RestaurantListUiState
 import androidx.compose.ui.Modifier
@@ -33,6 +31,8 @@ import io.umain.munchies.android.ui.components.FilterChipCompose
 import io.umain.munchies.android.ui.components.FilterChipData
 import io.umain.munchies.android.ui.components.RestaurantCardCompose
 import io.umain.munchies.android.ui.components.RestaurantCardData
+import org.koin.androidx.compose.koinViewModel
+import io.umain.munchies.android.features.restaurantlist.RestaurantListAndroidViewModel
 
 private val exampleRestaurants = listOf(
     RestaurantCardData(
@@ -84,8 +84,8 @@ fun RestaurantListScreen(
     coordinator: AppCoordinator,
     modifier: Modifier = Modifier
 ) {
-    // Use shared ViewModel (provided by Koin)
-    val viewModel: RestaurantListViewModel by koinInject()
+    // Use Android lifecycle-aware wrapper ViewModel (provided by Koin)
+    val viewModel: RestaurantListAndroidViewModel = koinViewModel()
     val uiState by viewModel.uiState.collectAsState(initial = RestaurantListUiState.Loading)
     val selectedFilterIds by viewModel.selectedFilters.collectAsState(initial = emptySet())
     // Trigger load once

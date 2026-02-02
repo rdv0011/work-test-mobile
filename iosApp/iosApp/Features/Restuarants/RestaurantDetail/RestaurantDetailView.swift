@@ -64,6 +64,10 @@ private func isRestaurantOpen(opensAt: String, closesAt: String) -> Bool {
 struct RestaurantDetailView: View {
     let restaurantId: String
     let coordinator: AppCoordinator
+    // placeholder for shared view model, will be resolved when KMP framework is present
+    private var sharedViewModel: RestaurantDetailViewModel? {
+        return io.umain.munchies.feature.restaurant.di.getRestaurantDetailViewModelIos()
+    }
     
     var body: some View {
         let tokesnColorsAccent = DesignTokens.ColorsAccent.shared

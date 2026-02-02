@@ -48,6 +48,12 @@ private let exampleFilters: [FilterChipData] = [
 struct RestaurantListView: View {
     let coordinator: AppCoordinator
     @State private var selectedFilterLabels: Set<String> = ["All"]
+    // Shared view model from KMP
+    private var sharedViewModel: RestaurantListViewModel? {
+        // Call into the shared module helper to get the shared ViewModel instance
+        // Koin must be initialized in App init (initKoinIos()) before this is called
+        return io.umain.munchies.feature.restaurant.di.getRestaurantListViewModelIos()
+    }
     
     private var filteredRestaurants: [RestaurantCardData] {
         if selectedFilterLabels.contains("All") {
@@ -134,6 +140,8 @@ struct RestaurantListView: View {
         .navigationTitle(tr(.restaurantListTitle))
         .onAppear {
             logInfo(tag: "RestaurantList", message: "Restaurant list view appeared")
+            // Trigger shared ViewModel load if available
+            sharedViewModel?.load()
         }
     }
 }
