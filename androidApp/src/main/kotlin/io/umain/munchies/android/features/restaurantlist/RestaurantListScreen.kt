@@ -13,8 +13,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.collectAsState
+import org.koin.androidx.compose.koinInject
+import io.umain.munchies.feature.restaurant.presentation.RestaurantListViewModel
+import io.umain.munchies.feature.restaurant.presentation.state.RestaurantListUiState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -78,22 +84,26 @@ fun RestaurantListScreen(
     coordinator: AppCoordinator,
     modifier: Modifier = Modifier
 ) {
-    val selectedFilterIds = remember { mutableStateOf(setOf("all")) }
-    
-    val filteredRestaurants = if (selectedFilterIds.value.contains("all")) {
-        exampleRestaurants
-    } else {
-        exampleRestaurants.filter { restaurant ->
-            selectedFilterIds.value.any { filterId ->
-                when (filterId) {
-                    "fast-food" -> restaurant.tags.contains("Fast Food")
-                    "asian" -> restaurant.tags.any { it in listOf("Japanese", "Thai", "Asian") }
-                    "vegetarian" -> restaurant.tags.contains("Vegetarian")
-                    "premium" -> restaurant.rating >= 4.7
-                    else -> false
-                }
-            }
+    // Use shared ViewModel (provided by Koin)
+    val viewModel: RestaurantListViewModel by koinInject()
+    val uiState by viewModel.uiState.collectAsState(initial = RestaurantListUiState.Loading)
+    val selectedFilterIds by viewModel.selectedFilters.collectAsState(initial = emptySet())
+    // Trigger load once
+    androidx.compose.runtime.LaunchedEffect(Unit) { viewModel.load() }
+
+    val filteredRestaurants = when (val state = uiState) {
+        is RestaurantListUiState.Success -> state.restaurants.map {
+            // convert domain Restaurant to RestaurantCardData for Compose component
+            RestaurantCardData(
+                restaurantName = it.name,
+                tags = it.filterIds,
+                deliveryTime = "", // API doesn't provide delivery time in domain model
+                distance = "",
+                rating = it.rating.toDouble(),
+                imageUrl = it.imageUrl
+            )
         }
+        else -> exampleRestaurants
     }
     
     Scaffold(
@@ -130,21 +140,12 @@ fun RestaurantListScreen(
                 horizontalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.sm.dp)
             ) {
                 items(exampleFilters) { filter ->
-                    val isSelected = selectedFilterIds.value.contains(filter.id)
+                    val isSelected = selectedFilterIds.contains(filter.id)
                     FilterChipCompose(
                         data = filter.copy(isSelected = isSelected),
                         onSelect = { selected ->
-                            val newSelectedIds = selectedFilterIds.value.toMutableSet()
-                            if (selected) {
-                                newSelectedIds.remove("all")
-                                newSelectedIds.add(filter.id)
-                            } else {
-                                newSelectedIds.remove(filter.id)
-                                if (newSelectedIds.isEmpty()) {
-                                    newSelectedIds.add("all")
-                                }
-                            }
-                            selectedFilterIds.value = newSelectedIds
+                            // Delegate selection changes to ViewModel
+                            viewModel.toggleFilter(filter.id)
                         },
                         modifier = Modifier
                             .height(DesignTokens.Sizes.Filter.height.dp)

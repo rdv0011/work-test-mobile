@@ -12,5 +12,7 @@ class MunchiesApplication : Application() {
         initKoin {
             androidContext(this@MunchiesApplication)
         }
+        // Register feature modules after Koin initialization
+        io.umain.munchies.feature.restaurant.di.registerFeatureRestaurantModule()
     }
 }
