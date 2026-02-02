@@ -1,5 +1,5 @@
 import Foundation
-import shared
+import featureRestaurant
 
 func inject<T: AnyObject>(_ type: T.Type) -> T {
     let kClass = KotlinKClass(objCClass: type)

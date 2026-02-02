@@ -7,6 +7,14 @@
 import SwiftUI
 import shared
 
+struct DetailCardData {
+    let title: String
+    let subtitle: String
+    let statusText: String
+    let statusColor: String
+    let contentDescription: String = "Restaurant status: $statusText"
+}
+
 /// DetailCardView - SwiftUI wrapper for DetailCardData
 ///
 /// Displays restaurant detail card with:

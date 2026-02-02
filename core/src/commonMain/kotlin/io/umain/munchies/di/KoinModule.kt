@@ -1,6 +1,5 @@
 package io.umain.munchies.di
 
-import io.umain.munchies.localization.TranslationService
 import io.umain.munchies.navigation.AppCoordinator
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module

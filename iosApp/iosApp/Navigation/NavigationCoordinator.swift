@@ -28,14 +28,6 @@ class NavigationCoordinator: ObservableObject {
         )
     }
     
-    private func startObserving() {
-        navigationTask = Task {
-            for await event in coordinator.navigationEvents.asAsyncSequence() {
-                handle(event: event)
-            }
-        }
-    }
-    
     func handle(event: NavigationEvent) {
         switch event {
         case let push as NavigationEvent.Push:

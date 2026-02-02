@@ -5,14 +5,7 @@ import shared
 struct MunchiesApp: App {
     init() {
         KoinModule_iosKt.doInitKoinIos()
-        // register feature modules
-        // Try the original generated symbol first; fall back to wrapper if needed
-        // Some Kotlin/Native symbol names vary; the wrapper ensures a stable symbol
-        if (FeatureRestaurantDiKt.responds(to: Selector(("registerFeatureRestaurantModule")))) {
-            FeatureRestaurantDiKt.registerFeatureRestaurantModule()
-        } else {
-            FeatureRestaurantDiWrapperKt.doRegisterFeatureRestaurantModule()
-        }
+        FeatureRestaurantDiKt.registerFeatureRestaurantModule()
     }
     
     private var coordinator: AppCoordinator {

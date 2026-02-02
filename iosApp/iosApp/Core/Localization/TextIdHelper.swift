@@ -28,4 +28,3 @@ extension TextId {
     static var errorNetwork: TextId { TextId.ErrorNetwork() }
     static var loading: TextId { TextId.Loading() }
 }
-

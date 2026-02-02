@@ -23,8 +23,8 @@ struct RestaurantCardView: View {
     var onTap: (() -> Void)? = nil
     
     var body: some View {
-        let tagGap = CGFloat(DesignTokens.Spacing.shared.xs)
-        let padding = CGFloat(DesignTokens.Spacing.shared.sm)
+        let tagGap = CGFloat(.spacingUI.xs)
+        let padding = CGFloat(.spacingUI.sm)
         
         VStack(alignment: .leading, spacing: 0) {
             // Image section - top 132pt with rounded corners

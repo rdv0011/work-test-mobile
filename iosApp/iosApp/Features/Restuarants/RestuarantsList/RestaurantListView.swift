@@ -9,8 +9,8 @@ import shared
 
 struct RestaurantListView: View {
     let coordinator: AppCoordinator
-    @StateObject private var holder = RestaurantListViewModelHolder(viewModel: io.umain.munchies.feature.restaurant.di.getRestaurantListViewModelIos())
-    @State private var uiState: RestaurantListUiState? = nil
+    @StateObject private var holder = RestaurantListViewModelHolder(viewModel: FeatureRestaurantIosKt.getRestaurantListViewModelIos())
+    @State private var uiState: FeatureRestaurantRestaurantListUiState? = nil
 
     private var filteredRestaurants: [RestaurantCardData] {
         // Convert shared domain restaurants to UI data
@@ -77,6 +77,7 @@ struct RestaurantListView: View {
         }
         .task {
             // Collect the Kotlin Flow/StateFlow exposed by the shared ViewModel and assign to Swift state
+            // `uiState` is a Kotlin StateFlow. We use `collect` bridge if `for await` is not available at runtime.
             for await state in holder.viewModel.uiState {
                 self.uiState = state
             }

@@ -5,6 +5,7 @@
 //  Created by Dmitry Rybakov on 2026-01-31.
 //
 import SwiftUI
+import shared
 
 private func isRestaurantOpen(opensAt: String, closesAt: String) -> Bool {
     let dateFormatter = DateFormatter()
@@ -29,7 +30,7 @@ struct RestaurantDetailView: View {
     let restaurantId: String
     let coordinator: AppCoordinator
     // Use holder pattern to collect uiState from shared ViewModel
-    @StateObject private var holder = RestaurantDetailViewModelHolder(viewModel: io.umain.munchies.feature.restaurant.di.getRestaurantDetailViewModelIos())
+    @StateObject private var holder = RestaurantDetailViewModelHolder(viewModel: FeatureRestaurantIosKt.getRestaurantDetailViewModelIos())
     @State private var uiState: RestaurantDetailUiState? = nil
     
     var body: some View {
@@ -42,14 +43,14 @@ struct RestaurantDetailView: View {
         var statusText: String = ""
         var statusColor = tokesnColorsAccent.positive
 
-        if let restaurant = viewModelAdapter.restaurant {
+        if let restaurant = viewModel.restaurant {
             detailsName = restaurant.name
             detailsDescription = restaurant.description
             detailsImageUrl = restaurant.imageUrl
             // Map status if available
-            statusText = restaurant.status == io_umain_munchies_feature_restaurant_domain_model_RestaurantStatus.OPEN ? tr(.restaurantStatusOpen) : tr(.restaurantStatusClosed)
+            statusText = restaurant.status == RestaurantStatus.OPEN ? tr(.restaurantStatusOpen) : tr(.restaurantStatusClosed)
             // statusColor left as positive/negative based on status
-            statusColor = restaurant.status == io_umain_munchies_feature_restaurant_domain_model_RestaurantStatus.OPEN ? tokesnColorsAccent.positive : tokesnColorsAccent.negative
+            statusColor = restaurant.status == RestaurantStatus.OPEN ? tokesnColorsAccent.positive : tokesnColorsAccent.negative
         } else {
             detailsName = restaurantId
             detailsDescription = ""
@@ -126,7 +127,7 @@ struct RestaurantDetailView: View {
         .onAppear {
             logInfo(tag: "RestaurantDetail", message: "Viewing restaurant detail: \(restaurantId)")
             // trigger loading the restaurant
-            holder.viewModel.load(restaurantId: restaurantId)
+            holder.viewModel.loadRestaurantId(restaurantId)
         }
         .task {
             for await state in holder.viewModel.uiState {
