@@ -27,9 +27,9 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import io.umain.munchies.android.ui.theme.MunchiesTheme
 import io.umain.munchies.android.ui.components.DetailCardCompose
-import io.umain.munchies.android.ui.components.DetailCardData
-import io.umain.munchies.core.TextId
+import io.umain.munchies.core.ui.TextId
 import io.umain.munchies.designtokens.DesignTokens
+import io.umain.munchies.feature.restaurant.presentation.model.DetailCardData
 import io.umain.munchies.localization.tr
 import io.umain.munchies.navigation.AppCoordinator
 import java.time.LocalDateTime

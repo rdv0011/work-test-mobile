@@ -100,7 +100,7 @@ struct FilterChipView: View {
                 label: "Italian",
                 iconUrl: "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=48&h=48&fit=crop",
                 isSelected: false,
-                contentDescription: "Filter: Italian"
+                contentDescription: "Filter chip for Italian cuisine"
             )
         )
         
@@ -110,7 +110,7 @@ struct FilterChipView: View {
                 label: "Sushi",
                 iconUrl: "https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=48&h=48&fit=crop",
                 isSelected: true,
-                contentDescription: "Filter: Sushi"
+                contentDescription: "Filter chip for Sushi cuisine"
             )
         )
     }

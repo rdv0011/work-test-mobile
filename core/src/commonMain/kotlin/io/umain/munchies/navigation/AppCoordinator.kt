@@ -2,7 +2,9 @@ package io.umain.munchies.navigation
 
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.launch
 
 sealed class NavigationEvent {
     data class Push(val destination: Destination) : NavigationEvent()

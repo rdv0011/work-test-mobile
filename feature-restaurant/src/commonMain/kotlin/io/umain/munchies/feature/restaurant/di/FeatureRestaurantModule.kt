@@ -4,6 +4,8 @@ import io.ktor.client.HttpClient
 import io.umain.munchies.feature.restaurant.data.remote.KtorRestaurantApi
 import io.umain.munchies.feature.restaurant.data.repository.RestaurantRepositoryImpl
 import io.umain.munchies.feature.restaurant.domain.repository.RestaurantRepository
+import io.umain.munchies.feature.restaurant.presentation.RestaurantDetailViewModel
+import io.umain.munchies.feature.restaurant.presentation.RestaurantListViewModel
 import org.koin.dsl.module
 
 val featureRestaurantModule = module {
@@ -15,7 +17,7 @@ val featureRestaurantModule = module {
         RestaurantRepositoryImpl(api)
     }
     // Shared ViewModels (platform-agnostic)
-    factory { io.umain.munchies.feature.restaurant.presentation.RestaurantListViewModel(get()) }
-    factory { io.umain.munchies.feature.restaurant.presentation.RestaurantDetailViewModel(get()) }
+    factory { RestaurantListViewModel(get()) }
+    factory { RestaurantDetailViewModel(get()) }
 
 }

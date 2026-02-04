@@ -9,12 +9,12 @@ import shared
 
 struct RestaurantListView: View {
     let coordinator: AppCoordinator
-    @StateObject private var holder = RestaurantListViewModelHolder(viewModel: FeatureRestaurantIosKt.getRestaurantListViewModelIos())
-    @State private var uiState: FeatureRestaurantRestaurantListUiState? = nil
+    let viewModel: RestaurantListViewModel
+    
+    @State private var uiState: RestaurantListUiState = RestaurantListUiState.Loading()
 
     private var filteredRestaurants: [RestaurantCardData] {
-        // Convert shared domain restaurants to UI data
-        guard let sharedState = uiState as? RestaurantListUiStateSuccess else {
+        guard let sharedState = uiState as? RestaurantListUiState.Success else {
             return []
         }
         return sharedState.restaurants.map { r in
@@ -31,32 +31,17 @@ struct RestaurantListView: View {
     }
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Header
-            VStack(alignment: .leading, spacing: .spacingUI.sm) {
-                Text(tr(.appTitle))
-                    .font(.headline1)
-                    .foregroundColor(.text.dark)
-                
-                Text(tr(.restaurantListTitle))
-                    .font(.title1)
-                    .foregroundColor(.text.dark)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, .spacingUI.lg)
-            .padding(.vertical, .spacingUI.lg)
-            
-            // (Filters removed) Filter chips will be provided from shared uiState in a follow-up change.
-            
-            // Restaurant list
-            if filteredRestaurants.isEmpty {
+        VStack(spacing: .zero) {
+            if uiState is RestaurantListUiState.Loading {
+                ProgressView()
+            } else if uiState is RestaurantListUiState.Error {
                 VStack {
                     Text("No restaurants found")
                         .font(.title2)
                         .foregroundColor(.text.subtitle)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-            } else {
+            } else if !filteredRestaurants.isEmpty {
                 ScrollView {
                     VStack(spacing: .spacingUI.lg) {
                         ForEach(filteredRestaurants, id: \.restaurantName) { restaurant in
@@ -73,12 +58,11 @@ struct RestaurantListView: View {
         }
         .navigationTitle(tr(.restaurantListTitle))
         .onAppear {
+            viewModel.load()
             logInfo(tag: "RestaurantList", message: "Restaurant list view appeared")
         }
-        .task {
-            // Collect the Kotlin Flow/StateFlow exposed by the shared ViewModel and assign to Swift state
-            // `uiState` is a Kotlin StateFlow. We use `collect` bridge if `for await` is not available at runtime.
-            for await state in holder.viewModel.uiState {
+        .task(id: viewModel) {
+            for await state in asyncStateStream(viewModel) as AsyncStream<RestaurantListUiState> {
                 self.uiState = state
             }
         }

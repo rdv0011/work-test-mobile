@@ -1,20 +1,18 @@
 package io.umain.munchies.feature.restaurant.presentation
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import io.umain.munchies.core.lifecycle.KmpViewModel
+import io.umain.munchies.core.state.ViewModelState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import io.umain.munchies.feature.restaurant.domain.repository.RestaurantRepository
 import io.umain.munchies.feature.restaurant.presentation.state.RestaurantListUiState
-import io.umain.munchies.feature.restaurant.domain.model.Filter
 
 class RestaurantListViewModel(
     private val repository: RestaurantRepository,
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
-) {
-    private val _uiState = MutableStateFlow<RestaurantListUiState>(RestaurantListUiState.Loading)
-    val uiState: StateFlow<RestaurantListUiState> = _uiState
+): KmpViewModel(), ViewModelState<RestaurantListUiState> {
+    private val _stateFlow = MutableStateFlow<RestaurantListUiState>(RestaurantListUiState.Loading)
+    override val stateFlow: StateFlow<RestaurantListUiState> = _stateFlow
 
     private val _selectedFilters = MutableStateFlow<Set<String>>(emptySet())
     val selectedFilters: StateFlow<Set<String>> = _selectedFilters
@@ -24,9 +22,9 @@ class RestaurantListViewModel(
             try {
                 val restaurants = repository.getRestaurants()
                 val filters = repository.getFilters()
-                _uiState.value = RestaurantListUiState.Success(restaurants = restaurants, filters = filters)
+                _stateFlow.value = RestaurantListUiState.Success(restaurants = restaurants, filters = filters)
             } catch (t: Throwable) {
-                _uiState.value = RestaurantListUiState.Error(message = t.message ?: "Unknown error")
+                _stateFlow.value = RestaurantListUiState.Error(message = t.message ?: "Unknown error")
             }
         }
     }
@@ -40,7 +38,7 @@ class RestaurantListViewModel(
 
     private fun applyFilters() {
         scope.launch {
-            _uiState.value = RestaurantListUiState.Loading
+            _stateFlow.value = RestaurantListUiState.Loading
             try {
                 val restaurants = if (_selectedFilters.value.isEmpty()) {
                     repository.getRestaurants()
@@ -48,9 +46,9 @@ class RestaurantListViewModel(
                     repository.getRestaurantsByFilter(_selectedFilters.value)
                 }
                 val filters = repository.getFilters()
-                _uiState.value = RestaurantListUiState.Success(restaurants = restaurants, filters = filters)
+                _stateFlow.value = RestaurantListUiState.Success(restaurants = restaurants, filters = filters)
             } catch (t: Throwable) {
-                _uiState.value = RestaurantListUiState.Error(message = t.message ?: "Unknown error")
+                _stateFlow.value = RestaurantListUiState.Error(message = t.message ?: "Unknown error")
             }
         }
     }

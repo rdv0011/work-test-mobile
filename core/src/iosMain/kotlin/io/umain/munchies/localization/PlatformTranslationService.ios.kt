@@ -1,6 +1,6 @@
 package io.umain.munchies.localization
 
-import io.umain.munchies.core.TextId
+import io.umain.munchies.core.ui.TextId
 import io.umain.munchies.core.mapTextIdToLocalizableKey
 import platform.Foundation.NSBundle
 import platform.Foundation.NSLocale

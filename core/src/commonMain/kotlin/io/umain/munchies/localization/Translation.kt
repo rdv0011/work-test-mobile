@@ -1,6 +1,6 @@
 package io.umain.munchies.localization
 
-import io.umain.munchies.core.TextId
+import io.umain.munchies.core.ui.TextId
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 

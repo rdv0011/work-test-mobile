@@ -1,3 +1,5 @@
+import org.gradle.kotlin.dsl.implementation
+
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
@@ -36,6 +38,7 @@ kotlin {
                 implementation("io.ktor:ktor-client-core:${Versions.ktor}")
                 implementation("io.ktor:ktor-client-content-negotiation:${Versions.ktor}")
                 implementation("io.ktor:ktor-serialization-kotlinx-json:${Versions.ktor}")
+
                 api("io.insert-koin:koin-core:${Versions.koin}")
             }
         }

@@ -1,5 +1,7 @@
 package io.umain.munchies.core
 
+import io.umain.munchies.core.ui.IconId
+
 class IconIdMapper {
     fun mapToFileName(iconId: IconId): String {
         return when (iconId) {

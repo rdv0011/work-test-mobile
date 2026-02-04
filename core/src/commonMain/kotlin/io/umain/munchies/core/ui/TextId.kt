@@ -1,4 +1,4 @@
-package io.umain.munchies.core
+package io.umain.munchies.core.ui
 
 sealed class TextId {
     object AppTitle : TextId()

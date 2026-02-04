@@ -10,6 +10,7 @@ import shared
 @MainActor
 class NavigationCoordinator: ObservableObject {
     @Published var path = NavigationPath()
+    
     let coordinator: AppCoordinator
     
     init(coordinator: AppCoordinator) {
@@ -17,18 +18,18 @@ class NavigationCoordinator: ObservableObject {
         observeNavigationEvents()
     }
     
-    private func observeNavigationEvents() {
-        coordinator.navigationEvents.collect(
-            collector: EventCollector(callback: { [weak self] event in
-                guard let self = self else { return }
-                self.handle(event: event)
-            }),
-            completionHandler: { error in
-                if let error = error {
-                    logError(tag: "Navigation", message: "Navigation collection error: \(error)")
-                }
-            }
-        )
+    func observeNavigationEvents() {
+        // Structured concurrency: attach to actor's task hierarchy
+        Task { [weak self] in
+            guard let self = self else { return }
+            await self.collectNavigationEvents()
+        }
+    }
+
+    private func collectNavigationEvents() async {
+        for await event in asyncKotlinStream(coordinator.navigationEvents) as AsyncStream<NavigationEvent> {
+            handle(event: event)
+        }
     }
     
     func handle(event: NavigationEvent) {

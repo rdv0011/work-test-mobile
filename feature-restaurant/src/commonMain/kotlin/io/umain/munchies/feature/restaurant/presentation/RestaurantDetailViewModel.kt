@@ -1,7 +1,7 @@
 package io.umain.munchies.feature.restaurant.presentation
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import io.umain.munchies.core.lifecycle.KmpViewModel
+import io.umain.munchies.core.state.ViewModelState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -10,19 +10,20 @@ import io.umain.munchies.feature.restaurant.presentation.state.RestaurantDetailU
 
 class RestaurantDetailViewModel(
     private val repository: RestaurantRepository,
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
-) {
-    private val _uiState = MutableStateFlow<RestaurantDetailUiState>(RestaurantDetailUiState.Loading)
-    val uiState: StateFlow<RestaurantDetailUiState> = _uiState
+): KmpViewModel(), ViewModelState<RestaurantDetailUiState> {
+    private val _stateFlow =
+        MutableStateFlow<RestaurantDetailUiState>(RestaurantDetailUiState.Loading)
+
+    override val stateFlow: StateFlow<RestaurantDetailUiState> = _stateFlow
 
     fun load(restaurantId: String) {
         scope.launch {
             try {
                 val restaurant = repository.getRestaurantById(restaurantId)
-                if (restaurant != null) _uiState.value = RestaurantDetailUiState.Success(restaurant)
-                else _uiState.value = RestaurantDetailUiState.Error("Not found")
+                if (restaurant != null) _stateFlow.value = RestaurantDetailUiState.Success(restaurant)
+                else _stateFlow.value = RestaurantDetailUiState.Error("Not found")
             } catch (t: Throwable) {
-                _uiState.value = RestaurantDetailUiState.Error(t.message ?: "Unknown error")
+                _stateFlow.value = RestaurantDetailUiState.Error(t.message ?: "Unknown error")
             }
         }
     }

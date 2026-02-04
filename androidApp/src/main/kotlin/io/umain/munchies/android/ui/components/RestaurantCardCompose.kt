@@ -15,16 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
 import io.umain.munchies.designtokens.DesignTokens
-
-data class RestaurantCardData(
-    val restaurantName: String,
-    val tags: List<String>,
-    val deliveryTime: String,
-    val distance: String,
-    val rating: Double,
-    val imageUrl: String,
-    val contentDescription: String = "Restaurant: $restaurantName"
-)
+import io.umain.munchies.feature.restaurant.presentation.model.RestaurantCardData
 
 @Composable
 fun RestaurantCardCompose(

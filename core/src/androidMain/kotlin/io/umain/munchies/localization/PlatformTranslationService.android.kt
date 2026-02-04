@@ -1,7 +1,7 @@
 package io.umain.munchies.localization
 
 import android.content.Context
-import io.umain.munchies.core.TextId
+import io.umain.munchies.core.ui.TextId
 import io.umain.munchies.core.mapTextIdToStringResource
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject

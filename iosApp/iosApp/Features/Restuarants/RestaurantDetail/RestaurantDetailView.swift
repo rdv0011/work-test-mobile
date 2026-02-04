@@ -7,132 +7,157 @@
 import SwiftUI
 import shared
 
-private func isRestaurantOpen(opensAt: String, closesAt: String) -> Bool {
-    let dateFormatter = DateFormatter()
-    dateFormatter.dateFormat = "HH:mm"
-    
-    let now = dateFormatter.string(from: Date())
-    
-    guard let openTime = dateFormatter.date(from: opensAt),
-          let closeTime = dateFormatter.date(from: closesAt),
-          let currentTime = dateFormatter.date(from: now) else {
-        return true
-    }
-    
-    if closeTime < openTime {
-        return currentTime >= openTime || currentTime < closeTime
-    } else {
-        return currentTime >= openTime && currentTime < closeTime
-    }
-}
-
 struct RestaurantDetailView: View {
     let restaurantId: String
-    let coordinator: AppCoordinator
-    // Use holder pattern to collect uiState from shared ViewModel
-    @StateObject private var holder = RestaurantDetailViewModelHolder(viewModel: FeatureRestaurantIosKt.getRestaurantDetailViewModelIos())
-    @State private var uiState: RestaurantDetailUiState? = nil
+    let viewModel: RestaurantDetailViewModel
     
+    @State private var uiState: RestaurantDetailUiState = RestaurantDetailUiState.Loading()
+
     var body: some View {
-        let tokesnColorsAccent = DesignTokens.ColorsAccent.shared
-
-        // Prepare data from shared view model if available, otherwise fallback to minimal placeholders
-        let detailsName: String
-        let detailsDescription: String
-        let detailsImageUrl: String
-        var statusText: String = ""
-        var statusColor = tokesnColorsAccent.positive
-
-        if let restaurant = viewModel.restaurant {
-            detailsName = restaurant.name
-            detailsDescription = restaurant.description
-            detailsImageUrl = restaurant.imageUrl
-            // Map status if available
-            statusText = restaurant.status == RestaurantStatus.OPEN ? tr(.restaurantStatusOpen) : tr(.restaurantStatusClosed)
-            // statusColor left as positive/negative based on status
-            statusColor = restaurant.status == RestaurantStatus.OPEN ? tokesnColorsAccent.positive : tokesnColorsAccent.negative
-        } else {
-            detailsName = restaurantId
-            detailsDescription = ""
-            detailsImageUrl = "https://via.placeholder.com/343x200?text=Restaurant"
-            // fallback: show unknown/closed
-            statusText = tr(.restaurantStatusClosed)
-            statusColor = tokesnColorsAccent.negative
-        }
-        
-        VStack(spacing: 0) {
-            // Restaurant image
-            AsyncImage(url: URL(string: detailsImageUrl)) { phase in
-                switch phase {
-                case .empty:
-                    ProgressView()
-                        .frame(height: 200)
-                        .frame(maxWidth: .infinity)
-                        .background(Color.gray.opacity(0.2))
-                case .success(let image):
-                    image
-                        .resizable()
-                        .scaledToFill()
-                        .frame(height: 200)
-                        .frame(maxWidth: .infinity)
-                        .clipped()
-                case .failure:
-                    Image(systemName: "photo")
-                        .frame(height: 200)
-                        .frame(maxWidth: .infinity)
-                        .background(Color.gray.opacity(0.2))
-                @unknown default:
-                    EmptyView()
-                }
-            }
+        ZStack {
+            contentView()
             
-            // Content section
-            ScrollView {
-                VStack(alignment: .leading, spacing: .spacingUI.lg) {
-                    // Detail card
-                    DetailCardView(
-                        data: DetailCardData(
-                            title: detailsName,
-                            subtitle: detailsDescription,
-                            statusText: statusText,
-                            statusColor: statusColor,
-                            contentDescription: ""
-                        )
-                    )
-                    
-                    // Hours of operation
-                    VStack(alignment: .leading, spacing: .spacingUI.sm) {
-                        Text("Hours of Operation")
-                            .font(.title1)
-                            .foregroundColor(.text.dark)
-                        
-                        HStack {
-                            Text("Opens: --:--")
-                                .font(.title2)
-                            Spacer()
-                            Text("Closes: --:--")
-                                .font(.title2)
-                        }
-                        .foregroundColor(.text.subtitle)
-                    }
-                    .padding(.spacingUI.lg)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .padding(.horizontal, .spacingUI.lg)
-                .padding(.vertical, .spacingUI.lg)
+            if isLoading() {
+                loadingOverlay()
             }
         }
         .navigationTitle(tr(.restaurantDetailTitle))
         .navigationBarBackButtonHidden(false)
         .onAppear {
             logInfo(tag: "RestaurantDetail", message: "Viewing restaurant detail: \(restaurantId)")
-            // trigger loading the restaurant
-            holder.viewModel.loadRestaurantId(restaurantId)
+            viewModel.load(restaurantId: restaurantId)
         }
-        .task {
-            for await state in holder.viewModel.uiState {
-                self.uiState = state
+        .task(id: viewModel) {
+            await observe()
+        }
+    }
+    
+    // MARK: - Content
+    
+    @ViewBuilder
+    private func contentView() -> some View {
+        VStack(spacing: .zero) {
+            restaurantImage()
+            ScrollView {
+                VStack(alignment: .leading, spacing: .spacingUI.lg) {
+                    detailCard()
+                    hoursView()
+                }
+                .padding(.horizontal, .spacingUI.lg)
+                .padding(.vertical, .spacingUI.lg)
             }
+        }
+    }
+    
+    @ViewBuilder
+    private func restaurantImage() -> some View {
+        AsyncImage(url: URL(string: restaurantImageUrl())) { phase in
+            switch phase {
+            case .empty:
+                Color.gray.opacity(0.2)
+                    .frame(height: 200)
+                    .frame(maxWidth: .infinity)
+            case .success(let image):
+                image
+                    .resizable()
+                    .scaledToFill()
+                    .frame(height: 200)
+                    .frame(maxWidth: .infinity)
+                    .clipped()
+            case .failure:
+                Image(systemName: "photo")
+                    .frame(height: 200)
+                    .frame(maxWidth: .infinity)
+                    .background(Color.gray.opacity(0.2))
+            @unknown default:
+                EmptyView()
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func detailCard() -> some View {
+        DetailCardView(
+            data: DetailCardData(
+                title: restaurantName(),
+                subtitle: restaurantDescription(),
+                statusText: statusText(),
+                statusColor: statusColor(),
+                contentDescription: "Details for restaurant: \(restaurantName())"
+            )
+        )
+    }
+    
+    @ViewBuilder
+    private func hoursView() -> some View {
+        VStack(alignment: .leading, spacing: .spacingUI.sm) {
+            Text("Hours of Operation")
+                .font(.title1)
+                .foregroundColor(.text.dark)
+            
+            HStack {
+                Text("Opens: --:--")
+                    .font(.title2)
+                Spacer()
+                Text("Closes: --:--")
+                    .font(.title2)
+            }
+            .foregroundColor(.text.subtitle)
+        }
+        .padding(.spacingUI.lg)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+    
+    // MARK: - Loading Overlay
+    
+    @ViewBuilder
+    private func loadingOverlay() -> some View {
+        ProgressView()
+            .progressViewStyle(CircularProgressViewStyle())
+            .scaleEffect(1.5)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color.black.opacity(0.2))
+    }
+    
+    // MARK: - State Helpers
+    
+    private func isLoading() -> Bool {
+        uiState is RestaurantDetailUiState.Loading
+    }
+    
+    private func restaurantName() -> String {
+        (uiState as? RestaurantDetailUiState.Success)?.restaurant.name ?? ""
+    }
+    
+    private func restaurantDescription() -> String {
+        (uiState as? RestaurantDetailUiState.Success)?.restaurant.description ?? ""
+    }
+    
+    private func restaurantImageUrl() -> String {
+        (uiState as? RestaurantDetailUiState.Success)?.restaurant.imageUrl ?? ""
+    }
+    
+    private func statusText() -> String {
+        guard let restaurant = (uiState as? RestaurantDetailUiState.Success)?.restaurant else {
+            return ""
+        }
+        return restaurant.status == RestaurantStatus.open ? tr(.restaurantStatusOpen) : tr(.restaurantStatusClosed)
+    }
+    
+    private func statusColor() -> String {
+        guard let restaurant = (uiState as? RestaurantDetailUiState.Success)?.restaurant else {
+            return ""
+        }
+        let tokesnColorsAccent = DesignTokens.ColorsAccent.shared
+        return restaurant.status == RestaurantStatus.closed ? tokesnColorsAccent.positive : tokesnColorsAccent.negative
+    }
+    
+    // MARK: - Observe StateFlow
+    
+    @MainActor
+    private func observe() async {
+        for await state in asyncStateStream(viewModel) as AsyncStream<RestaurantDetailUiState> {
+            uiState = state
         }
     }
 }

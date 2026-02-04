@@ -1,11 +1,10 @@
 import Foundation
 import shared
 
-@objcMembers
 final class RestaurantListViewModelHolder: ObservableObject {
-    let viewModel: RestaurantListViewModel
-
-    init(viewModel: RestaurantListViewModel) {
-        self.viewModel = viewModel
+    let viewModel: RestaurantListViewModel = FeatureRestaurantIosKt.getRestaurantListViewModelIos()
+    
+    deinit {
+        viewModel.close()
     }
 }

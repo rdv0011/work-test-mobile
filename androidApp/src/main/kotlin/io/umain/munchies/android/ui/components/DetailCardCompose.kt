@@ -15,14 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
 import io.umain.munchies.designtokens.DesignTokens
-
-data class DetailCardData(
-    val title: String,
-    val subtitle: String,
-    val statusText: String,
-    val statusColor: String,
-    val contentDescription: String = "Restaurant status: $statusText"
-)
+import io.umain.munchies.feature.restaurant.presentation.model.DetailCardData
 
 @Composable
 fun DetailCardCompose(

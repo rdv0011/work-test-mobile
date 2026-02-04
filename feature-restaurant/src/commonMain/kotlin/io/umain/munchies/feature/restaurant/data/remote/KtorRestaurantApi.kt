@@ -10,21 +10,21 @@ import kotlinx.serialization.json.Json
 
 class KtorRestaurantApi(private val client: HttpClient, private val baseUrl: String) : RestaurantApi {
     override suspend fun getRestaurants(): List<RestaurantDto> {
-        val resp: HttpResponse = client.get("${'$'}baseUrl/restaurants")
+        val resp: HttpResponse = client.get("$baseUrl/restaurants")
         if (resp.status.isSuccess()) return resp.body()
-        throw RuntimeException("Failed to load restaurants: ${'$'}{resp.status}")
+        throw RuntimeException("Failed to load restaurants: ${resp.status}")
     }
 
     override suspend fun getRestaurantById(id: String): RestaurantDto? {
-        val resp: HttpResponse = client.get("${'$'}baseUrl/restaurants/${'$'}id")
+        val resp: HttpResponse = client.get("$baseUrl/restaurants/$id")
         if (resp.status == HttpStatusCode.NotFound) return null
         if (resp.status.isSuccess()) return resp.body()
-        throw RuntimeException("Failed to load restaurant: ${'$'}{resp.status}")
+        throw RuntimeException("Failed to load restaurant: ${resp.status}")
     }
 
     override suspend fun getFilters(): List<FilterDto> {
-        val resp: HttpResponse = client.get("${'$'}baseUrl/filters")
+        val resp: HttpResponse = client.get("$baseUrl/filters")
         if (resp.status.isSuccess()) return resp.body()
-        throw RuntimeException("Failed to load filters: ${'$'}{resp.status}")
+        throw RuntimeException("Failed to load filters: ${resp.status}")
     }
 }

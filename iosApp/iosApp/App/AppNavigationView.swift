@@ -3,6 +3,8 @@ import shared
 
 struct AppNavigationView: View {
     @StateObject private var navigator: NavigationCoordinator
+    @StateObject private var restaurantDetailHolder = RestaurantDetailViewModelHolder()
+    @StateObject private var restaurantListHolder = RestaurantListViewModelHolder()
     
     init(coordinator: AppCoordinator) {
         _navigator = StateObject(wrappedValue: NavigationCoordinator(coordinator: coordinator))
@@ -10,10 +12,13 @@ struct AppNavigationView: View {
     
     var body: some View {
         NavigationStack(path: $navigator.path) {
-            RestaurantListView(coordinator: navigator.coordinator)
-                .navigationDestination(for: Route.self) { route in
-                    destinationView(for: route)
-                }
+            RestaurantListView(
+                coordinator: navigator.coordinator,
+                viewModel: restaurantListHolder.viewModel
+            )
+            .navigationDestination(for: Route.self) { route in
+                destinationView(for: route)
+            }
         }
     }
     
@@ -23,12 +28,8 @@ struct AppNavigationView: View {
         case .restaurantDetail(let restaurantId):
             RestaurantDetailView(
                 restaurantId: restaurantId,
-                coordinator: navigator.coordinator
+                viewModel: restaurantDetailHolder.viewModel
             )
         }
     }
-}
-
-enum Route: Hashable {
-    case restaurantDetail(String)
 }

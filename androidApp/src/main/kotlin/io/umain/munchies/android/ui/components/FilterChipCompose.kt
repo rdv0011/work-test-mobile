@@ -17,14 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
 import io.umain.munchies.designtokens.DesignTokens
-
-data class FilterChipData(
-    val id: String,
-    val label: String,
-    val iconUrl: String,
-    val isSelected: Boolean = false,
-    val contentDescription: String = "Filter: $label"
-)
+import io.umain.munchies.feature.restaurant.presentation.model.FilterChipData
 
 @Composable
 fun FilterChipCompose(

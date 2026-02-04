@@ -1,6 +1,7 @@
 package io.umain.munchies.core
 
 import android.content.Context
+import io.umain.munchies.core.ui.IconId
 
 class IconIdMapper(private val context: Context) {
     fun mapToDrawableResourceId(iconId: IconId): Int {

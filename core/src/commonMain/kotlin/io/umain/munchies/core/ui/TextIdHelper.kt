@@ -1,4 +1,4 @@
-package io.umain.munchies.core
+package io.umain.munchies.core.ui
 
 /**
  * Maps TextId sealed class instances to their corresponding translation keys.

@@ -6,7 +6,7 @@
 //
 import shared
 
-class EventCollector<T>: shared.FlowCollector {
+class FlowValuesCollector<T>: shared.FlowCollector {
     
     let callback: (T) -> Void
     

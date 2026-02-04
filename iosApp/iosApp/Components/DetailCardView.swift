@@ -7,14 +7,6 @@
 import SwiftUI
 import shared
 
-struct DetailCardData {
-    let title: String
-    let subtitle: String
-    let statusText: String
-    let statusColor: String
-    let contentDescription: String = "Restaurant status: $statusText"
-}
-
 /// DetailCardView - SwiftUI wrapper for DetailCardData
 ///
 /// Displays restaurant detail card with:
@@ -83,7 +75,7 @@ struct DetailCardView: View {
                 subtitle: "Italian Restaurant",
                 statusText: "Open",
                 statusColor: "#2ECC71",
-                contentDescription: "Restaurant status: Open"
+                contentDescription: "Famous for its wood-fired pizzas"
             )
         )
         
@@ -93,7 +85,7 @@ struct DetailCardView: View {
                 subtitle: "Japanese Restaurant",
                 statusText: "Closed",
                 statusColor: "#C0392B",
-                contentDescription: "Restaurant status: Closed"
+                contentDescription: "Known for fresh sushi and sashimi"
             )
         )
     }

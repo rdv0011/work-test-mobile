@@ -8,7 +8,7 @@ import io.umain.munchies.feature.restaurant.presentation.state.RestaurantListUiS
 class RestaurantListAndroidViewModel(
     private val shared: SharedRestaurantListViewModel
 ) : ViewModel() {
-    val uiState: StateFlow<RestaurantListUiState> = shared.uiState
+    val uiState: StateFlow<RestaurantListUiState> = shared.stateFlow
     val selectedFilters = shared.selectedFilters
 
     fun load() = shared.load()

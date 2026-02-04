@@ -1,9 +1,10 @@
 package io.umain.munchies.feature.restaurant.presentation.state
 
+import io.umain.munchies.core.state.ViewState
 import io.umain.munchies.feature.restaurant.domain.model.Restaurant
 import io.umain.munchies.feature.restaurant.domain.model.Filter
 
-sealed class RestaurantListUiState {
+sealed class RestaurantListUiState: ViewState {
     object Loading : RestaurantListUiState()
     data class Success(
         val restaurants: List<Restaurant>,
