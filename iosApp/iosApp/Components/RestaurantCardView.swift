@@ -194,6 +194,7 @@ struct RoundedCorner: Shape {
 #Preview {
     RestaurantCardView(
         data: RestaurantCardData(
+            id: "1234",
             restaurantName: "Pizza Palace",
             tags: ["Italian", "Pizza", "Vegetarian"],
             deliveryTime: "25-35 min",

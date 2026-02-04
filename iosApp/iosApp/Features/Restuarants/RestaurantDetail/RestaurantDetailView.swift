@@ -80,7 +80,6 @@ struct RestaurantDetailView: View {
         DetailCardView(
             data: DetailCardData(
                 title: restaurantName(),
-                subtitle: restaurantDescription(),
                 statusText: statusText(),
                 statusColor: statusColor(),
                 contentDescription: "Details for restaurant: \(restaurantName())"
@@ -126,38 +125,30 @@ struct RestaurantDetailView: View {
     }
     
     private func restaurantName() -> String {
-        if case let RestaurantDetailUiState.Success(restaurant, _) = uiState {
-            return restaurant.name
-        }
-        return ""
-    }
-    
-    private func restaurantDescription() -> String {
-        // Description not available in API, using name as placeholder
-        if case let RestaurantDetailUiState.Success(restaurant, _) = uiState {
-            return restaurant.name
+        if let success = uiState as? RestaurantDetailUiState.Success {
+            return success.restaurant.name
         }
         return ""
     }
     
     private func restaurantImageUrl() -> String {
-        if case let RestaurantDetailUiState.Success(restaurant, _) = uiState {
-            return restaurant.imageUrl
+        if let success = uiState as? RestaurantDetailUiState.Success {
+            return success.restaurant.imageUrl
         }
         return ""
     }
     
     private func statusText() -> String {
-        if case let RestaurantDetailUiState.Success(_, status) = uiState {
-            return status == RestaurantStatus.open ? tr(.restaurantStatusOpen) : tr(.restaurantStatusClosed)
+        if let success = uiState as? RestaurantDetailUiState.Success {
+            return success.status == RestaurantStatus.open ? tr(.restaurantStatusOpen) : tr(.restaurantStatusClosed)
         }
         return ""
     }
     
     private func statusColor() -> String {
-        if case let RestaurantDetailUiState.Success(_, status) = uiState {
+        if let success = uiState as? RestaurantDetailUiState.Success {
             let tokensColorsAccent = DesignTokens.ColorsAccent.shared
-            return status == RestaurantStatus.open ? tokensColorsAccent.positive : tokensColorsAccent.negative
+            return success.status == RestaurantStatus.open ? tokensColorsAccent.positive : tokensColorsAccent.negative
         }
         return ""
     }

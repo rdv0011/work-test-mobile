@@ -28,16 +28,7 @@ struct DetailCardView: View {
                 .accessibilityLabel("Title: \(data.title)")
                 .padding(.top, .spacingUI.lg)
                 .padding(.horizontal, .spacingUI.lg)
-            
-            Spacer(minLength: 8)
-            
-            Text(data.subtitle)
-                .font(.headline2)
-                .foregroundColor(.text.subtitle)
-                .lineLimit(1)
-                .accessibilityLabel("Subtitle: \(data.subtitle)")
-                .padding(.horizontal, .spacingUI.lg)
-            
+
             Spacer(minLength: 8)
             
             HStack(spacing: 8) {
@@ -72,7 +63,6 @@ struct DetailCardView: View {
         DetailCardView(
             data: DetailCardData(
                 title: "Pizza Palace",
-                subtitle: "Italian Restaurant",
                 statusText: "Open",
                 statusColor: "#2ECC71",
                 contentDescription: "Famous for its wood-fired pizzas"
@@ -82,7 +72,6 @@ struct DetailCardView: View {
         DetailCardView(
             data: DetailCardData(
                 title: "Sushi Spot",
-                subtitle: "Japanese Restaurant",
                 statusText: "Closed",
                 statusColor: "#C0392B",
                 contentDescription: "Known for fresh sushi and sashimi"

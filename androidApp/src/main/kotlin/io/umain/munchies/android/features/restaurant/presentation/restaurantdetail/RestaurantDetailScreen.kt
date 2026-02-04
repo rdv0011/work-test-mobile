@@ -121,7 +121,6 @@ fun RestaurantDetailScreen(
                         DetailCardCompose(
                             data = DetailCardData(
                                 title = restaurant.name,
-                                subtitle = restaurant.name, // No description, using name
                                 statusText = statusText,
                                 statusColor = statusColor
                             ),

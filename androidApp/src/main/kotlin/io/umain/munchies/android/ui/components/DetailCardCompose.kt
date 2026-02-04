@@ -45,15 +45,6 @@ fun DetailCardCompose(
         )
         
         Text(
-            text = data.subtitle,
-            style = TextStyle(
-                fontWeight = FontWeight(subtitleStyle.fontWeight),
-                fontSize = subtitleStyle.fontSize.sp
-            ),
-            color = Color(DesignTokens.Colors.Text.subtitle.toColorInt())
-        )
-        
-        Text(
             text = data.statusText,
             style = TextStyle(
                 fontWeight = FontWeight(statusStyle.fontWeight),
