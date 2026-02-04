@@ -6,10 +6,14 @@ import kotlinx.serialization.Serializable
 data class Restaurant(
     val id: String,
     val name: String,
-    val description: String,
     val imageUrl: String,
     val rating: Float,
-    val reviewCount: Int,
-    val status: RestaurantStatus,
+    val deliveryTimeMinutes: Int,
     val filterIds: List<String>
+)
+
+@Serializable
+data class RestaurantOpen(
+    val id: String,
+    val open: Boolean
 )

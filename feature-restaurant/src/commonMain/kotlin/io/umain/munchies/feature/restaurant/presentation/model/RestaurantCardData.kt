@@ -1,6 +1,7 @@
 package io.umain.munchies.feature.restaurant.presentation.model
 
 data class RestaurantCardData(
+    val id: String,
     val restaurantName: String,
     val tags: List<String>,
     val deliveryTime: String,

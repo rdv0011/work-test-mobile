@@ -1,5 +1,6 @@
 package io.umain.munchies.feature.restaurant.data.remote
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -10,26 +11,44 @@ import kotlinx.serialization.Serializable
  * can be used during development and tests.
  */
 interface RestaurantApi {
-    suspend fun getRestaurants(): List<RestaurantDto>
-    suspend fun getRestaurantById(id: String): RestaurantDto?
-    suspend fun getFilters(): List<FilterDto>
+    suspend fun getFilter(id: String): FilterDto?
+    suspend fun getRestaurants(): RestaurantContainerDto
+    suspend fun getOpen(id: String): RestaurantOpenDto?
 }
-
-@Serializable
-data class RestaurantDto(
-    val id: String,
-    val name: String,
-    val description: String,
-    val imageUrl: String,
-    val rating: Float,
-    val reviewCount: Int,
-    val status: String,
-    val filterIds: List<String>
-)
 
 @Serializable
 data class FilterDto(
     val id: String,
     val name: String,
-    val iconUrl: String
+    @SerialName("image_url")
+    val imageUrl: String
+)
+
+@Serializable
+data class RestaurantContainerDto(
+    val restaurants: List<RestaurantDto>
+)
+
+@Serializable
+data class RestaurantDto(
+    val id: String,
+    val name: String,
+
+    @SerialName("image_url")
+    val imageUrl: String,
+
+    val rating: Float,
+
+    @SerialName("delivery_time_minutes")
+    val deliveryTimeMinutes: Int,
+
+    val filterIds: List<String>
+)
+
+@Serializable
+data class RestaurantOpenDto(
+    @SerialName("restaurant_id")
+    val id: String,
+    @SerialName("is_currently_open")
+    val open: Boolean,
 )

@@ -32,51 +32,6 @@ import io.umain.munchies.feature.restaurant.presentation.model.FilterChipData
 import io.umain.munchies.feature.restaurant.presentation.model.RestaurantCardData
 import org.koin.androidx.compose.koinViewModel
 
-private val exampleRestaurants = listOf(
-    RestaurantCardData(
-        restaurantName = "Burger Palace",
-        tags = listOf("Burgers", "Fast Food", "American"),
-        deliveryTime = "25-35 min",
-        distance = "2.4 km",
-        rating = 4.8,
-        imageUrl = "https://via.placeholder.com/343x132?text=Burger+Palace"
-    ),
-    RestaurantCardData(
-        restaurantName = "Sushi Paradise",
-        tags = listOf("Japanese", "Sushi", "Seafood"),
-        deliveryTime = "30-45 min",
-        distance = "3.1 km",
-        rating = 4.6,
-        imageUrl = "https://via.placeholder.com/343x132?text=Sushi+Paradise"
-    ),
-    RestaurantCardData(
-        restaurantName = "Pizza Pizzeria",
-        tags = listOf("Italian", "Pizza", "Pasta"),
-        deliveryTime = "20-30 min",
-        distance = "1.8 km",
-        rating = 4.7,
-        imageUrl = "https://via.placeholder.com/343x132?text=Pizza+Pizzeria"
-    )
-)
-
-private val exampleFilters = listOf(
-    FilterChipData(
-        id = "all",
-        label = "All",
-        iconUrl = "https://via.placeholder.com/48x48?text=All"
-    ),
-    FilterChipData(
-        id = "fast-food",
-        label = "Fast Food",
-        iconUrl = "https://via.placeholder.com/48x48?text=Fast"
-    ),
-    FilterChipData(
-        id = "asian",
-        label = "Asian",
-        iconUrl = "https://via.placeholder.com/48x48?text=Asian"
-    )
-)
-
 @Composable
 fun RestaurantListScreen(
     coordinator: AppCoordinator,
@@ -93,6 +48,7 @@ fun RestaurantListScreen(
         is RestaurantListUiState.Success -> state.restaurants.map {
             // convert domain Restaurant to RestaurantCardData for Compose component
             RestaurantCardData(
+                id = it.id,
                 restaurantName = it.name,
                 tags = it.filterIds,
                 deliveryTime = "", // API doesn't provide delivery time in domain model
@@ -101,7 +57,19 @@ fun RestaurantListScreen(
                 imageUrl = it.imageUrl
             )
         }
-        else -> exampleRestaurants
+        else -> emptyList()
+    }
+    
+    val filters = when (val state = uiState) {
+        is RestaurantListUiState.Success -> state.filters.map {
+            FilterChipData(
+                id = it.id,
+                label = it.name,
+                iconUrl = it.imageUrl,
+                isSelected = selectedFilterIds.contains(it.id)
+            )
+        }
+        else -> emptyList()
     }
     
     Scaffold(
@@ -137,10 +105,9 @@ fun RestaurantListScreen(
                     .padding(horizontal = DesignTokens.Spacing.lg.dp),
                 horizontalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.sm.dp)
             ) {
-                items(exampleFilters) { filter ->
-                    val isSelected = selectedFilterIds.contains(filter.id)
+                items(filters) { filter ->
                     FilterChipCompose(
-                        data = filter.copy(isSelected = isSelected),
+                        data = filter,
                         onSelect = { selected ->
                             // Delegate selection changes to ViewModel
                             viewModel.toggleFilter(filter.id)
@@ -166,7 +133,7 @@ fun RestaurantListScreen(
                     RestaurantCardCompose(
                         data = restaurant,
                         onTap = {
-                            coordinator.navigateToRestaurantDetail(restaurant.restaurantName)
+                            coordinator.navigateToRestaurantDetail(restaurant.id)
                         },
                         modifier = Modifier
                             .fillMaxWidth()

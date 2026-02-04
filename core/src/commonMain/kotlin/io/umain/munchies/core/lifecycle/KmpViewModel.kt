@@ -17,7 +17,7 @@ abstract class KmpViewModel : Closeable {
     private val job = SupervisorJob()
 
     protected val scope =
-        CoroutineScope(job + Dispatchers.Main)
+        CoroutineScope(job + Dispatchers.Main.immediate)
 
     // Swift-friendly StateFlow adapter
     fun <T> StateFlow<T>.subscribeState(onEach: (T) -> Unit): kotlinx.coroutines.Job =
@@ -26,6 +26,11 @@ abstract class KmpViewModel : Closeable {
         }
 
     final override fun close() {
+        scope.cancel()
+        onCleared()
+    }
+
+    fun clear() {
         scope.cancel()
         onCleared()
     }

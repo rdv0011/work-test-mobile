@@ -19,6 +19,7 @@ struct RestaurantListView: View {
         }
         return sharedState.restaurants.map { r in
             RestaurantCardData(
+                id: r.id,
                 restaurantName: r.name,
                 tags: r.filterIds.map { $0 },
                 deliveryTime: "",
@@ -44,10 +45,10 @@ struct RestaurantListView: View {
             } else if !filteredRestaurants.isEmpty {
                 ScrollView {
                     VStack(spacing: .spacingUI.lg) {
-                        ForEach(filteredRestaurants, id: \.restaurantName) { restaurant in
+                        ForEach(filteredRestaurants, id: \.id) { restaurant in
                             RestaurantCardView(data: restaurant) {
                                 logInfo(tag: "RestaurantList", message: "Tapped restaurant: \(restaurant.restaurantName)")
-                                coordinator.navigateToRestaurantDetail(restaurantId: restaurant.restaurantName)
+                                coordinator.navigateToRestaurantDetail(restaurantId: restaurant.id)
                             }
                         }
                     }

@@ -126,30 +126,40 @@ struct RestaurantDetailView: View {
     }
     
     private func restaurantName() -> String {
-        (uiState as? RestaurantDetailUiState.Success)?.restaurant.name ?? ""
+        if case let RestaurantDetailUiState.Success(restaurant, _) = uiState {
+            return restaurant.name
+        }
+        return ""
     }
     
     private func restaurantDescription() -> String {
-        (uiState as? RestaurantDetailUiState.Success)?.restaurant.description ?? ""
+        // Description not available in API, using name as placeholder
+        if case let RestaurantDetailUiState.Success(restaurant, _) = uiState {
+            return restaurant.name
+        }
+        return ""
     }
     
     private func restaurantImageUrl() -> String {
-        (uiState as? RestaurantDetailUiState.Success)?.restaurant.imageUrl ?? ""
+        if case let RestaurantDetailUiState.Success(restaurant, _) = uiState {
+            return restaurant.imageUrl
+        }
+        return ""
     }
     
     private func statusText() -> String {
-        guard let restaurant = (uiState as? RestaurantDetailUiState.Success)?.restaurant else {
-            return ""
+        if case let RestaurantDetailUiState.Success(_, status) = uiState {
+            return status == RestaurantStatus.open ? tr(.restaurantStatusOpen) : tr(.restaurantStatusClosed)
         }
-        return restaurant.status == RestaurantStatus.open ? tr(.restaurantStatusOpen) : tr(.restaurantStatusClosed)
+        return ""
     }
     
     private func statusColor() -> String {
-        guard let restaurant = (uiState as? RestaurantDetailUiState.Success)?.restaurant else {
-            return ""
+        if case let RestaurantDetailUiState.Success(_, status) = uiState {
+            let tokensColorsAccent = DesignTokens.ColorsAccent.shared
+            return status == RestaurantStatus.open ? tokensColorsAccent.positive : tokensColorsAccent.negative
         }
-        let tokesnColorsAccent = DesignTokens.ColorsAccent.shared
-        return restaurant.status == RestaurantStatus.closed ? tokesnColorsAccent.positive : tokesnColorsAccent.negative
+        return ""
     }
     
     // MARK: - Observe StateFlow

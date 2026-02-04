@@ -7,6 +7,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import io.umain.munchies.feature.restaurant.domain.repository.RestaurantRepository
 import io.umain.munchies.feature.restaurant.presentation.state.RestaurantListUiState
+import io.umain.munchies.feature.restaurant.domain.model.Restaurant
+import io.umain.munchies.feature.restaurant.domain.model.Filter
 
 class RestaurantListViewModel(
     private val repository: RestaurantRepository,
@@ -17,12 +19,16 @@ class RestaurantListViewModel(
     private val _selectedFilters = MutableStateFlow<Set<String>>(emptySet())
     val selectedFilters: StateFlow<Set<String>> = _selectedFilters
 
+    private var allRestaurants: List<Restaurant> = emptyList()
+    private var allFilters: List<Filter> = emptyList()
+
     fun load() {
         scope.launch {
             try {
-                val restaurants = repository.getRestaurants()
-                val filters = repository.getFilters()
-                _stateFlow.value = RestaurantListUiState.Success(restaurants = restaurants, filters = filters)
+                allRestaurants = repository.getRestaurants()
+                val filterIds = allRestaurants.flatMap { it.filterIds }.distinct()
+                allFilters = filterIds.mapNotNull { repository.getFilterById(it) }
+                _stateFlow.value = RestaurantListUiState.Success(restaurants = allRestaurants, filters = allFilters)
             } catch (t: Throwable) {
                 _stateFlow.value = RestaurantListUiState.Error(message = t.message ?: "Unknown error")
             }
@@ -41,12 +47,13 @@ class RestaurantListViewModel(
             _stateFlow.value = RestaurantListUiState.Loading
             try {
                 val restaurants = if (_selectedFilters.value.isEmpty()) {
-                    repository.getRestaurants()
+                    allRestaurants
                 } else {
-                    repository.getRestaurantsByFilter(_selectedFilters.value)
+                    allRestaurants.filter { restaurant ->
+                        restaurant.filterIds.any { it in _selectedFilters.value }
+                    }
                 }
-                val filters = repository.getFilters()
-                _stateFlow.value = RestaurantListUiState.Success(restaurants = restaurants, filters = filters)
+                _stateFlow.value = RestaurantListUiState.Success(restaurants = restaurants, filters = allFilters)
             } catch (t: Throwable) {
                 _stateFlow.value = RestaurantListUiState.Error(message = t.message ?: "Unknown error")
             }

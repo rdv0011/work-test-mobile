@@ -19,9 +19,14 @@ class RestaurantDetailViewModel(
     fun load(restaurantId: String) {
         scope.launch {
             try {
-                val restaurant = repository.getRestaurantById(restaurantId)
-                if (restaurant != null) _stateFlow.value = RestaurantDetailUiState.Success(restaurant)
-                else _stateFlow.value = RestaurantDetailUiState.Error("Not found")
+                val restaurants = repository.getRestaurants()
+                val restaurant = restaurants.find { it.id == restaurantId }
+                if (restaurant != null) {
+                    val status = repository.getRestaurantsOpenById(restaurantId)
+                    _stateFlow.value = RestaurantDetailUiState.Success(restaurant, status)
+                } else {
+                    _stateFlow.value = RestaurantDetailUiState.Error("Not found")
+                }
             } catch (t: Throwable) {
                 _stateFlow.value = RestaurantDetailUiState.Error(t.message ?: "Unknown error")
             }
