@@ -11,9 +11,3 @@ data class Restaurant(
     val deliveryTimeMinutes: Int,
     val filterIds: List<String>
 )
-
-@Serializable
-data class RestaurantOpen(
-    val id: String,
-    val open: Boolean
-)
