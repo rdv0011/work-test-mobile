@@ -14,6 +14,7 @@ import io.umain.munchies.navigation.AppCoordinator
 import io.umain.munchies.navigation.Destination
 import io.umain.munchies.navigation.NavigationEvent
 import kotlinx.coroutines.flow.collectLatest
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun AppNavigation(coordinator: AppCoordinator) {

@@ -9,7 +9,7 @@ import io.ktor.http.*
 class KtorRestaurantApi(private val client: HttpClient, private val baseUrl: String) : RestaurantApi {
 
     override suspend fun getFilter(id: String): FilterDto {
-        val resp: HttpResponse = client.get("$baseUrl/api/v1/filters")
+        val resp: HttpResponse = client.get("$baseUrl/api/v1/filter/$id")
         if (resp.status.isSuccess()) return resp.body()
         throw RuntimeException("Failed to load filters: ${resp.status}")
     }
