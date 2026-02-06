@@ -3,7 +3,6 @@ import shared
 
 struct AppNavigationView: View {
     @StateObject private var navigator: NavigationCoordinator
-    @StateObject private var restaurantDetailHolder = RestaurantDetailViewModelHolder()
     @StateObject private var restaurantListHolder = RestaurantListViewModelHolder()
     
     init(coordinator: AppCoordinator) {
@@ -26,10 +25,7 @@ struct AppNavigationView: View {
     private func destinationView(for route: Route) -> some View {
         switch route {
         case .restaurantDetail(let restaurantId):
-            RestaurantDetailView(
-                restaurantId: restaurantId,
-                viewModel: restaurantDetailHolder.viewModel
-            )
+            RestaurantDetailDestinationView(restaurantId: restaurantId)
         }
     }
 }

@@ -25,7 +25,6 @@ struct RestaurantDetailView: View {
         .navigationBarBackButtonHidden(false)
         .onAppear {
             logInfo(tag: "RestaurantDetail", message: "Viewing restaurant detail: \(restaurantId)")
-            viewModel.load(restaurantId: restaurantId)
         }
         .task(id: viewModel) {
             await observe()
@@ -39,12 +38,8 @@ struct RestaurantDetailView: View {
         VStack(spacing: .zero) {
             restaurantImage()
             ScrollView {
-                VStack(alignment: .leading, spacing: .spacingUI.lg) {
-                    detailCard()
-                    hoursView()
-                }
-                .padding(.horizontal, .spacingUI.lg)
-                .padding(.vertical, .spacingUI.lg)
+                detailCard()
+                    .padding(.all, .spacingUI.lg)
             }
         }
     }
@@ -80,31 +75,11 @@ struct RestaurantDetailView: View {
         DetailCardView(
             data: DetailCardData(
                 title: restaurantName(),
+                tags: [],
                 statusText: statusText(),
                 statusColor: statusColor(),
-                contentDescription: "Details for restaurant: \(restaurantName())"
             )
         )
-    }
-    
-    @ViewBuilder
-    private func hoursView() -> some View {
-        VStack(alignment: .leading, spacing: .spacingUI.sm) {
-            Text("Hours of Operation")
-                .font(.title1)
-                .foregroundColor(.text.dark)
-            
-            HStack {
-                Text("Opens: --:--")
-                    .font(.title2)
-                Spacer()
-                Text("Closes: --:--")
-                    .font(.title2)
-            }
-            .foregroundColor(.text.subtitle)
-        }
-        .padding(.spacingUI.lg)
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
     
     // MARK: - Loading Overlay

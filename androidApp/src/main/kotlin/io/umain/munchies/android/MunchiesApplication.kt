@@ -14,7 +14,7 @@ class MunchiesApplication : Application() {
         initKoin {
             androidContext(this@MunchiesApplication)
         }
-        // Register feature modules after Koin initialization
+        // Register feature shared modules after Koin initialization
         registerFeatureRestaurantModule()
         // Register Android-specific UI wrappers
         registerAndroidUIWrappersModule()

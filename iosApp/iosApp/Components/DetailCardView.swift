@@ -43,7 +43,6 @@ struct DetailCardView: View {
                     .lineLimit(1)
             }
             .accessibilityLabel("Status: \(data.statusText)")
-            .accessibilityValue(data.contentDescription)
             .padding(.horizontal, .spacingUI.lg)
             .padding(.bottom, .spacingUI.lg)
             
@@ -63,18 +62,18 @@ struct DetailCardView: View {
         DetailCardView(
             data: DetailCardData(
                 title: "Pizza Palace",
+                tags: [],
                 statusText: "Open",
-                statusColor: "#2ECC71",
-                contentDescription: "Famous for its wood-fired pizzas"
+                statusColor: "#2ECC71"
             )
         )
         
         DetailCardView(
             data: DetailCardData(
                 title: "Sushi Spot",
+                tags: [],
                 statusText: "Closed",
-                statusColor: "#C0392B",
-                contentDescription: "Known for fresh sushi and sashimi"
+                statusColor: "#C0392B"
             )
         )
     }

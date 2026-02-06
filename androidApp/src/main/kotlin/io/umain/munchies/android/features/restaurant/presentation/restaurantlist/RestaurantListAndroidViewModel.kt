@@ -13,4 +13,9 @@ class RestaurantListAndroidViewModel(
 
     fun load() = shared.load()
     fun toggleFilter(filterId: String) = shared.toggleFilter(filterId)
+
+    override fun onCleared() {
+        super.onCleared()
+        shared.close()
+    }
 }

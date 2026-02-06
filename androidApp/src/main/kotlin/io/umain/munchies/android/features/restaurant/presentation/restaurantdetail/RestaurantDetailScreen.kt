@@ -21,7 +21,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,31 +29,32 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.collectAsState
 import coil.compose.AsyncImage
 import io.umain.munchies.android.ui.components.DetailCardCompose
+import io.umain.munchies.android.core.viewmodel.rememberScopedViewModel
 import io.umain.munchies.core.ui.TextId
 import io.umain.munchies.designtokens.DesignTokens
+import io.umain.munchies.feature.restaurant.di.RestaurantDetailScope
 import io.umain.munchies.feature.restaurant.domain.model.RestaurantStatus
+import io.umain.munchies.feature.restaurant.presentation.RestaurantDetailViewModel
 import io.umain.munchies.feature.restaurant.presentation.model.DetailCardData
 import io.umain.munchies.feature.restaurant.presentation.state.RestaurantDetailUiState
 import io.umain.munchies.localization.tr
 import io.umain.munchies.navigation.AppCoordinator
-import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RestaurantDetailScreen(
     restaurantId: String,
     coordinator: AppCoordinator,
-    viewModel: RestaurantDetailAndroidViewModel = koinViewModel(),
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val viewModel = rememberScopedViewModel<RestaurantDetailViewModel>(
+        scopeId = RestaurantDetailScope(restaurantId),
+        restaurantId
+    )
 
-    // Load data on first composition
-    LaunchedEffect(restaurantId) {
-        viewModel.load(restaurantId)
-    }
+    val uiState by viewModel.stateFlow.collectAsState()
 
     Column(
         modifier = Modifier
@@ -71,11 +71,12 @@ fun RestaurantDetailScreen(
                     CircularProgressIndicator()
                 }
             }
+
             is RestaurantDetailUiState.Success -> {
                 val successState = uiState as RestaurantDetailUiState.Success
                 val restaurant = successState.restaurant
                 val status = successState.status
-                
+
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -139,6 +140,7 @@ fun RestaurantDetailScreen(
                     )
                 }
             }
+
             is RestaurantDetailUiState.Error -> {
                 val errorState = uiState as RestaurantDetailUiState.Error
                 Column(
