@@ -6,4 +6,5 @@ data class RestaurantDetailScope(
     val restaurantId: String
 ) : KmpScopeId {
     override val value = "RestaurantDetail_$restaurantId"
+    override val qualifierName: String = "RestaurantDetailScope"
 }

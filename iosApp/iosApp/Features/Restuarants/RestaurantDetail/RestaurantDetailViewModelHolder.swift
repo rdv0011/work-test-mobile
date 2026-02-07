@@ -8,13 +8,13 @@ final class RestaurantDetailViewModelHolder: ObservableObject {
 
     init(restaurantId: String) {
 
-        let handle = ScopedViewModelFactoryKt.scopedViewModel(
+        let handle = FeatureRestaurantIosKt.getRestaurantDetailViewModel(
             scopeId: RestaurantDetailScope(restaurantId: restaurantId),
-            params: [restaurantId]
+            restaurantId: restaurantId
         )
 
         self.scope = handle.scope
-        self.viewModel = handle.viewModel as! RestaurantDetailViewModel
+        self.viewModel = handle.viewModel 
     }
 
     deinit {

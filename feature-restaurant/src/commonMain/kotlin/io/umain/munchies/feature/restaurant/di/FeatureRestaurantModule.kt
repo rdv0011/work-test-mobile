@@ -7,7 +7,7 @@ import io.umain.munchies.feature.restaurant.domain.repository.RestaurantReposito
 import io.umain.munchies.feature.restaurant.presentation.RestaurantDetailViewModel
 import io.umain.munchies.feature.restaurant.presentation.RestaurantListViewModel
 import org.koin.dsl.module
-
+import org.koin.core.qualifier.TypeQualifier
 import org.koin.core.qualifier.named
 
 val featureRestaurantModule = module {
@@ -23,7 +23,7 @@ val featureRestaurantModule = module {
     // Shared ViewModels (platform-agnostic)
     factory { RestaurantListViewModel(get()) }
 
-    scope(named("RestaurantDetailScope")) {
+    scope(named(RestaurantDetailScope("").qualifierName)) {
         scoped { (restaurantId: String) ->
             RestaurantDetailViewModel(
                 restaurantId = restaurantId,
