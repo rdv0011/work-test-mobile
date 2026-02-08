@@ -10,16 +10,18 @@ import shared
 @MainActor
 class NavigationCoordinator: ObservableObject {
     @Published var path = NavigationPath()
+    @Published private(set) var activeRoutes = Set<String>()
     
     let coordinator: AppCoordinator
+    private let registry: RouteHolderRegistry
     
     init(coordinator: AppCoordinator) {
         self.coordinator = coordinator
+        self.registry = RouteHolderRegistry(coordinator: coordinator)
         observeNavigationEvents()
     }
     
     func observeNavigationEvents() {
-        // Structured concurrency: attach to actor's task hierarchy
         Task { [weak self] in
             guard let self = self else { return }
             await self.collectNavigationEvents()
@@ -40,8 +42,12 @@ class NavigationCoordinator: ObservableObject {
             if !path.isEmpty {
                 path.removeLast()
             }
+            updateActiveRoutes()
+            syncCleanup()
         case is NavigationEvent.PopToRoot:
             path = NavigationPath()
+            activeRoutes.removeAll()
+            registry.cleanup(activeRoutes: [])
         default:
             break
         }
@@ -52,9 +58,31 @@ class NavigationCoordinator: ObservableObject {
         case is Destination.RestaurantList:
             break
         case let detail as Destination.RestaurantDetail:
-            path.append(Route.restaurantDetail(detail.restaurantId))
+            let route = Route.restaurantDetail(detail.restaurantId)
+            path.append(route)
+            updateActiveRoutes()
         default:
             break
         }
+    }
+    
+    private func updateActiveRoutes() {
+        activeRoutes.removeAll()
+        activeRoutes.insert("RestaurantList")
+        for case let route as Route in path {
+            activeRoutes.insert(route.key)
+        }
+    }
+    
+    func restaurantListHolder() -> RestaurantListViewModelHolder {
+        registry.restaurantListHolder()
+    }
+    
+    func restaurantDetailHolder(restaurantId: String) -> RestaurantDetailViewModelHolder {
+        registry.restaurantDetailHolder(restaurantId: restaurantId)
+    }
+    
+    private func syncCleanup() {
+        registry.cleanup(activeRoutes: activeRoutes)
     }
 }

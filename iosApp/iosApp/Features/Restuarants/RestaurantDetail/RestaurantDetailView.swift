@@ -9,6 +9,7 @@ import shared
 
 struct RestaurantDetailView: View {
     let restaurantId: String
+    let coordinator: AppCoordinator
     let viewModel: RestaurantDetailViewModel
     
     @State private var uiState: RestaurantDetailUiState = RestaurantDetailUiState.Loading()
@@ -23,6 +24,18 @@ struct RestaurantDetailView: View {
         }
         .navigationTitle(tr(.restaurantDetailTitle))
         .navigationBarBackButtonHidden(false)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: {
+                    coordinator.navigateBack()
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left")
+                        Text("Back")
+                    }
+                }
+            }
+        }
         .onAppear {
             logInfo(tag: "RestaurantDetail", message: "Viewing restaurant detail: \(restaurantId)")
         }

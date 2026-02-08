@@ -3,7 +3,6 @@ import shared
 
 struct AppNavigationView: View {
     @StateObject private var navigator: NavigationCoordinator
-    @StateObject private var restaurantListHolder = RestaurantListViewModelHolder()
     
     init(coordinator: AppCoordinator) {
         _navigator = StateObject(wrappedValue: NavigationCoordinator(coordinator: coordinator))
@@ -11,6 +10,7 @@ struct AppNavigationView: View {
     
     var body: some View {
         NavigationStack(path: $navigator.path) {
+            let restaurantListHolder = navigator.restaurantListHolder()
             RestaurantListView(
                 coordinator: navigator.coordinator,
                 viewModel: restaurantListHolder.viewModel
@@ -25,7 +25,14 @@ struct AppNavigationView: View {
     private func destinationView(for route: Route) -> some View {
         switch route {
         case .restaurantDetail(let restaurantId):
-            RestaurantDetailDestinationView(restaurantId: restaurantId)
+            let holder = navigator.restaurantDetailHolder(restaurantId: restaurantId)
+            RestaurantDetailView(
+                restaurantId: restaurantId,
+                coordinator: navigator.coordinator,
+                viewModel: holder.viewModel
+            )
+        case .restaurantList:
+            EmptyView()
         }
     }
 }
