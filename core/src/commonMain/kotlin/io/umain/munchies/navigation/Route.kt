@@ -8,6 +8,13 @@ package io.umain.munchies.navigation
  */
 interface Route : Comparable<Route> {
     val key: String
+    val isRootRoute: Boolean
+        get() = false
     
     override fun compareTo(other: Route): Int = key.compareTo(other.key)
+    
+    companion object {
+        val rootRoutes: List<Route>
+            get() = listOf(RestaurantListRoute())
+    }
 }

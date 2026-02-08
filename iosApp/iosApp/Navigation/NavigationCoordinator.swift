@@ -40,7 +40,6 @@ class NavigationCoordinator: ObservableObject {
         case let push as NavigationEvent.Push:
             handlePush(destination: push.destination)
         case is NavigationEvent.Pop:
-            logInfo(tag: "NavigationCoordinator", message: "Pop event, path count before: \(path.count)")
             if !path.isEmpty {
                 path.removeLast()
             }
@@ -50,7 +49,6 @@ class NavigationCoordinator: ObservableObject {
             updateActiveRoutes()
             syncCleanup()
         case is NavigationEvent.PopToRoot:
-            logInfo(tag: "NavigationCoordinator", message: "PopToRoot event")
             path = NavigationPath()
             routeStack.removeAll()
             activeRoutes.removeAll()
@@ -66,7 +64,6 @@ class NavigationCoordinator: ObservableObject {
             break
         case let detail as Destination.RestaurantDetail:
             let route = Route.restaurantDetail(detail.restaurantId)
-            logInfo(tag: "NavigationCoordinator", message: "Push event, adding route: \(route.key)")
             routeStack.append(route)
             path.append(route)
             updateActiveRoutes()
@@ -77,11 +74,12 @@ class NavigationCoordinator: ObservableObject {
     
     private func updateActiveRoutes() {
         activeRoutes.removeAll()
-        activeRoutes.insert("RestaurantList")
+        for rootRoute in Route.rootRoutes {
+            activeRoutes.insert(rootRoute.key)
+        }
         for route in routeStack {
             activeRoutes.insert(route.key)
         }
-        logInfo(tag: "NavigationCoordinator", message: "Active routes updated: \(activeRoutes.sorted().joined(separator: ", "))")
     }
     
     func restaurantListHolder() -> RestaurantListViewModelHolder {
@@ -93,7 +91,6 @@ class NavigationCoordinator: ObservableObject {
     }
     
     private func syncCleanup() {
-        logInfo(tag: "NavigationCoordinator", message: "Syncing cleanup with active routes: \(activeRoutes.sorted().joined(separator: ", "))")
         registry.cleanup(activeRoutes: activeRoutes)
     }
 }

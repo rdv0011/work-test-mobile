@@ -29,7 +29,8 @@ struct AppNavigationView: View {
             RestaurantDetailView(
                 restaurantId: restaurantId,
                 coordinator: navigator.coordinator,
-                viewModel: holder.viewModel
+                viewModel: holder.viewModel,
+                holder: holder
             )
         case .restaurantList:
             EmptyView()

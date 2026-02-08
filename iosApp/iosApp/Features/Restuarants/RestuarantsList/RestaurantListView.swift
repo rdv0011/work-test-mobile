@@ -47,7 +47,6 @@ struct RestaurantListView: View {
                     VStack(spacing: .spacingUI.lg) {
                         ForEach(filteredRestaurants, id: \.id) { restaurant in
                             RestaurantCardView(data: restaurant) {
-                                logInfo(tag: "RestaurantList", message: "Tapped restaurant: \(restaurant.restaurantName)")
                                 coordinator.navigateToRestaurantDetail(restaurantId: restaurant.id)
                             }
                         }
@@ -60,12 +59,18 @@ struct RestaurantListView: View {
         .navigationTitle(tr(.restaurantListTitle))
         .onAppear {
             viewModel.load()
-            logInfo(tag: "RestaurantList", message: "Restaurant list view appeared")
         }
         .task(id: viewModel) {
-            for await state in asyncStateStream(viewModel) as AsyncStream<RestaurantListUiState> {
-                self.uiState = state
-            }
+            await observe()
+        }
+    }
+    
+    // MARK: - Observe StateFlow
+    
+    @MainActor
+    private func observe() async {
+        for await state in asyncStateStream(viewModel) as AsyncStream<RestaurantListUiState> {
+            self.uiState = state
         }
     }
 }

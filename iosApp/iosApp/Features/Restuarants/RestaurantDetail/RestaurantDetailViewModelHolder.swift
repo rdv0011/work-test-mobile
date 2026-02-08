@@ -5,8 +5,10 @@ final class RestaurantDetailViewModelHolder: ObservableObject {
 
     let viewModel: RestaurantDetailViewModel
     private let scope: Scope
+    let restaurantId: String
 
     init(restaurantId: String) {
+        self.restaurantId = restaurantId
 
         let handle = FeatureRestaurantIosKt.getRestaurantDetailViewModel(
             scopeId: RestaurantDetailScope(restaurantId: restaurantId),
@@ -14,7 +16,7 @@ final class RestaurantDetailViewModelHolder: ObservableObject {
         )
 
         self.scope = handle.scope
-        self.viewModel = handle.viewModel 
+        self.viewModel = handle.viewModel
     }
 
     deinit {

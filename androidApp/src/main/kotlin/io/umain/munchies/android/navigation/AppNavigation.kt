@@ -17,13 +17,14 @@ import io.umain.munchies.navigation.Destination
 import io.umain.munchies.navigation.NavigationEvent
 import io.umain.munchies.navigation.RestaurantDetailRoute
 import io.umain.munchies.navigation.RestaurantListRoute
+import io.umain.munchies.navigation.Route
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun AppNavigation(coordinator: AppCoordinator) {
     val navController = rememberNavController()
     val registry = remember { RouteRegistry() }
-    val trackedRoutes = remember { mutableStateOf(setOf(RestaurantListRoute().key)) }
+    val trackedRoutes = remember { mutableStateOf(Route.rootRoutes.map { it.key }.toSet()) }
     
     LaunchedEffect(coordinator) {
         coordinator.navigationEvents.collectLatest { event ->
@@ -85,7 +86,7 @@ private fun handleNavigationEvent(
                 route = Destination.ROUTE_RESTAURANT_LIST,
                 inclusive = false
             )
-            trackedRoutes.value = setOf(RestaurantListRoute().key)
+            trackedRoutes.value = Route.rootRoutes.map { it.key }.toSet()
         }
     }
 }

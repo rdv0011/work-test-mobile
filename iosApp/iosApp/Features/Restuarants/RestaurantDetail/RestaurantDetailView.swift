@@ -12,6 +12,11 @@ struct RestaurantDetailView: View {
     let coordinator: AppCoordinator
     let viewModel: RestaurantDetailViewModel
     
+    /// CRITICAL: Store the holder to keep it alive for the view's lifetime.
+    /// Without this, the holder is deallocated in AppNavigationView.destinationView(),
+    /// causing the ViewModel scope to close and the ViewModel to be deleted.
+    let holder: RestaurantDetailViewModelHolder
+    
     @State private var uiState: RestaurantDetailUiState = RestaurantDetailUiState.Loading()
 
     var body: some View {
@@ -35,9 +40,6 @@ struct RestaurantDetailView: View {
                     }
                 }
             }
-        }
-        .onAppear {
-            logInfo(tag: "RestaurantDetail", message: "Viewing restaurant detail: \(restaurantId)")
         }
         .task(id: viewModel) {
             await observe()

@@ -18,5 +18,18 @@ enum Route: Hashable {
             return "RestaurantDetail_\(restaurantId)"
         }
     }
+    
+    var isRootRoute: Bool {
+        switch self {
+        case .restaurantList:
+            return true
+        case .restaurantDetail:
+            return false
+        }
+    }
+    
+    static var rootRoutes: [Route] {
+        [.restaurantList]
+    }
 }
 
