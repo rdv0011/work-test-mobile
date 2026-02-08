@@ -14,6 +14,7 @@ class NavigationCoordinator: ObservableObject {
     
     let coordinator: AppCoordinator
     private let registry: RouteHolderRegistry
+    private var routeStack: [Route] = []
     
     init(coordinator: AppCoordinator) {
         self.coordinator = coordinator
@@ -43,11 +44,15 @@ class NavigationCoordinator: ObservableObject {
             if !path.isEmpty {
                 path.removeLast()
             }
+            if !routeStack.isEmpty {
+                routeStack.removeLast()
+            }
             updateActiveRoutes()
             syncCleanup()
         case is NavigationEvent.PopToRoot:
             logInfo(tag: "NavigationCoordinator", message: "PopToRoot event")
             path = NavigationPath()
+            routeStack.removeAll()
             activeRoutes.removeAll()
             registry.cleanup(activeRoutes: [])
         default:
@@ -62,6 +67,7 @@ class NavigationCoordinator: ObservableObject {
         case let detail as Destination.RestaurantDetail:
             let route = Route.restaurantDetail(detail.restaurantId)
             logInfo(tag: "NavigationCoordinator", message: "Push event, adding route: \(route.key)")
+            routeStack.append(route)
             path.append(route)
             updateActiveRoutes()
         default:
@@ -72,7 +78,7 @@ class NavigationCoordinator: ObservableObject {
     private func updateActiveRoutes() {
         activeRoutes.removeAll()
         activeRoutes.insert("RestaurantList")
-        for case let route as Route in path {
+        for route in routeStack {
             activeRoutes.insert(route.key)
         }
         logInfo(tag: "NavigationCoordinator", message: "Active routes updated: \(activeRoutes.sorted().joined(separator: ", "))")
