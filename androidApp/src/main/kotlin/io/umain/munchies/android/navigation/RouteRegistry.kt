@@ -1,5 +1,6 @@
 package io.umain.munchies.android.navigation
 
+import android.util.Log
 import io.umain.munchies.core.lifecycle.Closeable
 import io.umain.munchies.feature.restaurant.di.RestaurantDetailScope
 import io.umain.munchies.feature.restaurant.presentation.RestaurantDetailViewModel
@@ -17,9 +18,13 @@ class RouteRegistry {
         val key = route.key
 
         holders[key]?.let {
-            if (it is ScopedViewModelOwner) return it
+            if (it is ScopedViewModelOwner) {
+                Log.i("RouteRegistry", "Reusing existing owner for route: $key")
+                return it
+            }
         }
 
+        Log.i("RouteRegistry", "Creating new owner for route: $key")
         val created = createOwner(route)
         holders[key] = created
         return created
@@ -28,8 +33,11 @@ class RouteRegistry {
     fun cleanup(activeRoutes: Set<String>) {
         val inactiveKeys = holders.keys - activeRoutes
 
-        inactiveKeys.forEach { key ->
-            holders.remove(key)?.close()
+        if (inactiveKeys.isNotEmpty()) {
+            Log.i("RouteRegistry", "Cleaning up routes: ${inactiveKeys.sorted()}, keeping: ${activeRoutes.sorted()}")
+            inactiveKeys.forEach { key ->
+                holders.remove(key)?.close()
+            }
         }
     }
 
@@ -37,6 +45,7 @@ class RouteRegistry {
         val koin = GlobalContext.get()
         return when (route) {
             is RestaurantListRoute -> {
+                Log.i("RouteRegistry", "Creating RestaurantList owner")
                 val scope = koin.getScopeOrNull(route.key)
                     ?: koin.createScope(
                         scopeId = route.key,
@@ -45,6 +54,7 @@ class RouteRegistry {
                 ScopedViewModelOwner(scope)
             }
             is RestaurantDetailRoute -> {
+                Log.i("RouteRegistry", "Creating RestaurantDetail owner for restaurantId: ${route.restaurantId}")
                 val scope = koin.getScopeOrNull(route.key)
                     ?: koin.createScope(
                         scopeId = route.key,
