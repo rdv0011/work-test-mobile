@@ -1,7 +1,9 @@
 package io.umain.munchies.android.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocal
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.navigation.NavHostController
@@ -19,6 +21,10 @@ import io.umain.munchies.navigation.RestaurantDetailRoute
 import io.umain.munchies.navigation.RestaurantListRoute
 import io.umain.munchies.navigation.Route
 import kotlinx.coroutines.flow.collectLatest
+
+val LocalRouteRegistry = compositionLocalOf<RouteRegistry> {
+    error("RouteRegistry not provided")
+}
 
 @Composable
 fun AppNavigation(coordinator: AppCoordinator) {
@@ -38,22 +44,26 @@ fun AppNavigation(coordinator: AppCoordinator) {
         }
     }
     
-    NavHost(
-        navController = navController,
-        startDestination = Destination.ROUTE_RESTAURANT_LIST
+    androidx.compose.runtime.CompositionLocalProvider(
+        LocalRouteRegistry provides registry
     ) {
-        composable(Destination.ROUTE_RESTAURANT_LIST) {
-            RestaurantListScreen(coordinator)
-        }
-        
-        composable(
-            route = Destination.ROUTE_RESTAURANT_DETAIL,
-            arguments = listOf(
-                navArgument(Destination.ARG_RESTAURANT_ID) { type = NavType.StringType }
-            )
-        ) { backStackEntry ->
-            val restaurantId = backStackEntry.arguments?.getString(Destination.ARG_RESTAURANT_ID) ?: ""
-            RestaurantDetailScreen(restaurantId, coordinator)
+        NavHost(
+            navController = navController,
+            startDestination = Destination.ROUTE_RESTAURANT_LIST
+        ) {
+            composable(Destination.ROUTE_RESTAURANT_LIST) {
+                RestaurantListScreen(coordinator)
+            }
+            
+            composable(
+                route = Destination.ROUTE_RESTAURANT_DETAIL,
+                arguments = listOf(
+                    navArgument(Destination.ARG_RESTAURANT_ID) { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val restaurantId = backStackEntry.arguments?.getString(Destination.ARG_RESTAURANT_ID) ?: ""
+                RestaurantDetailScreen(restaurantId, coordinator)
+            }
         }
     }
 }

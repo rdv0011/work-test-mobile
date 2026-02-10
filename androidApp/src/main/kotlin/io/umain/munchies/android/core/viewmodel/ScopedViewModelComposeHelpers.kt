@@ -1,31 +1,23 @@
 package io.umain.munchies.android.core.viewmodel
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
-import io.umain.munchies.core.di.KmpScopeId
+import io.umain.munchies.android.navigation.LocalRouteRegistry
 import io.umain.munchies.core.viewmodel.ScopedViewModel
-import io.umain.munchies.core.viewmodel.scopedViewModel
+import org.koin.core.scope.Scope
 
-/**
- * Composable helper that creates a scoped ViewModel and manages its lifecycle.
- * Returns the ViewModel directly, handling scope creation and cleanup automatically.
- */
 @Composable
 inline fun <reified VM : ScopedViewModel> rememberScopedViewModel(
-    scopeId: KmpScopeId,
-    vararg params: Any?
+    routeId: String,
+    noinline factory: () -> Scope
 ): VM {
-    val handle = remember(scopeId.value, *params) {
-        scopedViewModel<VM>(scopeId, params.toList())
+    val registry = LocalRouteRegistry.current
+    
+    val lifetime = remember(routeId) {
+        registry.lifetimeFor(routeId, factory)
     }
-
-    DisposableEffect(handle) {
-        onDispose {
-            handle.scope.close()
-            handle.viewModel.close()
-        }
+    
+    return remember(lifetime) {
+        lifetime.scope.get<VM>()
     }
-
-    return handle.viewModel
 }

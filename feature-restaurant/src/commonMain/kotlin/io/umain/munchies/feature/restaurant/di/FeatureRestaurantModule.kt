@@ -20,9 +20,12 @@ val featureRestaurantModule = module {
         RestaurantRepositoryImpl(api)
     }
 
-    // Shared ViewModels (platform-agnostic)
-    factory { RestaurantListViewModel(get()) }
+    // Restaurant List scope (singleton per app session, managed by RouteRegistry)
+    scope(named(RestaurantListScope.qualifierName)) {
+        scoped { RestaurantListViewModel(get()) }
+    }
 
+    // Restaurant Detail scope (parameterized per restaurant, managed by RouteRegistry)
     scope(named(RestaurantDetailScope("").qualifierName)) {
         scoped { (restaurantId: String) ->
             RestaurantDetailViewModel(

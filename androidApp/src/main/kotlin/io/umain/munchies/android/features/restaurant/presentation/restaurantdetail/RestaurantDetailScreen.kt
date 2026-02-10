@@ -33,9 +33,9 @@ import androidx.compose.runtime.collectAsState
 import coil.compose.AsyncImage
 import io.umain.munchies.android.ui.components.DetailCardCompose
 import io.umain.munchies.android.core.viewmodel.rememberScopedViewModel
+import io.umain.munchies.android.features.restaurant.di.RestaurantDetailScopeFactory
 import io.umain.munchies.core.ui.TextId
 import io.umain.munchies.designtokens.DesignTokens
-import io.umain.munchies.feature.restaurant.di.RestaurantDetailScope
 import io.umain.munchies.feature.restaurant.domain.model.RestaurantStatus
 import io.umain.munchies.feature.restaurant.presentation.RestaurantDetailViewModel
 import io.umain.munchies.feature.restaurant.presentation.model.DetailCardData
@@ -49,9 +49,11 @@ fun RestaurantDetailScreen(
     restaurantId: String,
     coordinator: AppCoordinator,
 ) {
+    val routeId = "detail-$restaurantId"
+    
     val viewModel = rememberScopedViewModel<RestaurantDetailViewModel>(
-        scopeId = RestaurantDetailScope(restaurantId),
-        restaurantId
+        routeId = routeId,
+        factory = { RestaurantDetailScopeFactory.createScope(restaurantId) }
     )
 
     val uiState by viewModel.stateFlow.collectAsState()
