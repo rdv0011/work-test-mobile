@@ -27,7 +27,7 @@ struct RestaurantDetailView: View {
             }
         }
         .navigationTitle(tr(.restaurantDetailTitle))
-        .navigationBarBackButtonHidden(false)
+        .navigationBarBackButtonHidden(true)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button(action: {

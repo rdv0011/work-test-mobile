@@ -21,7 +21,7 @@ final class RestaurantListViewModelHolder: ObservableObject {
     
     init(scope: Scope) {
         self.scope = scope
-        self.viewModel = try! scope.get(viewModel: RestaurantListViewModel.self)
+        self.viewModel = scope.getRestaurantListViewModel()
     }
     
     deinit {

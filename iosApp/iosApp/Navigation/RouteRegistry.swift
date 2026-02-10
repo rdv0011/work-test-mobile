@@ -28,10 +28,7 @@ final class RouteRegistry {
     private let koin: Koin
     
     init() {
-        guard let koin = try? GlobalContext.shared.get() else {
-            fatalError("Koin must be initialized before RouteRegistry")
-        }
-        self.koin = koin
+        self.koin = KoinModule_iosKt.getKoinForIos()
     }
     
     /// Get or create a route lifetime using the provided factory.
@@ -45,11 +42,11 @@ final class RouteRegistry {
     /// - Returns: A Scope that will be closed by this registry
     func lifetimeFor(routeId: String, factory: () -> Scope) -> Scope {
         if let existing = lifetimes[routeId] {
-            Logger.shared.log("RouteRegistry", "Reusing existing scope for: \(routeId)")
+            logInfo(tag: "RouteRegistry", message: "Reusing existing scope for: \(routeId)")
             return existing.scope
         }
         
-        Logger.shared.log("RouteRegistry", "Creating new scope for: \(routeId)")
+        logInfo(tag: "RouteRegistry", message: "Creating new scope for: \(routeId)")
         let scope = factory()
         let wrapper = RouteLifetimeWrapper(routeId: routeId, scope: scope)
         lifetimes[routeId] = wrapper
@@ -71,16 +68,11 @@ final class RouteRegistry {
         let inactiveKeys = Set(lifetimes.keys).subtracting(activeRoutes)
         
         if !inactiveKeys.isEmpty {
-            Logger.shared.log("RouteRegistry", "Cleaning up routes: \(inactiveKeys.sorted()), keeping: \(activeRoutes.sorted())")
+            logInfo(tag: "RouteRegistry", message: "Cleaning up routes: \(inactiveKeys.sorted()), keeping: \(activeRoutes.sorted())")
             inactiveKeys.forEach { key in
                 if let wrapper = lifetimes.removeValue(forKey: key) {
                     wrapper.close()
-                    // Also remove from Koin's cache to prevent scope resurrection
-                    do {
-                        try koin.deleteScope(scopeId: key)
-                    } catch {
-                        Logger.shared.log("RouteRegistry", "Failed to delete scope from Koin: \(key), error: \(error)")
-                    }
+                    koin.deleteScope(scopeId: key)
                 }
             }
         }
@@ -91,16 +83,12 @@ final class RouteRegistry {
     /// USAGE: Call when app is destroyed or explicitly resetting state.
     /// Not typically called during normal navigation (use cleanup() instead).
     func clearAll() {
-        Logger.shared.log("RouteRegistry", "Clearing all route lifetimes")
+        logInfo(tag: "RouteRegistry", message: "Clearing all route lifetimes")
         lifetimes.values.forEach { wrapper in
             wrapper.close()
         }
         lifetimes.values.forEach { wrapper in
-            do {
-                try koin.deleteScope(scopeId: wrapper.routeId)
-            } catch {
-                Logger.shared.log("RouteRegistry", "Failed to delete scope from Koin: \(wrapper.routeId), error: \(error)")
-            }
+            koin.deleteScope(scopeId: wrapper.routeId)
         }
         lifetimes.removeAll()
     }
@@ -117,21 +105,6 @@ private final class RouteLifetimeWrapper {
     }
     
     func close() {
-        do {
-            try scope.close()
-        } catch {
-            Logger.shared.log("RouteRegistry", "Error closing scope \(routeId): \(error)")
-        }
-    }
-}
-
-/// Simple logging helper for RouteRegistry
-private enum Logger {
-    static let shared = Self()
-    
-    func log(_ tag: String, _ message: String) {
-        #if DEBUG
-        print("[\(tag)] \(message)")
-        #endif
+        scope.close()
     }
 }
