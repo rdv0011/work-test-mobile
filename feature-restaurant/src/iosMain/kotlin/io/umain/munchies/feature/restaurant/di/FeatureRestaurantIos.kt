@@ -24,6 +24,7 @@ import org.koin.core.scope.Scope
  * Creates or retrieves the list scope from Koin.
  *
  * CRITICAL: This is a factory only. RouteRegistry decides when the scope lives.
+ * Does NOT initialize ViewModels—that happens when the ViewModelHolder calls getViewModel().
  */
 fun createRestaurantListScopeIos(): Scope {
     val koin = getKoin()
@@ -33,9 +34,7 @@ fun createRestaurantListScopeIos(): Scope {
         ?: koin.createScope(
             scopeId = scopeId,
             qualifier = named(RestaurantListScope.qualifierName)
-        ).also { scope ->
-            scope.get<RestaurantListViewModel>()
-        }
+        )
 }
 
 /**
@@ -43,6 +42,7 @@ fun createRestaurantListScopeIos(): Scope {
  * Creates or retrieves the detail scope from Koin with the given restaurantId.
  *
  * CRITICAL: This is a factory only. RouteRegistry decides when the scope lives.
+ * Does NOT initialize ViewModels—that happens when the ViewModelHolder calls getViewModel().
  *
  * @param restaurantId The restaurant ID to use as scope parameter
  * @return A Koin Scope for this restaurant detail
@@ -55,11 +55,7 @@ fun createRestaurantDetailScopeIos(restaurantId: String): Scope {
         ?: koin.createScope(
             scopeId = scopeId,
             qualifier = named(RestaurantDetailScope("").qualifierName)
-        ).also { scope ->
-            scope.get<RestaurantDetailViewModel>(
-                parameters = { org.koin.core.parameter.parametersOf(restaurantId) }
-            )
-        }
+        )
 }
 
 /**

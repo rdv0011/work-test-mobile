@@ -28,7 +28,10 @@ final class RestaurantDetailViewModelHolder: ObservableObject {
     init(restaurantId: String, scope: Scope) {
         self.restaurantId = restaurantId
         self.scope = scope
-        self.viewModel = try! scope.get(viewModel: RestaurantDetailViewModel.self)
+        self.viewModel = try! scope.get(
+            viewModel: RestaurantDetailViewModel.self,
+            parameters: restaurantId
+        )
     }
     
     deinit {

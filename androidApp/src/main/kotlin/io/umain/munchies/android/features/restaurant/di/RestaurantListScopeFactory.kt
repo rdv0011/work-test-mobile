@@ -15,8 +15,6 @@ object RestaurantListScopeFactory {
             ?: koin.createScope(
                 scopeId = scopeId,
                 qualifier = named(RestaurantListScope.qualifierName)
-            ).also { scope ->
-                scope.get<RestaurantListViewModel>()
-            }
+            )
     }
 }
