@@ -6,15 +6,74 @@ import io.umain.munchies.core.viewmodel.scopedViewModel
 import io.umain.munchies.feature.restaurant.presentation.RestaurantListViewModel
 import io.umain.munchies.di.getKoin
 import io.umain.munchies.feature.restaurant.presentation.RestaurantDetailViewModel
+import org.koin.core.qualifier.named
+import org.koin.core.scope.Scope
 
 /**
  * iOS helpers to retrieve shared ViewModel instances from Koin.
  * These functions provide stable symbols for Swift to call.
+ *
+ * OWNERSHIP MODEL:
+ * - Factory functions create Koin scopes but do NOT own them
+ * - iOS RouteRegistry owns the scopes and manages their lifetime
+ * - ViewModelHolders call factories to create/get scopes
+ */
+
+/**
+ * Factory function for RestaurantListScope.
+ * Creates or retrieves the list scope from Koin.
+ *
+ * CRITICAL: This is a factory only. RouteRegistry decides when the scope lives.
+ */
+fun createRestaurantListScopeIos(): Scope {
+    val koin = getKoin()
+    val scopeId = RestaurantListScope.value
+    
+    return koin.getScopeOrNull(scopeId)
+        ?: koin.createScope(
+            scopeId = scopeId,
+            qualifier = named(RestaurantListScope.qualifierName)
+        ).also { scope ->
+            scope.get<RestaurantListViewModel>()
+        }
+}
+
+/**
+ * Factory function for RestaurantDetailScope.
+ * Creates or retrieves the detail scope from Koin with the given restaurantId.
+ *
+ * CRITICAL: This is a factory only. RouteRegistry decides when the scope lives.
+ *
+ * @param restaurantId The restaurant ID to use as scope parameter
+ * @return A Koin Scope for this restaurant detail
+ */
+fun createRestaurantDetailScopeIos(restaurantId: String): Scope {
+    val koin = getKoin()
+    val scopeId = RestaurantDetailScope(restaurantId).value
+    
+    return koin.getScopeOrNull(scopeId)
+        ?: koin.createScope(
+            scopeId = scopeId,
+            qualifier = named(RestaurantDetailScope("").qualifierName)
+        ).also { scope ->
+            scope.get<RestaurantDetailViewModel>(
+                parameters = { org.koin.core.parameter.parametersOf(restaurantId) }
+            )
+        }
+}
+
+/**
+ * @deprecated Use createRestaurantListScopeIos() instead.
+ * This function does not respect RouteRegistry ownership.
  */
 fun getRestaurantListViewModelIos(): RestaurantListViewModel {
     return getKoin().get()
 }
 
+/**
+ * @deprecated Use createRestaurantDetailScopeIos() instead.
+ * This function does not respect RouteRegistry ownership.
+ */
 fun getRestaurantDetailViewModel(
     scopeId: KmpScopeId,
     restaurantId: String

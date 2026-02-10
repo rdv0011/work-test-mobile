@@ -12,9 +12,8 @@ struct RestaurantDetailView: View {
     let coordinator: AppCoordinator
     let viewModel: RestaurantDetailViewModel
     
-    /// CRITICAL: Store the holder to keep it alive for the view's lifetime.
-    /// Without this, the holder is deallocated in AppNavigationView.destinationView(),
-    /// causing the ViewModel scope to close and the ViewModel to be deleted.
+    /// Keep holder alive for view lifetime.
+    /// The scope is managed by RouteRegistry, but the holder keeps ViewModel state.
     let holder: RestaurantDetailViewModelHolder
     
     @State private var uiState: RestaurantDetailUiState = RestaurantDetailUiState.Loading()
