@@ -1,7 +1,6 @@
 package io.umain.munchies.android.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocal
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.mutableStateOf
@@ -18,7 +17,6 @@ import io.umain.munchies.navigation.AppCoordinator
 import io.umain.munchies.navigation.Destination
 import io.umain.munchies.navigation.NavigationEvent
 import io.umain.munchies.navigation.RestaurantDetailRoute
-import io.umain.munchies.navigation.RestaurantListRoute
 import io.umain.munchies.navigation.Route
 import kotlinx.coroutines.flow.collectLatest
 
@@ -34,13 +32,7 @@ fun AppNavigation(coordinator: AppCoordinator) {
     
     LaunchedEffect(coordinator) {
         coordinator.navigationEvents.collectLatest { event ->
-            handleNavigationEvent(event, navController, trackedRoutes)
-        }
-    }
-
-    LaunchedEffect(navController) {
-        navController.addOnDestinationChangedListener { _, destination, _ ->
-            registry.cleanup(trackedRoutes.value)
+            handleNavigationEvent(event, navController, trackedRoutes, registry)
         }
     }
     
@@ -71,7 +63,8 @@ fun AppNavigation(coordinator: AppCoordinator) {
 private fun handleNavigationEvent(
     event: NavigationEvent,
     navController: NavHostController,
-    trackedRoutes: androidx.compose.runtime.MutableState<Set<String>>
+    trackedRoutes: androidx.compose.runtime.MutableState<Set<String>>,
+    registry: RouteRegistry
 ) {
     when (event) {
         is NavigationEvent.Push -> {
@@ -86,10 +79,24 @@ private fun handleNavigationEvent(
             navController.navigate(route)
         }
         is NavigationEvent.Pop -> {
+            // Before popping, identify the current destination being removed
+            val currentDestination = navController.currentDestination?.route
+
             navController.popBackStack()
-            trackedRoutes.value = trackedRoutes.value.toMutableSet().apply {
-                remove(this.lastOrNull())
+
+            // Update tracked routes based on the destination that was removed
+            val updatedRoutes = trackedRoutes.value.toMutableSet()
+            when {
+                currentDestination?.startsWith(Destination.ROUTE_RESTAURANT_DETAIL) == true -> {
+                    // Remove the detail route that was just popped
+                    // Since we're removing from the back stack, identify which detail route was removed
+                    updatedRoutes.removeAll { it.startsWith("RestaurantDetail_") }
+                }
             }
+            trackedRoutes.value = updatedRoutes
+
+            // Cleanup routes that are no longer in the stack
+            registry.cleanup(trackedRoutes.value)
         }
         is NavigationEvent.PopToRoot -> {
             navController.popBackStack(
@@ -97,6 +104,7 @@ private fun handleNavigationEvent(
                 inclusive = false
             )
             trackedRoutes.value = Route.rootRoutes.map { it.key }.toSet()
+            registry.cleanup(trackedRoutes.value)
         }
     }
 }

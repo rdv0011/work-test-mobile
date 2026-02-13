@@ -73,7 +73,7 @@ class RouteRegistry {
     fun cleanup(activeRoutes: Set<String>) {
         val inactiveKeys = _lifetimes.keys - activeRoutes
 
-        if (inactiveKeys.isNotEmpty()) {
+         if (inactiveKeys.isNotEmpty()) {
             Log.i("RouteRegistry", "Cleaning up routes: ${inactiveKeys.sorted()}, keeping: ${activeRoutes.sorted()}")
             inactiveKeys.forEach { key ->
                 _lifetimes.remove(key)?.let { lifetime ->

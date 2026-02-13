@@ -36,6 +36,7 @@ import io.umain.munchies.android.core.viewmodel.rememberScopedViewModel
 import io.umain.munchies.android.features.restaurant.di.RestaurantDetailScopeFactory
 import io.umain.munchies.core.ui.TextId
 import io.umain.munchies.designtokens.DesignTokens
+import io.umain.munchies.feature.restaurant.di.RestaurantDetailScope
 import io.umain.munchies.feature.restaurant.domain.model.RestaurantStatus
 import io.umain.munchies.feature.restaurant.presentation.RestaurantDetailViewModel
 import io.umain.munchies.feature.restaurant.presentation.model.DetailCardData
@@ -49,7 +50,7 @@ fun RestaurantDetailScreen(
     restaurantId: String,
     coordinator: AppCoordinator,
 ) {
-    val routeId = "detail-$restaurantId"
+    val routeId = RestaurantDetailScope(restaurantId).value
     
     val viewModel = rememberScopedViewModel<RestaurantDetailViewModel>(
         routeId = routeId,
