@@ -1,6 +1,5 @@
 package io.umain.munchies.android.features.restaurant.di
 
-import io.umain.munchies.feature.restaurant.presentation.RestaurantListViewModel
 import org.koin.core.context.GlobalContext
 import org.koin.core.qualifier.named
 import org.koin.core.scope.Scope

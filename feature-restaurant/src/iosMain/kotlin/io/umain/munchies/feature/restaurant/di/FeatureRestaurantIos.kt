@@ -1,11 +1,6 @@
 package io.umain.munchies.feature.restaurant.di
 
-import io.umain.munchies.core.di.KmpScopeId
-import io.umain.munchies.core.viewmodel.ScopedViewModelHandle
-import io.umain.munchies.core.viewmodel.scopedViewModel
-import io.umain.munchies.feature.restaurant.presentation.RestaurantListViewModel
 import io.umain.munchies.di.getKoin
-import io.umain.munchies.feature.restaurant.presentation.RestaurantDetailViewModel
 import org.koin.core.qualifier.named
 import org.koin.core.scope.Scope
 
@@ -56,27 +51,4 @@ fun createRestaurantDetailScopeIos(restaurantId: String): Scope {
             scopeId = scopeId,
             qualifier = named(RestaurantDetailScope("").qualifierName)
         )
-}
-
-/**
- * @deprecated Use createRestaurantListScopeIos() instead.
- * This function does not respect RouteRegistry ownership.
- */
-fun getRestaurantListViewModelIos(): RestaurantListViewModel {
-    return getKoin().get()
-}
-
-/**
- * @deprecated Use createRestaurantDetailScopeIos() instead.
- * This function does not respect RouteRegistry ownership.
- */
-fun getRestaurantDetailViewModel(
-    scopeId: KmpScopeId,
-    restaurantId: String
-): ScopedViewModelHandle<RestaurantDetailViewModel> {
-    return scopedViewModel(
-        vmClass = RestaurantDetailViewModel::class,
-        scopeId = scopeId,
-        params = listOf(restaurantId)
-    )
 }

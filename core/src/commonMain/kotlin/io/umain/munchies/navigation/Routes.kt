@@ -1,7 +1,7 @@
 package io.umain.munchies.navigation
 
 data class RestaurantListRoute(
-    override val key: String = RestaurantListRoute.KEY
+    override val key: String = KEY
 ) : Route {
     override val isRootRoute: Boolean = true
     
@@ -13,7 +13,7 @@ data class RestaurantListRoute(
 data class RestaurantDetailRoute(
     val restaurantId: String
 ) : Route {
-    override val key: String = "${RestaurantDetailRoute.KEY_PREFIX}$restaurantId"
+    override val key: String = "${KEY_PREFIX}$restaurantId"
     override val isRootRoute: Boolean = false
     
     companion object {
