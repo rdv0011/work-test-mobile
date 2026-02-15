@@ -1,10 +1,12 @@
 package io.umain.munchies.android.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -13,11 +15,14 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import io.umain.munchies.android.features.restaurant.presentation.restaurantdetail.RestaurantDetailScreen
 import io.umain.munchies.android.features.restaurant.presentation.restaurantlist.RestaurantListScreen
+import io.umain.munchies.feature.restaurant.navigation.RestaurantRouteProvider
 import io.umain.munchies.navigation.AppCoordinator
 import io.umain.munchies.navigation.Destination
 import io.umain.munchies.navigation.NavigationEvent
 import io.umain.munchies.navigation.RestaurantDetailRoute
 import io.umain.munchies.navigation.Route
+import io.umain.munchies.navigation.RouteHandler
+import io.umain.munchies.navigation.RouteProvider
 import kotlinx.coroutines.flow.collectLatest
 
 val LocalRouteRegistry = compositionLocalOf<RouteRegistry> {
@@ -25,29 +30,64 @@ val LocalRouteRegistry = compositionLocalOf<RouteRegistry> {
 }
 
 @Composable
-fun AppNavigation(coordinator: AppCoordinator) {
+fun AppNavigation(
+    coordinator: AppCoordinator,
+    routeProviders: List<RouteProvider> = listOf(RestaurantRouteProvider())
+) {
     val navController = rememberNavController()
     val registry = remember { RouteRegistry() }
     val trackedRoutes = remember { mutableStateOf(Route.rootRoutes.map { it.key }.toSet()) }
     
     LaunchedEffect(coordinator) {
         coordinator.navigationEvents.collectLatest { event ->
-            handleNavigationEvent(event, navController, trackedRoutes, registry)
+            handleNavigationEvent(event, navController, trackedRoutes, registry, routeProviders)
         }
     }
     
-    androidx.compose.runtime.CompositionLocalProvider(
+    CompositionLocalProvider(
         LocalRouteRegistry provides registry
     ) {
         NavHost(
             navController = navController,
             startDestination = Destination.ROUTE_RESTAURANT_LIST
         ) {
-            composable(Destination.ROUTE_RESTAURANT_LIST) {
+            routeProviders.forEach { provider ->
+                buildNavGraphForProvider(provider, this, coordinator)
+            }
+        }
+    }
+}
+
+/**
+ * Dynamically build navigation graph entries for all routes from a provider.
+ */
+private fun buildNavGraphForProvider(
+    provider: RouteProvider,
+    navGraphBuilder: NavGraphBuilder,
+    coordinator: AppCoordinator
+) {
+    provider.getRoutes().forEach { handler ->
+        buildRouteGraphEntry(handler, navGraphBuilder, coordinator)
+    }
+}
+
+/**
+ * Build a single route graph entry for the given handler.
+ */
+private fun buildRouteGraphEntry(
+    handler: RouteHandler,
+    navGraphBuilder: NavGraphBuilder,
+    coordinator: AppCoordinator
+) {
+    val routeString = handler.toRouteString()
+    when (routeString) {
+        Destination.ROUTE_RESTAURANT_LIST -> {
+            navGraphBuilder.composable(Destination.ROUTE_RESTAURANT_LIST) {
                 RestaurantListScreen(coordinator)
             }
-            
-            composable(
+        }
+        Destination.ROUTE_RESTAURANT_DETAIL -> {
+            navGraphBuilder.composable(
                 route = Destination.ROUTE_RESTAURANT_DETAIL,
                 arguments = listOf(
                     navArgument(Destination.ARG_RESTAURANT_ID) { type = NavType.StringType }
@@ -64,38 +104,44 @@ private fun handleNavigationEvent(
     event: NavigationEvent,
     navController: NavHostController,
     trackedRoutes: androidx.compose.runtime.MutableState<Set<String>>,
-    registry: RouteRegistry
+    registry: RouteRegistry,
+    routeProviders: List<RouteProvider>
 ) {
     when (event) {
         is NavigationEvent.Push -> {
-            when (event.destination) {
-                is Destination.RestaurantDetail -> {
-                    val detail = event.destination as Destination.RestaurantDetail
-                    trackedRoutes.value = trackedRoutes.value + RestaurantDetailRoute(detail.restaurantId).key
+            var handled = false
+            for (provider in routeProviders) {
+                val handler = provider.getRoutes().firstOrNull { it.canHandle(event.destination) }
+                if (handler != null) {
+                    val route = handler.destinationToRoute(event.destination)
+                    if (route != null) {
+                        trackedRoutes.value += route.key
+                        val navigationRoute = when (route) {
+                            is RestaurantDetailRoute -> "${Destination.ROUTE_RESTAURANT_DETAIL_BASE}/${route.restaurantId}"
+                            else -> handler.toRouteString()
+                        }
+                        navController.navigate(navigationRoute)
+                        handled = true
+                        break
+                    }
                 }
-                else -> {}
             }
-            val route = event.destination.toRoute()
-            navController.navigate(route)
+
+            if (!handled) {
+                throw IllegalArgumentException("No route provider found for destination: ${event.destination}")
+            }
         }
         is NavigationEvent.Pop -> {
-            // Before popping, identify the current destination being removed
             val currentDestination = navController.currentDestination?.route
 
             navController.popBackStack()
 
-            // Update tracked routes based on the destination that was removed
             val updatedRoutes = trackedRoutes.value.toMutableSet()
-            when {
-                currentDestination?.startsWith(Destination.ROUTE_RESTAURANT_DETAIL) == true -> {
-                    // Remove the detail route that was just popped
-                    // Since we're removing from the back stack, identify which detail route was removed
-                    updatedRoutes.removeAll { it.startsWith("RestaurantDetail_") }
-                }
+            if (currentDestination?.startsWith(Destination.ROUTE_RESTAURANT_DETAIL_BASE) == true) {
+                updatedRoutes.removeAll { it.startsWith(RestaurantDetailRoute.KEY_PREFIX) }
             }
             trackedRoutes.value = updatedRoutes
 
-            // Cleanup routes that are no longer in the stack
             registry.cleanup(trackedRoutes.value)
         }
         is NavigationEvent.PopToRoot -> {

@@ -13,9 +13,9 @@ enum Route: Hashable {
     var key: String {
         switch self {
         case .restaurantList:
-            return "RestaurantList"
+            return Self.KEY_RESTAURANT_LIST
         case .restaurantDetail(let restaurantId):
-            return "RestaurantDetail_\(restaurantId)"
+            return "\(Self.KEY_RESTAURANT_DETAIL_PREFIX)\(restaurantId)"
         }
     }
     
@@ -31,5 +31,8 @@ enum Route: Hashable {
     static var rootRoutes: [Route] {
         [.restaurantList]
     }
+    
+    static let KEY_RESTAURANT_LIST = "RestaurantList"
+    static let KEY_RESTAURANT_DETAIL_PREFIX = "RestaurantDetail_"
 }
 

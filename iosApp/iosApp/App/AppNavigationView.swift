@@ -5,7 +5,14 @@ struct AppNavigationView: View {
     @StateObject private var navigator: NavigationCoordinator
     
     init(coordinator: AppCoordinator) {
-        _navigator = StateObject(wrappedValue: NavigationCoordinator(coordinator: coordinator))
+        let restaurantProvider = RestaurantRouteProvider(
+            coordinator: coordinator,
+            holderRegistry: RestaurantHolderProviderImpl()
+        )
+        _navigator = StateObject(wrappedValue: NavigationCoordinator(
+            coordinator: coordinator,
+            routeProviders: [restaurantProvider]
+        ))
     }
     
     var body: some View {

@@ -14,11 +14,16 @@ class NavigationCoordinator: ObservableObject {
     
     let coordinator: AppCoordinator
     private let registry: RouteHolderRegistry
+    private let routeProviders: [RouteProvider]
     private var routeStack: [Route] = []
     
-    init(coordinator: AppCoordinator) {
+    init(
+        coordinator: AppCoordinator,
+        routeProviders: [RouteProvider] = []
+    ) {
         self.coordinator = coordinator
-        self.registry = RouteHolderRegistry(coordinator: coordinator)
+        self.routeProviders = routeProviders
+        self.registry = RouteHolderRegistry(coordinator: coordinator, providers: routeProviders)
         observeNavigationEvents()
     }
     
@@ -59,16 +64,32 @@ class NavigationCoordinator: ObservableObject {
     }
     
     private func handlePush(destination: shared.Destination) {
-        switch destination {
-        case is Destination.RestaurantList:
-            break
-        case let detail as Destination.RestaurantDetail:
-            let route = Route.restaurantDetail(detail.restaurantId)
-            routeStack.append(route)
-            path.append(route)
-            updateActiveRoutes()
+        for provider in routeProviders {
+            let handler = provider.getRoutes().first { 
+                $0.canHandle(destination: destination) 
+            }
+            
+            if let handler = handler,
+               let kmpRoute = handler.destinationToRoute(destination: destination),
+               let iosRoute = convertToIOSRoute(kmpRoute) {
+                routeStack.append(iosRoute)
+                path.append(iosRoute)
+                updateActiveRoutes()
+                return
+            }
+        }
+        
+        fatalError("No route provider found for destination: \(destination)")
+    }
+    
+    private func convertToIOSRoute(_ kmpRoute: shared.Route) -> Route? {
+        switch kmpRoute {
+        case _ as RestaurantListRoute:
+            return .restaurantList
+        case let detailRoute as RestaurantDetailRoute:
+            return .restaurantDetail(detailRoute.restaurantId)
         default:
-            break
+            return nil
         }
     }
     

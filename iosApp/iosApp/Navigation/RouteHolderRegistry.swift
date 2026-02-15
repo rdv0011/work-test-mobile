@@ -21,11 +21,16 @@ import shared
 final class RouteHolderRegistry {
     
     private let coordinator: AppCoordinator
+    private let providers: [RouteProvider]
     private var holders: [String: AnyObject] = [:]
     private let routeRegistry = RouteRegistry()
     
-    init(coordinator: AppCoordinator) {
+    init(
+        coordinator: AppCoordinator,
+        providers: [RouteProvider] = []
+    ) {
         self.coordinator = coordinator
+        self.providers = providers
     }
     
     /// Get or create a holder for the restaurant list route.
@@ -79,7 +84,7 @@ final class RouteHolderRegistry {
         return created
     }
     
-    /// Clean up inactive routes.
+     /// Clean up inactive routes.
     ///
     /// This method delegates to RouteRegistry, which:
     /// 1. Closes Koin scopes not in activeRoutes
@@ -97,5 +102,31 @@ final class RouteHolderRegistry {
                 holders[key] = nil
             }
         }
+    }
+    
+    /// Get or create a holder for any route by delegating to the appropriate provider.
+    ///
+    /// This method:
+    /// 1. Checks all registered providers for one that can create this route's holder
+    /// 2. Calls the provider's getHolder method
+    /// 3. Caches and returns the holder
+    ///
+    /// - Parameter route: The route to create a holder for
+    /// - Returns: Optional holder if a provider handles this route
+    func holderFor(route: shared.Route) -> AnyObject? {
+        let key = route.key
+        
+        if let existing = holders[key] {
+            return existing
+        }
+        
+        for provider in providers {
+            if let holder = provider.getHolder(for: route) {
+                holders[key] = holder
+                return holder
+            }
+        }
+        
+        return nil
     }
 }
