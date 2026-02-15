@@ -30,19 +30,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
 import coil.compose.AsyncImage
+import io.umain.munchies.android.navigation.LocalRouteRegistry
 import io.umain.munchies.android.ui.components.DetailCardCompose
-import io.umain.munchies.android.core.viewmodel.rememberScopedViewModel
-import io.umain.munchies.android.features.restaurant.di.RestaurantDetailScopeFactory
 import io.umain.munchies.core.ui.TextId
 import io.umain.munchies.designtokens.DesignTokens
-import io.umain.munchies.feature.restaurant.di.RestaurantDetailScope
 import io.umain.munchies.feature.restaurant.domain.model.RestaurantStatus
 import io.umain.munchies.feature.restaurant.presentation.RestaurantDetailViewModel
 import io.umain.munchies.feature.restaurant.presentation.model.DetailCardData
 import io.umain.munchies.feature.restaurant.presentation.state.RestaurantDetailUiState
 import io.umain.munchies.localization.tr
 import io.umain.munchies.navigation.AppCoordinator
+import io.umain.munchies.navigation.RestaurantDetailRoute
+import org.koin.core.parameter.parametersOf
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,12 +51,13 @@ fun RestaurantDetailScreen(
     restaurantId: String,
     coordinator: AppCoordinator,
 ) {
-    val routeId = RestaurantDetailScope(restaurantId).value
-    
-    val viewModel = rememberScopedViewModel<RestaurantDetailViewModel>(
-        routeId = routeId,
-        factory = { RestaurantDetailScopeFactory.createScope(restaurantId) }
-    )
+    val registry = LocalRouteRegistry.current
+    val route = remember { RestaurantDetailRoute(restaurantId) }
+
+    val viewModel = remember {
+        val scope = registry.createScopeForRoute(route)
+        scope.get<RestaurantDetailViewModel>()
+    }
 
     val uiState by viewModel.stateFlow.collectAsState()
 

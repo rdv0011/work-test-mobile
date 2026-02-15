@@ -13,6 +13,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import io.umain.munchies.android.core.viewmodel.rememberScopedViewModel
 import io.umain.munchies.android.features.restaurant.presentation.restaurantdetail.RestaurantDetailScreen
 import io.umain.munchies.android.features.restaurant.presentation.restaurantlist.RestaurantListScreen
 import io.umain.munchies.feature.restaurant.navigation.RestaurantRouteProvider
@@ -23,6 +24,7 @@ import io.umain.munchies.navigation.RestaurantDetailRoute
 import io.umain.munchies.navigation.Route
 import io.umain.munchies.navigation.RouteHandler
 import io.umain.munchies.navigation.RouteProvider
+import io.umain.munchies.navigation.ScopedRouteHandler
 import kotlinx.coroutines.flow.collectLatest
 
 val LocalRouteRegistry = compositionLocalOf<RouteRegistry> {
@@ -35,21 +37,25 @@ fun AppNavigation(
     routeProviders: List<RouteProvider> = listOf(RestaurantRouteProvider())
 ) {
     val navController = rememberNavController()
-    val registry = remember { RouteRegistry() }
+    val allHandlers = remember {
+        routeProviders.flatMap { it.getRoutes() }.filterIsInstance<ScopedRouteHandler>()
+    }
+    val scopedRouteHandlerRegistry = remember { ScopedRouteHandlerRegistry(allHandlers) }
+    val registry = remember { RouteRegistry(scopedRouteHandlerRegistry) }
     val trackedRoutes = remember { mutableStateOf(Route.rootRoutes.map { it.key }.toSet()) }
-    
+
     LaunchedEffect(coordinator) {
         coordinator.navigationEvents.collectLatest { event ->
             handleNavigationEvent(event, navController, trackedRoutes, registry, routeProviders)
         }
     }
-    
+
     CompositionLocalProvider(
         LocalRouteRegistry provides registry
     ) {
         NavHost(
             navController = navController,
-            startDestination = Destination.ROUTE_RESTAURANT_LIST
+            startDestination = "restaurant_list"
         ) {
             routeProviders.forEach { provider ->
                 buildNavGraphForProvider(provider, this, coordinator)
@@ -58,9 +64,6 @@ fun AppNavigation(
     }
 }
 
-/**
- * Dynamically build navigation graph entries for all routes from a provider.
- */
 private fun buildNavGraphForProvider(
     provider: RouteProvider,
     navGraphBuilder: NavGraphBuilder,
@@ -71,30 +74,34 @@ private fun buildNavGraphForProvider(
     }
 }
 
-/**
- * Build a single route graph entry for the given handler.
- */
 private fun buildRouteGraphEntry(
     handler: RouteHandler,
     navGraphBuilder: NavGraphBuilder,
     coordinator: AppCoordinator
 ) {
     val routeString = handler.toRouteString()
-    when (routeString) {
-        Destination.ROUTE_RESTAURANT_LIST -> {
-            navGraphBuilder.composable(Destination.ROUTE_RESTAURANT_LIST) {
-                RestaurantListScreen(coordinator)
+
+    if (handler is ScopedRouteHandler) {
+        when (handler.route) {
+            is RestaurantDetailRoute -> {
+                navGraphBuilder.composable(
+                    route = routeString,
+                    arguments = listOf(
+                        navArgument("restaurantId") { type = NavType.StringType }
+                    )
+                ) { backStackEntry ->
+                    val restaurantId = backStackEntry.arguments?.getString("restaurantId") ?: ""
+                    RestaurantDetailScreen(restaurantId, coordinator)
+                }
             }
-        }
-        Destination.ROUTE_RESTAURANT_DETAIL -> {
-            navGraphBuilder.composable(
-                route = Destination.ROUTE_RESTAURANT_DETAIL,
-                arguments = listOf(
-                    navArgument(Destination.ARG_RESTAURANT_ID) { type = NavType.StringType }
-                )
-            ) { backStackEntry ->
-                val restaurantId = backStackEntry.arguments?.getString(Destination.ARG_RESTAURANT_ID) ?: ""
-                RestaurantDetailScreen(restaurantId, coordinator)
+            else -> {
+                navGraphBuilder.composable(routeString) {
+                    when (handler.route) {
+                        is io.umain.munchies.navigation.RestaurantListRoute -> {
+                            RestaurantListScreen(coordinator)
+                        }
+                    }
+                }
             }
         }
     }
@@ -117,7 +124,7 @@ private fun handleNavigationEvent(
                     if (route != null) {
                         trackedRoutes.value += route.key
                         val navigationRoute = when (route) {
-                            is RestaurantDetailRoute -> "${Destination.ROUTE_RESTAURANT_DETAIL_BASE}/${route.restaurantId}"
+                            is RestaurantDetailRoute -> "${handler.toRouteString().substringBefore("/")}/${route.restaurantId}"
                             else -> handler.toRouteString()
                         }
                         navController.navigate(navigationRoute)
@@ -137,7 +144,7 @@ private fun handleNavigationEvent(
             navController.popBackStack()
 
             val updatedRoutes = trackedRoutes.value.toMutableSet()
-            if (currentDestination?.startsWith(Destination.ROUTE_RESTAURANT_DETAIL_BASE) == true) {
+            if (currentDestination?.startsWith("restaurant_detail") == true) {
                 updatedRoutes.removeAll { it.startsWith(RestaurantDetailRoute.KEY_PREFIX) }
             }
             trackedRoutes.value = updatedRoutes
@@ -146,7 +153,7 @@ private fun handleNavigationEvent(
         }
         is NavigationEvent.PopToRoot -> {
             navController.popBackStack(
-                route = Destination.ROUTE_RESTAURANT_LIST,
+                route = "restaurant_list",
                 inclusive = false
             )
             trackedRoutes.value = Route.rootRoutes.map { it.key }.toSet()
@@ -154,3 +161,4 @@ private fun handleNavigationEvent(
         }
     }
 }
+
