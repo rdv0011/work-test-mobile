@@ -28,18 +28,4 @@ interface ScopedRouteHandler : RouteHandler {
      * @return A Koin scope configured for this route
      */
     fun createScope(route: Route): Scope
-
-    /**
-     * Create a Koin scope for the given destination.
-     *
-     * Convenience method that converts destination to route first, then creates scope.
-     * Default implementation handles the conversion automatically.
-     *
-     * @param destination The destination to create a scope for
-     * @return A Koin scope configured for this destination, or null if not handled
-     */
-    fun createScopeForDestination(destination: Destination): Scope? {
-        val route = destinationToRoute(destination) ?: return null
-        return createScope(route)
-    }
 }

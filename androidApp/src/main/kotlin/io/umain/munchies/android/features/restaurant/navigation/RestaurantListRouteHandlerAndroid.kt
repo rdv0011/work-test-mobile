@@ -1,0 +1,61 @@
+package io.umain.munchies.android.features.restaurant.navigation
+
+import androidx.navigation.NavGraphBuilder
+import androidx.navigation.compose.composable
+import io.umain.munchies.feature.restaurant.navigation.RestaurantListRouteHandler
+import io.umain.munchies.navigation.AppCoordinator
+import io.umain.munchies.navigation.Destination
+import io.umain.munchies.navigation.Route
+import io.umain.munchies.navigation.RouteComposableBuilder
+import io.umain.munchies.navigation.RouteNavigationMapper
+import io.umain.munchies.navigation.ScopedRouteHandler
+import io.umain.munchies.android.features.restaurant.presentation.restaurantlist.RestaurantListScreen
+import io.umain.munchies.feature.restaurant.di.RestaurantListScope
+import org.koin.core.context.GlobalContext
+import org.koin.core.qualifier.named
+import org.koin.core.scope.Scope
+
+class RestaurantListRouteHandlerAndroid(
+    private val commonHandler: RestaurantListRouteHandler = RestaurantListRouteHandler
+) : ScopedRouteHandler, RouteComposableBuilder, RouteNavigationMapper {
+    
+    override val route: Route = commonHandler.route
+    
+    override fun toRouteString(): String = commonHandler.toRouteString()
+    
+    override fun canHandle(destination: Destination): Boolean = 
+        commonHandler.canHandle(destination)
+    
+    override fun destinationToRoute(destination: Destination): Route? =
+        commonHandler.destinationToRoute(destination)
+    
+    override fun createScope(route: Route): Scope {
+        require(route is io.umain.munchies.navigation.RestaurantListRoute) { "Expected RestaurantListRoute, got $route" }
+        val koin = GlobalContext.get()
+        val scopeId = route.key
+        return koin.getScopeOrNull(scopeId)
+            ?: koin.createScope(
+                scopeId = scopeId,
+                qualifier = named(RestaurantListScope.qualifierName)
+            )
+    }
+    
+    override fun buildComposable(
+        navGraphBuilder: NavGraphBuilder,
+        coordinator: AppCoordinator
+    ) {
+        navGraphBuilder.composable(toRouteString()) {
+            RestaurantListScreen(coordinator)
+        }
+    }
+
+    override fun mapDestinationToNavRoute(destination: Destination): String? =
+        if (canHandle(destination)) toRouteString() else null
+
+    override fun getRouteCleanupPattern(): String? = null
+    
+    override fun getRouteKeyPattern(): String? = null
+}
+
+fun restaurantListRouteHandlerAndroid(): RestaurantListRouteHandlerAndroid =
+    RestaurantListRouteHandlerAndroid()

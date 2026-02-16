@@ -4,26 +4,18 @@ import android.util.Log
 import io.umain.munchies.core.lifecycle.RouteLifetime
 import io.umain.munchies.navigation.Route
 import org.koin.core.context.GlobalContext
+import org.koin.core.scope.Scope
 
 class RouteRegistry(
     private val scopeHandlerRegistry: ScopedRouteHandlerRegistry
 ) {
     private val _lifetimes = mutableMapOf<String, RouteLifetime>()
-    val lifetimes: Map<String, RouteLifetime> = _lifetimes
 
-    fun lifetimeFor(
-        routeId: String,
-        factory: () -> org.koin.core.scope.Scope
-    ): RouteLifetime {
-        val isNew = routeId !in _lifetimes
-        return _lifetimes.getOrPut(routeId) {
-            Log.i("RouteRegistry", "Creating new RouteLifetime for: $routeId")
-            RouteLifetime(routeId, factory())
-        }.also {
-            if (!isNew) {
-                Log.i("RouteRegistry", "Reusing existing RouteLifetime for: $routeId")
-            }
-        }
+    fun createScopeForRoute(route: Route): Scope {
+        val scope = scopeHandlerRegistry.createScope(route)
+        _lifetimes[route.key] = RouteLifetime(route.key, scope)
+        Log.i("RouteRegistry", "Created scope and lifetime for route: ${route.key}")
+        return scope
     }
 
     fun cleanup(activeRoutes: Set<String>) {
@@ -56,7 +48,4 @@ class RouteRegistry(
         }
         _lifetimes.clear()
     }
-
-    fun createScopeForRoute(route: Route) =
-        scopeHandlerRegistry.createScope(route)
 }

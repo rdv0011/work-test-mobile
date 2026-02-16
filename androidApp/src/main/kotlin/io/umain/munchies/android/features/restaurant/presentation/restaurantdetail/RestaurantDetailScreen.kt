@@ -31,6 +31,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import io.umain.munchies.android.navigation.LocalRouteRegistry
 import io.umain.munchies.android.ui.components.DetailCardCompose
@@ -58,8 +59,7 @@ fun RestaurantDetailScreen(
         val scope = registry.createScopeForRoute(route)
         scope.get<RestaurantDetailViewModel>()
     }
-
-    val uiState by viewModel.stateFlow.collectAsState()
+    val uiState by viewModel.stateFlow.collectAsStateWithLifecycle()
 
     Column(
         modifier = Modifier

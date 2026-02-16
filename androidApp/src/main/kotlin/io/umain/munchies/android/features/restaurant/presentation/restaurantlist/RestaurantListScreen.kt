@@ -21,26 +21,33 @@ import io.umain.munchies.feature.restaurant.presentation.state.RestaurantListUiS
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.umain.munchies.android.ui.theme.MunchiesTheme
 import io.umain.munchies.core.ui.TextId
 import io.umain.munchies.designtokens.DesignTokens
 import io.umain.munchies.localization.tr
 import io.umain.munchies.navigation.AppCoordinator
+import io.umain.munchies.android.navigation.LocalRouteRegistry
 import io.umain.munchies.android.ui.components.FilterChipCompose
 import io.umain.munchies.android.ui.components.RestaurantCardCompose
 import io.umain.munchies.feature.restaurant.presentation.model.FilterChipData
 import io.umain.munchies.feature.restaurant.presentation.model.RestaurantCardData
-import org.koin.androidx.compose.koinViewModel
+import androidx.compose.runtime.remember
 
 @Composable
 fun RestaurantListScreen(
     coordinator: AppCoordinator,
     modifier: Modifier = Modifier
 ) {
-    // Use Android lifecycle-aware wrapper ViewModel (provided by Koin)
-    val viewModel: RestaurantListAndroidViewModel = koinViewModel()
-    val uiState by viewModel.uiState.collectAsState(initial = RestaurantListUiState.Loading)
-    val selectedFilterIds by viewModel.selectedFilters.collectAsState(initial = emptySet())
+    val registry = LocalRouteRegistry.current
+    val route = remember { io.umain.munchies.navigation.RestaurantListRoute() }
+    
+    val viewModel = remember {
+        val scope = registry.createScopeForRoute(route)
+        scope.get<RestaurantListAndroidViewModel>()
+    }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val selectedFilterIds by viewModel.selectedFilters.collectAsStateWithLifecycle()
     // Trigger load once
     LaunchedEffect(Unit) { viewModel.load() }
 
