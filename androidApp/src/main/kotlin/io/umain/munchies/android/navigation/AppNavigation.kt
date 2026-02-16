@@ -25,7 +25,7 @@ val LocalRouteRegistry = compositionLocalOf<RouteRegistry> {
 @Composable
 fun AppNavigation(
     coordinator: AppCoordinator,
-    routeProviders: List<RouteProvider> = listOf(AndroidRestaurantRouteProvider())
+    routeProviders: List<RouteProvider> = AndroidAppRouteProviders.create().getAllProviders()
 ) {
     val navController = rememberNavController()
     val allHandlers = remember {

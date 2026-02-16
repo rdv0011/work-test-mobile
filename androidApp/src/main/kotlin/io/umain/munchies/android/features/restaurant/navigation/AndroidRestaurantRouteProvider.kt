@@ -1,4 +1,4 @@
-package io.umain.munchies.android.navigation
+package io.umain.munchies.android.features.restaurant.navigation
 
 import io.umain.munchies.android.features.restaurant.navigation.restaurantDetailRouteHandlerAndroid
 import io.umain.munchies.android.features.restaurant.navigation.restaurantListRouteHandlerAndroid
