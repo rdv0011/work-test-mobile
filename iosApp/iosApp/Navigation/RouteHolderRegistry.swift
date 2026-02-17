@@ -25,20 +25,24 @@ final class RouteHolderRegistry {
     private var holders: [String: AnyObject] = [:]
     private let routeRegistry = RouteRegistry()
     
+    private let listHandler: RestaurantListRouteHandlerSwift
+    private let detailHandler: RestaurantDetailRouteHandlerSwift
+    
     init(
         coordinator: AppCoordinator,
         providers: [RouteProvider] = []
     ) {
         self.coordinator = coordinator
         self.providers = providers
+        self.listHandler = RestaurantListRouteHandlerSwift(routeRegistry: routeRegistry)
+        self.detailHandler = RestaurantDetailRouteHandlerSwift(routeRegistry: routeRegistry)
     }
     
     /// Get or create a holder for the restaurant list route.
     ///
-    /// This method:
-    /// 1. Calls routeRegistry.lifetimeFor() with a factory to create/get the Scope
-    /// 2. Creates a new RestaurantListViewModelHolder with that Scope
-    /// 3. Caches and returns the holder
+    /// This method delegates holder creation to the handler.
+    /// The handler owns all scope creation and holder instantiation logic.
+    /// This registry is responsible only for caching.
     ///
     /// - Returns: RestaurantListViewModelHolder that retains the ViewModel
     func restaurantListHolder() -> RestaurantListViewModelHolder {
@@ -49,21 +53,16 @@ final class RouteHolderRegistry {
             return existing
         }
         
-        let scope = routeRegistry.lifetimeFor(routeId: key) {
-            FeatureRestaurantIosKt.createRestaurantListScopeIos()
-        }
-        
-        let created = RestaurantListViewModelHolder(scope: scope)
-        holders[key] = created
-        return created
+        let holder = listHandler.createHolder()
+        holders[key] = holder
+        return holder
     }
     
     /// Get or create a holder for the restaurant detail route.
     ///
-    /// This method:
-    /// 1. Calls routeRegistry.lifetimeFor() with a factory to create/get the Scope
-    /// 2. Creates a new RestaurantDetailViewModelHolder with that Scope
-    /// 3. Caches and returns the holder
+    /// This method delegates holder creation to the handler.
+    /// The handler owns all scope creation and holder instantiation logic.
+    /// This registry is responsible only for caching.
     ///
     /// - Parameter restaurantId: The restaurant ID for this detail route
     /// - Returns: RestaurantDetailViewModelHolder that retains the ViewModel
@@ -75,13 +74,9 @@ final class RouteHolderRegistry {
             return existing
         }
         
-        let scope = routeRegistry.lifetimeFor(routeId: key) {
-            FeatureRestaurantIosKt.createRestaurantDetailScopeIos(restaurantId: restaurantId)
-        }
-        
-        let created = RestaurantDetailViewModelHolder(restaurantId: restaurantId, scope: scope)
-        holders[key] = created
-        return created
+        let holder = detailHandler.createHolder(restaurantId: restaurantId)
+        holders[key] = holder
+        return holder
     }
     
      /// Clean up inactive routes.
