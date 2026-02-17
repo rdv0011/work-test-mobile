@@ -91,7 +91,7 @@ private fun handleNavigationEvent(
 ) {
     when (event) {
         is NavigationEvent.Push -> {
-            handleNavigationPush(event, navController, trackedRouteKeys, navigationMappers, allHandlers, registry)
+            handleNavigationPush(event, navController, trackedRouteKeys, navigationMappers, allHandlers)
         }
         is NavigationEvent.Pop -> {
             handleNavigationPop(navController, trackedRouteKeys, registry, navigationMappers)
@@ -107,16 +107,13 @@ private fun handleNavigationPush(
     navController: NavHostController,
     trackedRouteKeys: androidx.compose.runtime.MutableState<Set<String>>,
     navigationMappers: List<RouteNavigationMapper>,
-    allHandlers: List<ScopedRouteHandler>,
-    registry: RouteRegistry
+    allHandlers: List<ScopedRouteHandler>
 ) {
     for (handler in allHandlers) {
         if (handler.canHandle(event.destination)) {
             val route = handler.destinationToRoute(event.destination)
             if (route != null) {
                 trackedRouteKeys.value += route.key
-                // Register scope lifetime in RouteRegistry
-                registry.createScopeForRoute(route)
                 
                 val navRoute = navigationMappers.firstNotNullOfOrNull { mapper ->
                     mapper.mapDestinationToNavRoute(event.destination)

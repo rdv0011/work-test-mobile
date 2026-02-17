@@ -12,6 +12,12 @@ class RouteRegistry(
     private val _lifetimes = mutableMapOf<String, RouteLifetime>()
 
     fun createScopeForRoute(route: Route): Scope {
+        val existingLifetime = _lifetimes[route.key]
+        if (existingLifetime != null) {
+            Log.i("RouteRegistry", "Reusing existing scope for route: ${route.key}")
+            return existingLifetime.scope
+        }
+        
         val scope = scopeHandlerRegistry.createScope(route)
         _lifetimes[route.key] = RouteLifetime(route.key, scope)
         Log.i("RouteRegistry", "Created scope and lifetime for route: ${route.key}")
