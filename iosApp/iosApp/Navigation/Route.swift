@@ -32,7 +32,8 @@ enum Route: Hashable {
         [.restaurantList]
     }
     
-    static let KEY_RESTAURANT_LIST = "RestaurantList"
-    static let KEY_RESTAURANT_DETAIL_PREFIX = "RestaurantDetail_"
+    static let KEY_RESTAURANT_LIST = RouteConstantsKt.RouteConstants.KEY_RESTAURANT_LIST
+    static let KEY_RESTAURANT_DETAIL_PREFIX = RouteConstantsKt.RouteConstants.KEY_RESTAURANT_DETAIL_PREFIX
 }
+
 

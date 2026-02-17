@@ -10,6 +10,7 @@ import io.umain.munchies.navigation.Destination
 import io.umain.munchies.navigation.RestaurantDetailRoute
 import io.umain.munchies.navigation.Route
 import io.umain.munchies.navigation.RouteComposableBuilder
+import io.umain.munchies.navigation.RouteConstants
 import io.umain.munchies.navigation.RouteNavigationMapper
 import io.umain.munchies.navigation.ScopedRouteHandler
 import io.umain.munchies.android.features.restaurant.presentation.restaurantdetail.RestaurantDetailScreen
@@ -56,10 +57,10 @@ class RestaurantDetailRouteHandlerAndroid(
         navGraphBuilder.composable(
             route = toRouteString(),
             arguments = listOf(
-                navArgument("restaurantId") { type = NavType.StringType }
+                navArgument(RouteConstants.PARAM_RESTAURANT_ID) { type = NavType.StringType }
             )
         ) { backStackEntry ->
-            val restaurantId = backStackEntry.arguments?.getString("restaurantId") ?: ""
+            val restaurantId = backStackEntry.arguments?.getString(RouteConstants.PARAM_RESTAURANT_ID) ?: ""
             RestaurantDetailScreen(
                 restaurantId,
                 coordinator
@@ -69,11 +70,11 @@ class RestaurantDetailRouteHandlerAndroid(
 
     override fun mapDestinationToNavRoute(destination: Destination): String? {
         return (destination as? Destination.RestaurantDetail)?.let { detail ->
-            "${toRouteString().substringBefore("/")}/${detail.restaurantId}"
+            "${RouteConstants.ROUTE_RESTAURANT_DETAIL}/${detail.restaurantId}"
         }
     }
 
-    override fun getRouteCleanupPattern(): String? = toRouteString().substringBefore("/")
+    override fun getRouteCleanupPattern(): String? = RouteConstants.ROUTE_RESTAURANT_DETAIL
     
     override fun getRouteKeyPattern(): String? = RestaurantDetailRoute.KEY_PREFIX
 }
