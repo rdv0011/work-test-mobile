@@ -58,7 +58,7 @@ class RestaurantDetailRouteHandlerAndroid(
             route = toRouteString(),
             arguments = listOf(
                 navArgument(RouteConstants.PARAM_RESTAURANT_ID) { type = NavType.StringType }
-            )
+            )§
         ) { backStackEntry ->
             val restaurantId = backStackEntry.arguments?.getString(RouteConstants.PARAM_RESTAURANT_ID) ?: ""
             RestaurantDetailScreen(
