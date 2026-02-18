@@ -99,6 +99,30 @@ private fun handleNavigationEvent(
         is NavigationEvent.PopToRoot -> {
             handleNavigationPopToRoot(navController, trackedRouteKeys, registry, rootDestinationRoute)
         }
+        is NavigationEvent.ShowModal -> {
+            // Modal handling will be implemented in UI layer
+        }
+        is NavigationEvent.DismissModal -> {
+            // Modal dismissal handled by modal composable
+        }
+        is NavigationEvent.DismissAllModals -> {
+            // Modal dismissal handled by modal composable
+        }
+        is NavigationEvent.DismissModalUntil -> {
+            // Modal dismissal handled by modal composable
+        }
+        is NavigationEvent.SelectTab -> {
+            // Tab selection handled in tab navigation composable
+        }
+        is NavigationEvent.PushInTab -> {
+            // Push within tab handled by tab navigation composable
+        }
+        is NavigationEvent.PopInTab -> {
+            // Pop within tab handled by tab navigation composable
+        }
+        is NavigationEvent.ApplyNavigationState -> {
+            // Deep link state application - reconstruct navigation stack
+        }
     }
 }
 

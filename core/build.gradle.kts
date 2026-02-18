@@ -46,6 +46,7 @@ kotlin {
             dependencies {
                 implementation(kotlin("test"))
                 implementation("io.ktor:ktor-client-mock:${Versions.ktor}")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.coroutines}")
             }
         }
         val androidMain by getting {
