@@ -10,7 +10,10 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import io.umain.munchies.navigation.AppCoordinator
+import io.umain.munchies.navigation.Destination
 import io.umain.munchies.navigation.NavigationEvent
+import io.umain.munchies.navigation.RestaurantDetailRoute
+import io.umain.munchies.navigation.RestaurantListRoute
 import io.umain.munchies.navigation.Route
 import io.umain.munchies.navigation.RouteComposableBuilder
 import io.umain.munchies.navigation.RouteNavigationMapper
@@ -100,7 +103,7 @@ private fun handleNavigationEvent(
             handleNavigationPopToRoot(navController, trackedRouteKeys, registry, rootDestinationRoute)
         }
         is NavigationEvent.ShowModal -> {
-            // Modal handling will be implemented in UI layer
+            // Modal UI layer will observe coordinator.navigationEvents and render modals directly
         }
         is NavigationEvent.DismissModal -> {
             // Modal dismissal handled by modal composable
@@ -122,6 +125,7 @@ private fun handleNavigationEvent(
         }
         is NavigationEvent.ApplyNavigationState -> {
             // Deep link state application - reconstruct navigation stack
+            handleApplyNavigationState(event, navController, trackedRouteKeys, registry, navigationMappers, rootDestinationRoute)
         }
     }
 }
@@ -195,5 +199,41 @@ private fun handleNavigationPopToRoot(
         inclusive = false
     )
     trackedRouteKeys.value = Route.rootRoutes.map { it.key }.toSet()
+    registry.cleanup(trackedRouteKeys.value)
+}
+
+private fun handleApplyNavigationState(
+    event: NavigationEvent.ApplyNavigationState,
+    navController: NavHostController,
+    trackedRouteKeys: androidx.compose.runtime.MutableState<Set<String>>,
+    registry: RouteRegistry,
+    navigationMappers: List<RouteNavigationMapper>,
+    rootDestinationRoute: String
+) {
+    val newState = event.newState
+    
+    if (event.clearCurrentStack) {
+        navController.popBackStack(
+            route = rootDestinationRoute,
+            inclusive = false
+        )
+        trackedRouteKeys.value = Route.rootRoutes.map { it.key }.toSet()
+    }
+    
+    for (route in newState.currentStack) {
+        trackedRouteKeys.value += route.key
+        val destination = when (route) {
+            is RestaurantListRoute -> Destination.RestaurantList
+            is RestaurantDetailRoute -> Destination.RestaurantDetail(route.restaurantId)
+            else -> continue
+        }
+        
+        val navRoute = navigationMappers.firstNotNullOfOrNull { mapper ->
+            mapper.mapDestinationToNavRoute(destination)
+        } ?: continue
+        
+        navController.navigate(navRoute)
+    }
+    
     registry.cleanup(trackedRouteKeys.value)
 }

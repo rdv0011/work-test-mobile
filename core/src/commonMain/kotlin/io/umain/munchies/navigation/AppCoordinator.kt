@@ -157,6 +157,14 @@ class AppCoordinator(
             NavigationEvent.ApplyNavigationState(newState, clearCurrentStack)
         )
     }
+    
+    /**
+     * Apply navigation state from a deep link URL
+     */
+    fun applyDeepLink(deepLink: String) {
+        val navigationState = DeepLinkParser.parseDeepLink(deepLink)
+        applyNavigationState(navigationState)
+    }
 
     /**
      * Get current state (snapshot)

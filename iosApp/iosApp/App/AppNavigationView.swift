@@ -16,16 +16,43 @@ struct AppNavigationView: View {
     }
     
     var body: some View {
-        NavigationStack(path: $navigator.path) {
-            let restaurantListHolder = navigator.restaurantListHolder()
-            RestaurantListView(
-                coordinator: navigator.coordinator,
-                viewModel: restaurantListHolder.viewModel
-            )
-            .navigationDestination(for: Route.self) { route in
-                destinationView(for: route)
+        ZStack {
+            NavigationStack(path: $navigator.path) {
+                let restaurantListHolder = navigator.restaurantListHolder()
+                RestaurantListView(
+                    coordinator: navigator.coordinator,
+                    viewModel: restaurantListHolder.viewModel
+                )
+                .navigationDestination(for: Route.self) { route in
+                    destinationView(for: route)
+                }
+            }
+            
+            if let topModal = navigator.showingModal {
+                ZStack {
+                    Color.black.opacity(0.3)
+                        .ignoresSafeArea()
+                        .onTapGesture {
+                            if topModal.dismissOnBackgroundTap {
+                                navigator.coordinator.dismissModal()
+                            }
+                        }
+                    
+                    VStack {
+                        Spacer()
+                        ModalDestinationView(
+                            modal: topModal,
+                            onDismiss: {
+                                navigator.coordinator.dismissModal()
+                            }
+                        )
+                        Spacer()
+                    }
+                }
+                .transition(.opacity.combined(with: .scale))
             }
         }
+        .animation(.easeInOut(duration: 0.2), value: navigator.showingModal)
     }
     
     @ViewBuilder

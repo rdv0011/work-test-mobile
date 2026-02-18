@@ -11,6 +11,8 @@ import shared
 class NavigationCoordinator: ObservableObject {
     @Published var path = NavigationPath()
     @Published private(set) var activeRoutes = Set<String>()
+    @Published var modalStack: [shared.ModalRoute] = []
+    @Published var showingModal: shared.ModalRoute?
     
     let coordinator: AppCoordinator
     private let registry: RouteHolderRegistry
@@ -58,6 +60,14 @@ class NavigationCoordinator: ObservableObject {
             routeStack.removeAll()
             activeRoutes.removeAll()
             registry.cleanup(activeRoutes: [])
+        case let showModal as NavigationEvent.ShowModal:
+            handleShowModal(showModal.destination)
+        case is NavigationEvent.DismissModal:
+            handleDismissModal()
+        case is NavigationEvent.DismissAllModals:
+            handleDismissAllModals()
+        case let dismissUntil as NavigationEvent.DismissModalUntil:
+            handleDismissModalUntil(dismissUntil.predicate)
         default:
             break
         }
@@ -113,5 +123,48 @@ class NavigationCoordinator: ObservableObject {
     
     private func syncCleanup() {
         registry.cleanup(activeRoutes: activeRoutes)
+    }
+    
+    private func handleShowModal(_ destination: shared.ModalDestination) {
+        var handlers = [shared.RouteHandler]()
+        for provider in routeProviders {
+            handlers.append(contentsOf: provider.getRoutes())
+        }
+        
+        for handler in handlers {
+            if let modalHandler = handler as? shared.ModalRouteHandler {
+                if let modal = modalHandler.destinationToModalRoute(destination: destination) {
+                    modalStack.append(modal)
+                    showingModal = modal
+                    return
+                }
+            }
+        }
+        
+        fatalError("No modal handler found for destination: \(destination)")
+    }
+    
+    private func handleDismissModal() {
+        if !modalStack.isEmpty {
+            modalStack.removeLast()
+        }
+        showingModal = modalStack.last
+    }
+    
+    private func handleDismissAllModals() {
+        modalStack.removeAll()
+        showingModal = nil
+    }
+    
+    private func handleDismissModalUntil(_ predicate: @escaping (shared.ModalRoute) -> KotlinBoolean) {
+        while !modalStack.isEmpty {
+            if let last = modalStack.last {
+                if predicate(last).boolValue {
+                    break
+                }
+            }
+            modalStack.removeLast()
+        }
+        showingModal = modalStack.last
     }
 }
