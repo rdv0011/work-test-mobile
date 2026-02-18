@@ -6,6 +6,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
@@ -19,6 +26,8 @@ import io.umain.munchies.navigation.RouteComposableBuilder
 import io.umain.munchies.navigation.RouteNavigationMapper
 import io.umain.munchies.navigation.RouteProvider
 import io.umain.munchies.navigation.ScopedRouteHandler
+import io.umain.munchies.navigation.ModalDestination
+import io.umain.munchies.navigation.ModalRoute
 import kotlinx.coroutines.flow.collectLatest
 
 val LocalRouteRegistry = compositionLocalOf<RouteRegistry> {
@@ -45,6 +54,10 @@ fun AppNavigation(
         mutableStateOf(Route.rootRoutes.map { it.key }.toSet())
     }
     
+    val modalStack = remember { 
+        mutableStateOf<List<ModalRoute>>(emptyList())
+    }
+    
     val composableBuilders = remember {
         routeProviders.flatMap { it.getRoutes() }.filterIsInstance<RouteComposableBuilder>()
     }
@@ -61,6 +74,7 @@ fun AppNavigation(
                 event, 
                 navController, 
                 trackedRouteKeys,
+                modalStack,
                 registry, 
                 navigationMappers,
                 allHandlers,
@@ -72,12 +86,39 @@ fun AppNavigation(
     CompositionLocalProvider(
         LocalRouteRegistry provides registry
     ) {
-        NavHost(
-            navController = navController,
-            startDestination = startDestination
+        Box(
+            modifier = Modifier.fillMaxSize()
         ) {
-            composableBuilders.forEach { builder ->
-                builder.buildComposable(this, coordinator)
+            NavHost(
+                navController = navController,
+                startDestination = startDestination
+            ) {
+                composableBuilders.forEach { builder ->
+                    builder.buildComposable(this, coordinator)
+                }
+            }
+            
+            // Modal overlay - render on top of navigation stack
+            if (modalStack.value.isNotEmpty()) {
+                val currentModal = modalStack.value.last()
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f))
+                        .clickable(enabled = true) {
+                            // Dismiss top modal on background tap
+                            modalStack.value = modalStack.value.dropLast(1)
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    ModalDestinationComposable(
+                        modal = currentModal,
+                        coordinator = coordinator,
+                        onDismiss = {
+                            modalStack.value = modalStack.value.dropLast(1)
+                        }
+                    )
+                }
             }
         }
     }
@@ -87,6 +128,7 @@ private fun handleNavigationEvent(
     event: NavigationEvent,
     navController: NavHostController,
     trackedRouteKeys: androidx.compose.runtime.MutableState<Set<String>>,
+    modalStack: androidx.compose.runtime.MutableState<List<ModalRoute>>,
     registry: RouteRegistry,
     navigationMappers: List<RouteNavigationMapper>,
     allHandlers: List<ScopedRouteHandler>,
@@ -103,16 +145,23 @@ private fun handleNavigationEvent(
             handleNavigationPopToRoot(navController, trackedRouteKeys, registry, rootDestinationRoute)
         }
         is NavigationEvent.ShowModal -> {
-            // Modal UI layer will observe coordinator.navigationEvents and render modals directly
+            modalStack.value = modalStack.value + event.destination.toModalRoute()
         }
         is NavigationEvent.DismissModal -> {
-            // Modal dismissal handled by modal composable
+            if (modalStack.value.isNotEmpty()) {
+                modalStack.value = modalStack.value.dropLast(1)
+            }
         }
         is NavigationEvent.DismissAllModals -> {
-            // Modal dismissal handled by modal composable
+            modalStack.value = emptyList()
         }
         is NavigationEvent.DismissModalUntil -> {
-            // Modal dismissal handled by modal composable
+            val indexToKeep = modalStack.value.indexOfFirst { event.predicate(it) }
+            if (indexToKeep >= 0) {
+                modalStack.value = modalStack.value.take(indexToKeep)
+            } else {
+                modalStack.value = emptyList()
+            }
         }
         is NavigationEvent.SelectTab -> {
             // Tab selection handled in tab navigation composable
@@ -126,6 +175,8 @@ private fun handleNavigationEvent(
         is NavigationEvent.ApplyNavigationState -> {
             // Deep link state application - reconstruct navigation stack
             handleApplyNavigationState(event, navController, trackedRouteKeys, registry, navigationMappers, rootDestinationRoute)
+            // Apply modals from new state
+            modalStack.value = event.newState.modalStack
         }
     }
 }
@@ -236,4 +287,13 @@ private fun handleApplyNavigationState(
     }
     
     registry.cleanup(trackedRouteKeys.value)
+}
+
+private fun ModalDestination.toModalRoute(): ModalRoute {
+    return when (this) {
+        is ModalDestination.Filter -> FilterModalRoute(preSelectedFilters)
+        is ModalDestination.Reviews -> ReviewsModalRoute(restaurantId)
+        is ModalDestination.ConfirmAction -> ConfirmActionModalRoute(message, confirmText, cancelText)
+        is ModalDestination.DatePicker -> DatePickerModalRoute(initialDate)
+    }
 }
