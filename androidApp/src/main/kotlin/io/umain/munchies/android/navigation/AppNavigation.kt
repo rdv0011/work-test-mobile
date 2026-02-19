@@ -6,6 +6,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.collectAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -21,6 +22,7 @@ import io.umain.munchies.navigation.Destination
 import io.umain.munchies.navigation.NavigationEvent
 import io.umain.munchies.navigation.RestaurantDetailRoute
 import io.umain.munchies.navigation.RestaurantListRoute
+import io.umain.munchies.navigation.SettingsRoute
 import io.umain.munchies.navigation.Route
 import io.umain.munchies.navigation.RouteComposableBuilder
 import io.umain.munchies.navigation.RouteNavigationMapper
@@ -28,6 +30,9 @@ import io.umain.munchies.navigation.RouteProvider
 import io.umain.munchies.navigation.ScopedRouteHandler
 import io.umain.munchies.navigation.ModalDestination
 import io.umain.munchies.navigation.ModalRoute
+import io.umain.munchies.android.features.settings.presentation.SettingsScreen
+import io.umain.munchies.android.features.restaurant.presentation.restaurantlist.RestaurantListScreen
+import io.umain.munchies.android.features.restaurant.presentation.restaurantdetail.RestaurantDetailScreen
 import kotlinx.coroutines.flow.collectLatest
 
 val LocalRouteRegistry = compositionLocalOf<RouteRegistry> {
@@ -68,6 +73,8 @@ fun AppNavigation(
         }
     }
 
+    val navigationState = coordinator.navigationState.collectAsState().value
+
     LaunchedEffect(coordinator) {
         coordinator.navigationEvents.collectLatest { event ->
             handleNavigationEvent(
@@ -86,40 +93,84 @@ fun AppNavigation(
     CompositionLocalProvider(
         LocalRouteRegistry provides registry
     ) {
-        Box(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            NavHost(
-                navController = navController,
-                startDestination = startDestination
+        val usesTabs = navigationState.usesTabs
+        val tabNavState = navigationState.tabNavigation
+
+        if (usesTabs && tabNavState != null) {
+            TabNavigationScaffold(
+                tabNavigationState = tabNavState,
+                coordinator = coordinator,
+                modifier = Modifier.fillMaxSize()
             ) {
-                composableBuilders.forEach { builder ->
-                    builder.buildComposable(this, coordinator)
-                }
+                renderTabContent(tabNavState, coordinator)
+                renderModalsIfNeeded(modalStack, coordinator)
             }
-            
-            // Modal overlay - render on top of navigation stack
-            if (modalStack.value.isNotEmpty()) {
-                val currentModal = modalStack.value.last()
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f))
-                        .clickable(enabled = true) {
-                            // Dismiss top modal on background tap
-                            modalStack.value = modalStack.value.dropLast(1)
-                        },
-                    contentAlignment = Alignment.Center
+        } else {
+            Box(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                NavHost(
+                    navController = navController,
+                    startDestination = startDestination
                 ) {
-                    ModalDestinationComposable(
-                        modal = currentModal,
-                        coordinator = coordinator,
-                        onDismiss = {
-                            modalStack.value = modalStack.value.dropLast(1)
-                        }
-                    )
+                    composableBuilders.forEach { builder ->
+                        builder.buildComposable(this, coordinator)
+                    }
                 }
+                
+                renderModalsIfNeeded(modalStack, coordinator)
             }
+        }
+    }
+}
+
+@Composable
+private fun renderTabContent(
+    tabNavState: io.umain.munchies.navigation.TabNavigationState,
+    coordinator: AppCoordinator
+) {
+    val activeStack = tabNavState.getActiveTabStack()
+    if (activeStack.isNotEmpty()) {
+        val topRoute = activeStack.last()
+        renderCurrentScreen(topRoute, coordinator)
+    }
+}
+
+@Composable
+private fun renderCurrentScreen(
+    route: Route,
+    coordinator: AppCoordinator
+) {
+    when (route) {
+        is RestaurantListRoute -> RestaurantListScreen(coordinator)
+        is RestaurantDetailRoute -> RestaurantDetailScreen(route.restaurantId, coordinator)
+        is SettingsRoute -> SettingsScreen(coordinator)
+    }
+}
+
+@Composable
+private fun renderModalsIfNeeded(
+    modalStack: androidx.compose.runtime.MutableState<List<ModalRoute>>,
+    coordinator: AppCoordinator
+) {
+    if (modalStack.value.isNotEmpty()) {
+        val currentModal = modalStack.value.last()
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f))
+                .clickable(enabled = true) {
+                    modalStack.value = modalStack.value.dropLast(1)
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            ModalDestinationComposable(
+                modal = currentModal,
+                coordinator = coordinator,
+                onDismiss = {
+                    modalStack.value = modalStack.value.dropLast(1)
+                }
+            )
         }
     }
 }
