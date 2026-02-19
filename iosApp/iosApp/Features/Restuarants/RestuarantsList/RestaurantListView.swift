@@ -57,6 +57,16 @@ struct RestaurantListView: View {
             }
         }
         .navigationTitle(tr(.restaurantListTitle))
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: {
+                    let selectedFilterIds = (uiState as? RestaurantListUiState.Success)?.filters.map { $0.id } ?? []
+                    coordinator.showModal(destination: ModalDestination.Filter(preSelectedFilters: selectedFilterIds as [String]))
+                }) {
+                    Text("Filters")
+                }
+            }
+        }
         .onAppear {
             viewModel.load()
         }

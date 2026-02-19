@@ -97,10 +97,10 @@ class AppCoordinator(
     }
 
     /**
-     * Show reviews modal for a restaurant
+     * Show submit review modal for a restaurant
      */
-    fun showReviews(restaurantId: String) {
-        showModal(ModalDestination.Reviews(restaurantId))
+    fun submitReview(restaurantId: String) {
+        showModal(ModalDestination.SubmitReviewModal(restaurantId))
     }
 
     /**

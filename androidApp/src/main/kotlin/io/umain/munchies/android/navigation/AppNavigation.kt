@@ -292,7 +292,7 @@ private fun handleApplyNavigationState(
 private fun ModalDestination.toModalRoute(): ModalRoute {
     return when (this) {
         is ModalDestination.Filter -> FilterModalRoute(preSelectedFilters)
-        is ModalDestination.Reviews -> ReviewsModalRoute(restaurantId)
+        is ModalDestination.SubmitReviewModal -> SubmitReviewModalRoute(restaurantId)
         is ModalDestination.ConfirmAction -> ConfirmActionModalRoute(message, confirmText, cancelText)
         is ModalDestination.DatePicker -> DatePickerModalRoute(initialDate)
     }

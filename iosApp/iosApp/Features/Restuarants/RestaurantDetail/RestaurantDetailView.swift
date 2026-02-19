@@ -18,32 +18,39 @@ struct RestaurantDetailView: View {
     
     @State private var uiState: RestaurantDetailUiState = RestaurantDetailUiState.Loading()
 
-    var body: some View {
-        ZStack {
-            contentView()
-            
-            if isLoading() {
-                loadingOverlay()
-            }
-        }
-        .navigationTitle(tr(.restaurantDetailTitle))
-        .navigationBarBackButtonHidden(true)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: {
-                    coordinator.navigateBack()
-                }) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "chevron.left")
-                        Text("Back")
-                    }
-                }
-            }
-        }
-        .task(id: viewModel) {
-            await observe()
-        }
-    }
+     var body: some View {
+         ZStack {
+             contentView()
+             
+             if isLoading() {
+                 loadingOverlay()
+             }
+         }
+         .navigationTitle(tr(.restaurantDetailTitle))
+         .navigationBarBackButtonHidden(true)
+         .toolbar {
+             ToolbarItem(placement: .navigationBarLeading) {
+                 Button(action: {
+                     coordinator.navigateBack()
+                 }) {
+                     HStack(spacing: 4) {
+                         Image(systemName: "chevron.left")
+                         Text("Back")
+                     }
+                 }
+             }
+             ToolbarItem(placement: .navigationBarTrailing) {
+                 Button(action: {
+                     coordinator.showModal(destination: ModalDestination.SubmitReviewModal(restaurantId: restaurantId))
+                 }) {
+                     Text("Leave a Review")
+                 }
+             }
+         }
+         .task(id: viewModel) {
+             await observe()
+         }
+     }
     
     // MARK: - Content
     

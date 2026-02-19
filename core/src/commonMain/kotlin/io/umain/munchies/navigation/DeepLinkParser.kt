@@ -1,7 +1,7 @@
 package io.umain.munchies.navigation
 
-private data class ReviewsModal(val restaurantId: String) : ModalRoute {
-    override val key: String = "reviews_$restaurantId"
+private data class SubmitReviewModal(val restaurantId: String) : ModalRoute {
+    override val key: String = "submit_review_$restaurantId"
     override val presentationStyle: ModalPresentationStyle = ModalPresentationStyle.SHEET
     override val dismissOnBackgroundTap: Boolean = true
 }
@@ -39,7 +39,7 @@ object DeepLinkParser {
      * - "app://restaurant-list" → RestaurantListRoute
      * - "app://restaurant-detail/123" → RestaurantDetailRoute("123")
      * - "app://restaurant-list/filters" → Shows filter modal
-     * - "app://restaurant-detail/123?reviews=true" → Detail + reviews modal
+     * - "app://restaurant-detail/123?submit_review=true" → Detail + submit review modal
      */
     fun parseDeepLink(deepLink: String): NavigationState {
         return when {
@@ -99,9 +99,9 @@ object DeepLinkParser {
         val modals = mutableListOf<ModalRoute>()
         val params = parseQueryString(queryParams)
         
-        if (params["reviews"] == "true") {
+        if (params["submit_review"] == "true") {
             val restaurantId = params["restaurantId"] ?: return modals
-            modals.add(ReviewsModal(restaurantId))
+            modals.add(SubmitReviewModal(restaurantId))
         }
         
         if (params["filters"] == "true") {
@@ -120,9 +120,9 @@ object DeepLinkParser {
                 val selected = params["selected"]?.split(",") ?: emptyList()
                 listOf(FilterModal(selected))
             }
-            "reviews" -> {
+            "submit_review" -> {
                 val restaurantId = params["restaurantId"] ?: return emptyList()
-                listOf(ReviewsModal(restaurantId))
+                listOf(SubmitReviewModal(restaurantId))
             }
             "confirm" -> {
                 val message = params["message"] ?: return emptyList()

@@ -152,10 +152,10 @@ class AppCoordinatorTest {
     }
 
     @Test
-    fun testShowReviewsCreatesReviewsEvent() {
+    fun testSubmitReviewEvent() {
         val coordinator = AppCoordinator()
         
-        coordinator.showReviews("restaurant123")
+        coordinator.submitReview("restaurant123")
         
         assertEquals(NavigationState(primaryStack = listOf(RestaurantListRoute())), coordinator.getCurrentState())
     }

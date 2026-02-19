@@ -1,22 +1,15 @@
 package io.umain.munchies.android.navigation
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -32,10 +25,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import io.umain.munchies.navigation.AppCoordinator
-import io.umain.munchies.navigation.ModalDestination
 import io.umain.munchies.navigation.ModalRoute
 
 @Composable
@@ -46,7 +37,7 @@ fun ModalDestinationComposable(
 ) {
     when (modal) {
         is FilterModalRoute -> FilterModalComposable(modal, onDismiss)
-        is ReviewsModalRoute -> ReviewsModalComposable(modal, onDismiss)
+        is SubmitReviewModalRoute -> SubmitReviewModalComposable(modal, onDismiss)
         is ConfirmActionModalRoute -> ConfirmActionModalComposable(modal, onDismiss)
         is DatePickerModalRoute -> DatePickerModalComposable(modal, onDismiss)
         else -> Unit
@@ -119,8 +110,8 @@ fun FilterModalComposable(
 }
 
 @Composable
-fun ReviewsModalComposable(
-    modal: ReviewsModalRoute,
+fun SubmitReviewModalComposable(
+    modal: SubmitReviewModalRoute,
     onDismiss: () -> Unit
 ) {
     Surface(
@@ -141,7 +132,7 @@ fun ReviewsModalComposable(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Reviews",
+                    text = "Leave a Review",
                     style = MaterialTheme.typography.headlineSmall
                 )
             }
@@ -153,7 +144,7 @@ fun ReviewsModalComposable(
                     .padding(16.dp)
             ) {
                 Text(
-                    text = "No reviews for restaurant ${modal.restaurantId}",
+                    text = "Rate restaurant ${modal.restaurantId}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -249,10 +240,10 @@ data class FilterModalRoute(
     override val key: String = "filter"
 }
 
-data class ReviewsModalRoute(
+data class SubmitReviewModalRoute(
     val restaurantId: String
 ) : ModalRoute {
-    override val key: String = "reviews_$restaurantId"
+    override val key: String = "submit_review_$restaurantId"
 }
 
 data class ConfirmActionModalRoute(

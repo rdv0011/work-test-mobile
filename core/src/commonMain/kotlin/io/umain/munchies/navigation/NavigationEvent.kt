@@ -97,7 +97,7 @@ sealed class ModalDestination {
         val initialDate: String? = null
     ) : ModalDestination()
 
-    data class Reviews(
+    data class SubmitReviewModal(
         val restaurantId: String
     ) : ModalDestination()
 }

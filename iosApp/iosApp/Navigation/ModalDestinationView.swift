@@ -183,7 +183,7 @@ struct ReviewsModalView: View {
                 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("No reviews for restaurant \(modal.restaurantId)")
+                        Text("Rate restaurant \(modal.restaurantId)")
                             .foregroundColor(.gray)
                             .padding()
                     }

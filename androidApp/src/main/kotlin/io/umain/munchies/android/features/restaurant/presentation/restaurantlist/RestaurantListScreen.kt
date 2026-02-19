@@ -3,6 +3,7 @@ package io.umain.munchies.android.features.restaurant.presentation.restaurantlis
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -18,6 +20,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
 import io.umain.munchies.feature.restaurant.presentation.state.RestaurantListUiState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -27,6 +30,7 @@ import io.umain.munchies.core.ui.TextId
 import io.umain.munchies.designtokens.DesignTokens
 import io.umain.munchies.localization.tr
 import io.umain.munchies.navigation.AppCoordinator
+import io.umain.munchies.navigation.ModalDestination
 import io.umain.munchies.android.navigation.LocalRouteRegistry
 import io.umain.munchies.android.ui.components.FilterChipCompose
 import io.umain.munchies.android.ui.components.RestaurantCardCompose
@@ -95,15 +99,36 @@ fun RestaurantListScreen(
                         vertical = DesignTokens.Spacing.lg.dp
                     )
             ) {
-                Text(
-                    text = tr(TextId.AppTitle),
-                    style = MaterialTheme.typography.headlineLarge
-                )
-                Text(
-                    text = tr(TextId.RestaurantListTitle),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(top = DesignTokens.Spacing.sm.dp)
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = tr(TextId.AppTitle),
+                            style = MaterialTheme.typography.headlineLarge
+                        )
+                        Text(
+                            text = tr(TextId.RestaurantListTitle),
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(top = DesignTokens.Spacing.sm.dp)
+                        )
+                    }
+                    Button(
+                        onClick = {
+                            coordinator.showModal(
+                                ModalDestination.Filter(selectedFilterIds.toList())
+                            )
+                        },
+                        modifier = Modifier.padding(start = DesignTokens.Spacing.md.dp)
+                    ) {
+                        Text("Filters")
+                    }
+                }
             }
             
             LazyRow(
