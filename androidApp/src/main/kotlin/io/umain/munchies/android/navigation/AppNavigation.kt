@@ -85,7 +85,8 @@ fun AppNavigation(
                 registry, 
                 navigationMappers,
                 allHandlers,
-                startDestination
+                startDestination,
+                navigationState
             )
         }
     }
@@ -183,17 +184,34 @@ private fun handleNavigationEvent(
     registry: RouteRegistry,
     navigationMappers: List<RouteNavigationMapper>,
     allHandlers: List<ScopedRouteHandler>,
-    rootDestinationRoute: String
+    rootDestinationRoute: String,
+    navigationState: io.umain.munchies.navigation.NavigationState
 ) {
+    // When using tabs, only handle modal and tab-specific events
+    val usesTabs = navigationState.usesTabs
+    
     when (event) {
         is NavigationEvent.Push -> {
-            handleNavigationPush(event, navController, trackedRouteKeys, navigationMappers, allHandlers)
+            if (usesTabs) {
+                // In tab mode, push events are handled by tab navigation
+                // Just update modal stack if needed
+            } else {
+                handleNavigationPush(event, navController, trackedRouteKeys, navigationMappers, allHandlers)
+            }
         }
         is NavigationEvent.Pop -> {
-            handleNavigationPop(navController, trackedRouteKeys, registry, navigationMappers)
+            if (usesTabs) {
+                // In tab mode, pop events are handled by tab navigation
+            } else {
+                handleNavigationPop(navController, trackedRouteKeys, registry, navigationMappers)
+            }
         }
         is NavigationEvent.PopToRoot -> {
-            handleNavigationPopToRoot(navController, trackedRouteKeys, registry, rootDestinationRoute)
+            if (usesTabs) {
+                // In tab mode, pop to root is handled by tab navigation
+            } else {
+                handleNavigationPopToRoot(navController, trackedRouteKeys, registry, rootDestinationRoute)
+            }
         }
         is NavigationEvent.ShowModal -> {
             modalStack.value = modalStack.value + event.destination.toModalRoute()
@@ -224,10 +242,13 @@ private fun handleNavigationEvent(
             // Pop within tab handled by tab navigation composable
         }
         is NavigationEvent.ApplyNavigationState -> {
-            // Deep link state application - reconstruct navigation stack
-            handleApplyNavigationState(event, navController, trackedRouteKeys, registry, navigationMappers, rootDestinationRoute)
-            // Apply modals from new state
-            modalStack.value = event.newState.modalStack
+            if (usesTabs) {
+                // In tab mode, don't use NavController
+                modalStack.value = event.newState.modalStack
+            } else {
+                handleApplyNavigationState(event, navController, trackedRouteKeys, registry, navigationMappers, rootDestinationRoute)
+                modalStack.value = event.newState.modalStack
+            }
         }
     }
 }
