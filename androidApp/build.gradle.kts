@@ -49,6 +49,7 @@ dependencies {
     implementation(project(":design-tokens"))
     implementation(project(":core"))
     implementation(project(":feature-restaurant"))
+    implementation(project(":feature-settings"))
     implementation("androidx.compose.ui:ui:${Versions.compose}")
     implementation("androidx.compose.ui:ui-tooling:${Versions.compose}")
     implementation("androidx.compose.ui:ui-tooling-preview:${Versions.compose}")
