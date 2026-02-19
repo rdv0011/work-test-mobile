@@ -27,6 +27,7 @@ final class RouteHolderRegistry {
     
     private let listHandler: RestaurantListRouteHandlerSwift
     private let detailHandler: RestaurantDetailRouteHandlerSwift
+    private let settingsHandler: SettingsRouteHandlerSwift
     
     init(
         coordinator: AppCoordinator,
@@ -36,6 +37,7 @@ final class RouteHolderRegistry {
         self.providers = providers
         self.listHandler = RestaurantListRouteHandlerSwift(routeRegistry: routeRegistry)
         self.detailHandler = RestaurantDetailRouteHandlerSwift(routeRegistry: routeRegistry)
+        self.settingsHandler = SettingsRouteHandlerSwift(routeRegistry: routeRegistry)
     }
     
     /// Get or create a holder for the restaurant list route.
@@ -75,6 +77,19 @@ final class RouteHolderRegistry {
         }
         
         let holder = detailHandler.createHolder(restaurantId: restaurantId)
+        holders[key] = holder
+        return holder
+    }
+    
+    func settingsHolder() -> SettingsViewModelHolder {
+        let route = Route.settings
+        let key = route.key
+        
+        if let existing = holders[key] as? SettingsViewModelHolder {
+            return existing
+        }
+        
+        let holder = settingsHandler.createHolder()
         holders[key] = holder
         return holder
     }

@@ -10,6 +10,11 @@ import shared
 @MainActor
 class NavigationCoordinator: ObservableObject {
     @Published var path = NavigationPath()
+    @Published var activeTabId = "restaurants"
+    @Published var tabStacks: [String: NavigationPath] = [
+        "restaurants": NavigationPath(),
+        "settings": NavigationPath()
+    ]
     @Published private(set) var activeRoutes = Set<String>()
     @Published var modalStack: [shared.ModalRoute] = []
     @Published var showingModal: shared.ModalRoute?
@@ -60,6 +65,8 @@ class NavigationCoordinator: ObservableObject {
             routeStack.removeAll()
             activeRoutes.removeAll()
             registry.cleanup(activeRoutes: [])
+        case let selectTab as NavigationEvent.SelectTab:
+            handleSelectTab(selectTab.tabId)
         case let showModal as NavigationEvent.ShowModal:
             handleShowModal(showModal.destination)
         case is NavigationEvent.DismissModal:
@@ -70,6 +77,15 @@ class NavigationCoordinator: ObservableObject {
             handleDismissModalUntil(dismissUntil.predicate)
         default:
             break
+        }
+    }
+    
+    private func handleSelectTab(_ tabId: String) {
+        activeTabId = tabId
+        if tabId == "restaurants" {
+            path = tabStacks["restaurants"] ?? NavigationPath()
+        } else if tabId == "settings" {
+            path = tabStacks["settings"] ?? NavigationPath()
         }
     }
     
@@ -85,6 +101,7 @@ class NavigationCoordinator: ObservableObject {
                 routeStack.append(iosRoute)
                 path.append(iosRoute)
                 updateActiveRoutes()
+                updateActiveTabStack()
                 return
             }
         }
@@ -98,6 +115,8 @@ class NavigationCoordinator: ObservableObject {
             return .restaurantList
         case let detailRoute as RestaurantDetailRoute:
             return .restaurantDetail(detailRoute.restaurantId)
+        case _ as SettingsRoute:
+            return .settings
         default:
             return nil
         }
@@ -113,12 +132,20 @@ class NavigationCoordinator: ObservableObject {
         }
     }
     
+    private func updateActiveTabStack() {
+        tabStacks[activeTabId] = path
+    }
+    
     func restaurantListHolder() -> RestaurantListViewModelHolder {
         registry.restaurantListHolder()
     }
     
     func restaurantDetailHolder(restaurantId: String) -> RestaurantDetailViewModelHolder {
         registry.restaurantDetailHolder(restaurantId: restaurantId)
+    }
+    
+    func settingsHolder() -> SettingsViewModelHolder {
+        registry.settingsHolder()
     }
     
     private func syncCleanup() {
