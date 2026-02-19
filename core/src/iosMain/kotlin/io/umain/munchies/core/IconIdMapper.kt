@@ -8,6 +8,8 @@ class IconIdMapper {
             IconId.Logo -> "ic_logo.svg"
             IconId.Clock -> "ic_clock_icon.svg"
             IconId.Star -> "ic_star_icon.svg"
+            IconId.Restaurant -> "ic_restaurant.svg"
+            IconId.Settings -> "ic_settings.svg"
         }
     }
     

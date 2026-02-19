@@ -9,6 +9,8 @@ class IconIdMapper(private val context: Context) {
             IconId.Logo -> context.resources.getIdentifier("ic_logo", "drawable", context.packageName)
             IconId.Clock -> context.resources.getIdentifier("ic_clock_icon", "drawable", context.packageName)
             IconId.Star -> context.resources.getIdentifier("ic_star_icon", "drawable", context.packageName)
+            IconId.Restaurant -> context.resources.getIdentifier("ic_restaurant", "drawable", context.packageName)
+            IconId.Settings -> context.resources.getIdentifier("ic_settings", "drawable", context.packageName)
         }
     }
 }

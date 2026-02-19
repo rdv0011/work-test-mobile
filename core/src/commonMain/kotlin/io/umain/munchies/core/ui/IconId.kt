@@ -4,4 +4,6 @@ sealed class IconId {
     object Logo : IconId()
     object Clock : IconId()
     object Star : IconId()
+    object Restaurant : IconId()
+    object Settings : IconId()
 }

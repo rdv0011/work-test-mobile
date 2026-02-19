@@ -18,4 +18,11 @@ sealed class TextId {
     object ErrorLoading : TextId()
     object ErrorNetwork : TextId()
     object Loading : TextId()
+    
+    object Restaurants : TextId()
+    object Settings : TextId()
+    object SettingsTitle : TextId()
+    object DarkMode : TextId()
+    object Notifications : TextId()
+    object About : TextId()
 }

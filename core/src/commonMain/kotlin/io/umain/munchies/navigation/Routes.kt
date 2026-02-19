@@ -20,3 +20,14 @@ data class RestaurantDetailRoute(
         const val KEY_PREFIX = "RestaurantDetail_"
     }
 }
+
+data class SettingsRoute(
+    override val key: String = KEY
+) : Route {
+    override val isRootRoute: Boolean = true
+    
+    companion object {
+        const val KEY = "Settings"
+    }
+}
+

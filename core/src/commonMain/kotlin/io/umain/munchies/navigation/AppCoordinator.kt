@@ -6,6 +6,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import io.umain.munchies.core.ui.TextId
+import io.umain.munchies.core.ui.IconId
 
 /**
  * Central coordinator for all navigation in the application.
@@ -19,9 +21,7 @@ import kotlinx.coroutines.flow.asStateFlow
  * Uses Redux pattern: events are dispatched, reduced to new state, and emitted.
  */
 class AppCoordinator(
-    initialState: NavigationState = NavigationState(
-        primaryStack = listOf(RestaurantListRoute())
-    )
+    initialState: NavigationState = createInitialTabNavigationState()
 ) {
     // === INTERNAL STATE ===
 
@@ -180,5 +180,40 @@ class AppCoordinator(
         val currentState = _navigationState.value
         val newState = NavigationReducer.reduce(currentState, event, routeHandlers)
         _navigationState.value = newState
+    }
+
+    companion object {
+        /**
+         * Create initial navigation state with tab navigation enabled
+         */
+        private fun createInitialTabNavigationState(): NavigationState {
+            val restaurantsTab = TabDefinition(
+                id = "restaurants",
+                label = TextId.Restaurants,
+                icon = IconId.Restaurant,
+                rootRoute = RestaurantListRoute()
+            )
+
+            val settingsTab = TabDefinition(
+                id = "settings",
+                label = TextId.Settings,
+                icon = IconId.Settings,
+                rootRoute = SettingsRoute()
+            )
+
+            val tabNav = TabNavigationState(
+                tabDefinitions = listOf(restaurantsTab, settingsTab),
+                activeTabId = "restaurants",
+                stacksByTab = mapOf(
+                    "restaurants" to listOf(RestaurantListRoute()),
+                    "settings" to listOf(SettingsRoute())
+                )
+            )
+
+            return NavigationState(
+                tabNavigation = tabNav,
+                usesTabs = true
+            )
+        }
     }
 }

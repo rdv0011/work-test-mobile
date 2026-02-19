@@ -22,4 +22,11 @@ fun mapTextIdToKey(textId: TextId): String = when (textId) {
     TextId.ErrorLoading -> "error.loading"
     TextId.ErrorNetwork -> "error.network"
     TextId.Loading -> "loading"
+    
+    TextId.Restaurants -> "tab.restaurants"
+    TextId.Settings -> "tab.settings"
+    TextId.SettingsTitle -> "settings.title"
+    TextId.DarkMode -> "settings.dark.mode"
+    TextId.Notifications -> "settings.notifications"
+    TextId.About -> "settings.about"
 }
