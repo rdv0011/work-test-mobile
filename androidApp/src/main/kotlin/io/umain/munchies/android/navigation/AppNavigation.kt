@@ -30,6 +30,10 @@ import io.umain.munchies.navigation.RouteProvider
 import io.umain.munchies.navigation.ScopedRouteHandler
 import io.umain.munchies.navigation.ModalDestination
 import io.umain.munchies.navigation.ModalRoute
+import io.umain.munchies.navigation.FilterModalRoute
+import io.umain.munchies.navigation.SubmitReviewModalRoute
+import io.umain.munchies.navigation.ConfirmActionModalRoute
+import io.umain.munchies.navigation.DatePickerModalRoute
 import io.umain.munchies.android.features.settings.presentation.SettingsScreen
 import io.umain.munchies.android.features.restaurant.presentation.restaurantlist.RestaurantListScreen
 import io.umain.munchies.android.features.restaurant.presentation.restaurantdetail.RestaurantDetailScreen
@@ -75,8 +79,13 @@ fun AppNavigation(
 
     val navigationState = coordinator.navigationState.collectAsState().value
 
+    LaunchedEffect(allHandlers) {
+        coordinator.routeHandlers = allHandlers
+    }
+
     LaunchedEffect(coordinator) {
         coordinator.navigationEvents.collectLatest { event ->
+            coordinator.reduceState(event)
             handleNavigationEvent(
                 event, 
                 navController, 

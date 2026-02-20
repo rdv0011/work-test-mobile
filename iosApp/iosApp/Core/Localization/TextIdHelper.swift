@@ -27,4 +27,10 @@ extension TextId {
     static var errorLoading: TextId { TextId.ErrorLoading() }
     static var errorNetwork: TextId { TextId.ErrorNetwork() }
     static var loading: TextId { TextId.Loading() }
+    static var settingsTitle: TextId { TextId.SettingsTitle() }
+    static var darkMode: TextId { TextId.DarkMode() }
+    static var notifications: TextId { TextId.Notifications() }
+    static var about: TextId { TextId.About() }
+    static var restaurants: TextId { TextId.Restaurants() }
+    static var settings: TextId { TextId.Settings() }
 }

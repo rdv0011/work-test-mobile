@@ -8,7 +8,11 @@ import shared
 struct SettingsView: View {
     let viewModel: SettingsViewModel
 
-    @State private var uiState: SettingsUiState = SettingsUiState()
+    @State private var uiState: SettingsUiState = SettingsUiState(
+        darkModeEnabled: false,
+        notificationsEnabled: false,
+        appVersion: ""
+    )
 
     var body: some View {
         VStack(spacing: .zero) {
@@ -48,7 +52,7 @@ struct SettingsView: View {
 
     @MainActor
     private func observe() async {
-        for await state in viewModel.stateFlow.asAsyncSequence() {
+        for await state in asyncStateStream(viewModel) as AsyncStream<SettingsUiState> {
             uiState = state
         }
     }

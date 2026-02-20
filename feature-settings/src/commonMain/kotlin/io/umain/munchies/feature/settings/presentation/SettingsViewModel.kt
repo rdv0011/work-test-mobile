@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 class SettingsViewModel : KmpViewModel(), ViewModelState<SettingsUiState> {
-    private val _stateFlow = MutableStateFlow<SettingsUiState>(SettingsUiState())
+    private val _stateFlow = MutableStateFlow(SettingsUiState())
     override val stateFlow: StateFlow<SettingsUiState> = _stateFlow
 
     fun toggleDarkMode() {

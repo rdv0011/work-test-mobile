@@ -28,6 +28,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import io.umain.munchies.navigation.AppCoordinator
 import io.umain.munchies.navigation.ModalRoute
+import io.umain.munchies.navigation.FilterModalRoute
+import io.umain.munchies.navigation.SubmitReviewModalRoute
+import io.umain.munchies.navigation.ConfirmActionModalRoute
+import io.umain.munchies.navigation.DatePickerModalRoute
 
 @Composable
 fun ModalDestinationComposable(
@@ -232,30 +236,4 @@ fun DatePickerModalComposable(
     ) {
         DatePicker(state = datePickerState)
     }
-}
-
-data class FilterModalRoute(
-    val preSelectedFilters: List<String> = emptyList()
-) : ModalRoute {
-    override val key: String = "filter"
-}
-
-data class SubmitReviewModalRoute(
-    val restaurantId: String
-) : ModalRoute {
-    override val key: String = "submit_review_$restaurantId"
-}
-
-data class ConfirmActionModalRoute(
-    val message: String,
-    val confirmText: String = "OK",
-    val cancelText: String = "Cancel"
-) : ModalRoute {
-    override val key: String = "confirm"
-}
-
-data class DatePickerModalRoute(
-    val initialDate: String? = null
-) : ModalRoute {
-    override val key: String = "date_picker"
 }

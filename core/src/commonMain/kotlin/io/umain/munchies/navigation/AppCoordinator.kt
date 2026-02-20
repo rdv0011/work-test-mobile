@@ -175,8 +175,10 @@ class AppCoordinator(
 
     /**
      * Reduce current state with event and update internal state
+     * 
+     * Called by platform layers to process navigation events and update state.
      */
-    internal fun reduceState(event: NavigationEvent) {
+    fun reduceState(event: NavigationEvent) {
         val currentState = _navigationState.value
         val newState = NavigationReducer.reduce(currentState, event, routeHandlers)
         _navigationState.value = newState

@@ -54,9 +54,6 @@ struct TabNavigationView: View {
     
     @ViewBuilder
     private var restaurantTab: some View {
-        let initialPath = navigator.tabStacks["restaurants"] ?? NavigationPath()
-        var path = initialPath
-        
         NavigationStack(path: Binding(
             get: { navigator.tabStacks["restaurants"] ?? NavigationPath() },
             set: { navigator.tabStacks["restaurants"] = $0 }

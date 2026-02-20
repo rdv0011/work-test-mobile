@@ -16,7 +16,7 @@ struct ModalDestinationView: View {
                 fullScreenContent()
             case .dialog:
                 dialogContent()
-            @unknown default:
+            default:
                 Text("Unknown modal type")
             }
         }
@@ -24,13 +24,13 @@ struct ModalDestinationView: View {
     
     @ViewBuilder
     private func sheetContent() -> some View {
-        if let filter = modal as? ModalDestination_Filter {
+        if let filter = modal as? ModalDestination.Filter {
             FilterModalView(modal: filter, onDismiss: onDismiss)
-        } else if let confirm = modal as? ModalDestination_ConfirmAction {
+        } else if let confirm = modal as? ModalDestination.ConfirmAction {
             ConfirmActionModalView(modal: confirm, onDismiss: onDismiss)
-        } else if let reviews = modal as? ModalDestination_Reviews {
+        } else if let reviews = modal as? ModalDestination.SubmitReviewModal {
             ReviewsModalView(modal: reviews, onDismiss: onDismiss)
-        } else if let datePicker = modal as? ModalDestination_DatePicker {
+        } else if let datePicker = modal as? ModalDestination.DatePicker {
             DatePickerModalView(modal: datePicker, onDismiss: onDismiss)
         } else {
             EmptyView()
@@ -39,7 +39,7 @@ struct ModalDestinationView: View {
     
     @ViewBuilder
     private func fullScreenContent() -> some View {
-        if let reviews = modal as? ModalDestination_Reviews {
+        if let reviews = modal as? ModalDestination.SubmitReviewModal {
             ReviewsModalView(modal: reviews, onDismiss: onDismiss)
                 .ignoresSafeArea()
         } else {
@@ -49,7 +49,7 @@ struct ModalDestinationView: View {
     
     @ViewBuilder
     private func dialogContent() -> some View {
-        if let confirm = modal as? ModalDestination_ConfirmAction {
+        if let confirm = modal as? ModalDestination.ConfirmAction {
             ConfirmActionModalView(modal: confirm, onDismiss: onDismiss)
         } else {
             sheetContent()
@@ -60,7 +60,7 @@ struct ModalDestinationView: View {
 // MARK: - Filter Modal
 
 struct FilterModalView: View {
-    let modal: ModalDestination_Filter
+    let modal: ModalDestination.Filter
     let onDismiss: () -> Void
     
     @State private var selectedFilters = Set<String>()
@@ -122,7 +122,7 @@ struct FilterModalView: View {
 // MARK: - Confirm Action Modal
 
 struct ConfirmActionModalView: View {
-    let modal: ModalDestination_ConfirmAction
+    let modal: ModalDestination.ConfirmAction
     let onDismiss: () -> Void
     
     var body: some View {
@@ -161,7 +161,7 @@ struct ConfirmActionModalView: View {
 // MARK: - Reviews Modal
 
 struct ReviewsModalView: View {
-    let modal: ModalDestination_Reviews
+    let modal: ModalDestination.SubmitReviewModal
     let onDismiss: () -> Void
     
     var body: some View {
@@ -196,7 +196,7 @@ struct ReviewsModalView: View {
 // MARK: - Date Picker Modal
 
 struct DatePickerModalView: View {
-    let modal: ModalDestination_DatePicker
+    let modal: ModalDestination.DatePicker
     let onDismiss: () -> Void
     
     @State private var selectedDate = Date()

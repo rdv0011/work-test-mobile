@@ -48,6 +48,8 @@ class NavigationCoordinator: ObservableObject {
     }
     
     func handle(event: NavigationEvent) {
+        coordinator.reduceState(event: event)
+        
         switch event {
         case let push as NavigationEvent.Push:
             handlePush(destination: push.destination)
@@ -153,22 +155,28 @@ class NavigationCoordinator: ObservableObject {
     }
     
     private func handleShowModal(_ destination: shared.ModalDestination) {
-        var handlers = [shared.RouteHandler]()
-        for provider in routeProviders {
-            handlers.append(contentsOf: provider.getRoutes())
+        if let modal = destinationToModalRoute(destination) {
+            modalStack.append(modal)
+            showingModal = modal
+            return
         }
         
-        for handler in handlers {
-            if let modalHandler = handler as? shared.ModalRouteHandler {
-                if let modal = modalHandler.destinationToModalRoute(destination: destination) {
-                    modalStack.append(modal)
-                    showingModal = modal
-                    return
-                }
-            }
+        fatalError("Unable to convert ModalDestination to ModalRoute: \(destination)")
+    }
+    
+    private func destinationToModalRoute(_ destination: shared.ModalDestination) -> shared.ModalRoute? {
+        switch destination {
+        case let filter as shared.ModalDestination.Filter:
+            return FilterModalRoute(preSelectedFilters: filter.preSelectedFilters)
+        case let review as shared.ModalDestination.SubmitReviewModal:
+            return SubmitReviewModalRoute(restaurantId: review.restaurantId)
+        case let confirm as shared.ModalDestination.ConfirmAction:
+            return ConfirmActionModalRoute(message: confirm.message, confirmText: confirm.confirmText, cancelText: confirm.cancelText)
+        case let picker as shared.ModalDestination.DatePicker:
+            return DatePickerModalRoute(initialDate: picker.initialDate)
+        default:
+            return nil
         }
-        
-        fatalError("No modal handler found for destination: \(destination)")
     }
     
     private func handleDismissModal() {
