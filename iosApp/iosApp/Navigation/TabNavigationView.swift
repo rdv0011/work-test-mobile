@@ -49,7 +49,7 @@ struct TabNavigationView: View {
                 .transition(.opacity.combined(with: .scale))
             }
         }
-        .animation(.easeInOut(duration: 0.2), value: navigator.showingModal)
+        .animation(.easeInOut(duration: 0.2), value: navigator.showingModalKey)
     }
     
     @ViewBuilder
