@@ -6,6 +6,7 @@ struct MunchiesApp: App {
     init() {
         KoinModule_iosKt.doInitKoinIos()
         FeatureRestaurantDiKt.registerFeatureRestaurantModule()
+        FeatureSettingsDiKt.registerFeatureSettingsModule()
     }
     
     private var coordinator: AppCoordinator {
