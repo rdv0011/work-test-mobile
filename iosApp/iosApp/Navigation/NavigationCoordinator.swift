@@ -55,11 +55,11 @@ class NavigationCoordinator: ObservableObject {
         case let push as NavigationEvent.Push:
             handlePush(destination: push.destination)
         case is NavigationEvent.Pop:
-            if !path.isEmpty {
-                path.removeLast()
-            }
             if !routeStack.isEmpty {
                 routeStack.removeLast()
+            }
+            if !tabStacks[activeTabId, default: NavigationPath()].isEmpty {
+                tabStacks[activeTabId]?.removeLast()
             }
             updateActiveRoutes()
             syncCleanup()

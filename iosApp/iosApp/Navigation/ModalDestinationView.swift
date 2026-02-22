@@ -24,13 +24,11 @@ struct ModalDestinationView: View {
     
     @ViewBuilder
     private func sheetContent() -> some View {
-        if let filter = modal as? ModalDestination.Filter {
+        if let filter = modal as? FilterModalRoute {
             FilterModalView(modal: filter, onDismiss: onDismiss)
-        } else if let confirm = modal as? ModalDestination.ConfirmAction {
-            ConfirmActionModalView(modal: confirm, onDismiss: onDismiss)
-        } else if let reviews = modal as? ModalDestination.SubmitReviewModal {
+        } else if let reviews = modal as? SubmitReviewModalRoute {
             ReviewsModalView(modal: reviews, onDismiss: onDismiss)
-        } else if let datePicker = modal as? ModalDestination.DatePicker {
+        } else if let datePicker = modal as? DatePickerModalRoute {
             DatePickerModalView(modal: datePicker, onDismiss: onDismiss)
         } else {
             EmptyView()
@@ -39,7 +37,7 @@ struct ModalDestinationView: View {
     
     @ViewBuilder
     private func fullScreenContent() -> some View {
-        if let reviews = modal as? ModalDestination.SubmitReviewModal {
+        if let reviews = modal as? SubmitReviewModalRoute {
             ReviewsModalView(modal: reviews, onDismiss: onDismiss)
                 .ignoresSafeArea()
         } else {
@@ -49,7 +47,7 @@ struct ModalDestinationView: View {
     
     @ViewBuilder
     private func dialogContent() -> some View {
-        if let confirm = modal as? ModalDestination.ConfirmAction {
+        if let confirm = modal as? ConfirmActionModalRoute {
             ConfirmActionModalView(modal: confirm, onDismiss: onDismiss)
         } else {
             sheetContent()
@@ -60,7 +58,7 @@ struct ModalDestinationView: View {
 // MARK: - Filter Modal
 
 struct FilterModalView: View {
-    let modal: ModalDestination.Filter
+    let modal: FilterModalRoute
     let onDismiss: () -> Void
     
     @State private var selectedFilters = Set<String>()
@@ -122,7 +120,7 @@ struct FilterModalView: View {
 // MARK: - Confirm Action Modal
 
 struct ConfirmActionModalView: View {
-    let modal: ModalDestination.ConfirmAction
+    let modal: ConfirmActionModalRoute
     let onDismiss: () -> Void
     
     var body: some View {
@@ -161,7 +159,7 @@ struct ConfirmActionModalView: View {
 // MARK: - Reviews Modal
 
 struct ReviewsModalView: View {
-    let modal: ModalDestination.SubmitReviewModal
+    let modal: SubmitReviewModalRoute
     let onDismiss: () -> Void
     
     var body: some View {
@@ -196,7 +194,7 @@ struct ReviewsModalView: View {
 // MARK: - Date Picker Modal
 
 struct DatePickerModalView: View {
-    let modal: ModalDestination.DatePicker
+    let modal: DatePickerModalRoute
     let onDismiss: () -> Void
     
     @State private var selectedDate = Date()
