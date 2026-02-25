@@ -9,7 +9,6 @@ import shared
 
 @MainActor
 class NavigationCoordinator: ObservableObject {
-    @Published var path = NavigationPath()
     @Published var activeTabId = "restaurants"
     @Published var tabStacks: [String: NavigationPath] = [
         "restaurants": NavigationPath(),
@@ -54,20 +53,18 @@ class NavigationCoordinator: ObservableObject {
         switch event {
         case let push as NavigationEvent.Push:
             handlePush(destination: push.destination)
-        case is NavigationEvent.Pop:
-            if !routeStack.isEmpty {
-                routeStack.removeLast()
-            }
-            if !tabStacks[activeTabId, default: NavigationPath()].isEmpty {
-                tabStacks[activeTabId]?.removeLast()
-            }
-            updateActiveRoutes()
-            syncCleanup()
-        case is NavigationEvent.PopToRoot:
-            path = NavigationPath()
-            routeStack.removeAll()
-            activeRoutes.removeAll()
-            registry.cleanup(activeRoutes: [])
+         case is NavigationEvent.Pop:
+             if !routeStack.isEmpty {
+                 routeStack.removeLast()
+             }
+             recomputeTabStacks()
+             updateActiveRoutes()
+             syncCleanup()
+         case is NavigationEvent.PopToRoot:
+             routeStack.removeAll()
+             recomputeTabStacks()
+             activeRoutes.removeAll()
+             registry.cleanup(activeRoutes: [])
         case let selectTab as NavigationEvent.SelectTab:
             handleSelectTab(selectTab.tabId)
         case let showModal as NavigationEvent.ShowModal:
@@ -83,34 +80,32 @@ class NavigationCoordinator: ObservableObject {
         }
     }
     
-    private func handleSelectTab(_ tabId: String) {
-        activeTabId = tabId
-        if tabId == "restaurants" {
-            path = tabStacks["restaurants"] ?? NavigationPath()
-        } else if tabId == "settings" {
-            path = tabStacks["settings"] ?? NavigationPath()
-        }
-    }
+     private func handleSelectTab(_ tabId: String) {
+         let previousTabId = activeTabId
+         activeTabId = tabId
+         updateActiveRoutes()
+         syncCleanup()
+     }
     
-    private func handlePush(destination: shared.Destination) {
-        for provider in routeProviders {
-            let handler = provider.getRoutes().first { 
-                $0.canHandle(destination: destination) 
-            }
-            
-            if let handler = handler,
-               let kmpRoute = handler.destinationToRoute(destination: destination),
-               let iosRoute = convertToIOSRoute(kmpRoute) {
-                routeStack.append(iosRoute)
-                path.append(iosRoute)
-                updateActiveRoutes()
-                updateActiveTabStack()
-                return
-            }
-        }
-        
-        fatalError("No route provider found for destination: \(destination)")
-    }
+     private func handlePush(destination: shared.Destination) {
+         for provider in routeProviders {
+             let handler = provider.getRoutes().first { 
+                 $0.canHandle(destination: destination) 
+             }
+             
+             if let handler = handler,
+                let kmpRoute = handler.destinationToRoute(destination: destination),
+                let iosRoute = convertToIOSRoute(kmpRoute) {
+                 routeStack.append(iosRoute)
+                 recomputeTabStacks()
+                 updateActiveRoutes()
+                 syncCleanup()
+                 return
+             }
+         }
+         
+         fatalError("No route provider found for destination: \(destination)")
+     }
     
     private func convertToIOSRoute(_ kmpRoute: shared.Route) -> Route? {
         switch kmpRoute {
@@ -135,9 +130,30 @@ class NavigationCoordinator: ObservableObject {
         }
     }
     
-    private func updateActiveTabStack() {
-        tabStacks[activeTabId] = path
-    }
+     private func recomputeTabStacks() {
+         var newTabStacks: [String: NavigationPath] = [
+             "restaurants": NavigationPath(),
+             "settings": NavigationPath()
+         ]
+         
+         for route in routeStack {
+             let tabId = tabIdForRoute(route)
+             newTabStacks[tabId]?.append(route)
+         }
+         
+         tabStacks = newTabStacks
+     }
+     
+     private func tabIdForRoute(_ route: Route) -> String {
+         switch route {
+         case .restaurantList:
+             return "restaurants"
+         case .restaurantDetail:
+             return "restaurants"
+         case .settings:
+             return "settings"
+         }
+     }
     
     func restaurantListHolder() -> RestaurantListViewModelHolder {
         registry.restaurantListHolder()
