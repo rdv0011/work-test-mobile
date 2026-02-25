@@ -11,9 +11,72 @@
         <activity
             android:name=".MainActivity"
             android:exported="true">
+            <!-- Launcher intent -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            
+            <!-- Deep links: munchies://restaurants -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="munchies" android:host="restaurants" />
+            </intent-filter>
+            
+            <!-- Deep links: munchies://restaurants/{restaurantId} -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data 
+                    android:scheme="munchies" 
+                    android:host="restaurants"
+                    android:pathPattern="/[0-9]*" />
+            </intent-filter>
+            
+            <!-- Deep links: munchies://settings -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="munchies" android:host="settings" />
+            </intent-filter>
+            
+            <!-- Deep links: munchies://modal/filter?filters=tag1,tag2 -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="munchies" android:host="modal" android:path="/filter" />
+            </intent-filter>
+            
+            <!-- Deep links: munchies://modal/submit_review/{restaurantId} -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data 
+                    android:scheme="munchies" 
+                    android:host="modal"
+                    android:pathPattern="/submit_review/[0-9]*" />
+            </intent-filter>
+            
+            <!-- Deep links: munchies://modal/confirm?message=...&confirmText=...&cancelText=... -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="munchies" android:host="modal" android:path="/confirm" />
+            </intent-filter>
+            
+            <!-- Deep links: munchies://modal/date_picker?initialDate=2026-02-25 -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="munchies" android:host="modal" android:path="/date_picker" />
             </intent-filter>
         </activity>
     </application>
