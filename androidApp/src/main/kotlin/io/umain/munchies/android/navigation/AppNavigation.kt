@@ -79,10 +79,6 @@ fun AppNavigation(
 
     val navigationState = coordinator.navigationState.collectAsState().value
 
-    LaunchedEffect(allHandlers) {
-        coordinator.routeHandlers = allHandlers
-    }
-
     LaunchedEffect(coordinator) {
         coordinator.navigationEvents.collectLatest { event ->
             coordinator.reduceState(event)

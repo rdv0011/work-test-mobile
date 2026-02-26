@@ -33,7 +33,7 @@
                 <data 
                     android:scheme="munchies" 
                     android:host="restaurants"
-                    android:pathPattern="/[0-9]*" />
+                    android:pathPattern="/[0-9]+" />
             </intent-filter>
             
             <!-- Deep links: munchies://settings -->
