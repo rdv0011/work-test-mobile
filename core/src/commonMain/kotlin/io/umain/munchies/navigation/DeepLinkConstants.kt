@@ -1,8 +1,11 @@
-package io.umain.munchies.android.deeplinks
+package io.umain.munchies.navigation
 
 /**
  * Constants for deep link handling across the application.
  * Centralizes all deep link-related string literals and patterns.
+ * 
+ * These constants are used by both Android and iOS platforms to ensure
+ * consistent deep link handling and feature parity.
  */
 object DeepLinkConstants {
     
@@ -14,11 +17,11 @@ object DeepLinkConstants {
     const val HOST_MODAL = "modal"
     const val HOST_SETTINGS = "settings"
     
-    // Paths
-    const val PATH_FILTER = "/filter"
-    const val PATH_SUBMIT_REVIEW = "/submit_review"
-    const val PATH_CONFIRM = "/confirm"
-    const val PATH_DATE_PICKER = "/date_picker"
+    // Paths (without leading slash for cross-platform compatibility)
+    const val PATH_FILTER = "filter"
+    const val PATH_SUBMIT_REVIEW = "submit_review"
+    const val PATH_CONFIRM = "confirm"
+    const val PATH_DATE_PICKER = "date_picker"
     
     // Query parameter names
     const val QUERY_PARAM_FILTERS = "filters"
@@ -36,7 +39,7 @@ object DeepLinkConstants {
     const val TAB_ID_RESTAURANTS = "restaurants"
     const val TAB_ID_SETTINGS = "settings"
     
-    // Path segments indices
+    // Path segment indices
     const val MODAL_TYPE_INDEX = 0
     const val SUBMIT_REVIEW_RESTAURANT_ID_INDEX = 1
     const val RESTAURANT_ID_INDEX = 0

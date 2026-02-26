@@ -20,7 +20,7 @@ import io.umain.munchies.core.ui.IconId
  *
  * Uses Redux pattern: events are dispatched, reduced to new state, and emitted.
  */
-class AppCoordinator(
+open class AppCoordinator(
     initialState: NavigationState = createInitialTabNavigationState()
 ) {
     // === INTERNAL STATE ===
@@ -44,7 +44,7 @@ class AppCoordinator(
     /**
      * Navigate to a screen
      */
-    fun navigateToScreen(destination: Destination) {
+    open fun navigateToScreen(destination: Destination) {
         _navigationEvents.tryEmit(NavigationEvent.Push(destination))
     }
 
@@ -74,21 +74,21 @@ class AppCoordinator(
     /**
      * Show a modal dialog
      */
-    fun showModal(destination: ModalDestination) {
+    open fun showModal(destination: ModalDestination) {
         _navigationEvents.tryEmit(NavigationEvent.ShowModal(destination))
     }
 
     /**
      * Show filter modal
      */
-    fun showFilterModal(preSelectedFilters: List<String> = emptyList()) {
+    open fun showFilterModal(preSelectedFilters: List<String> = emptyList()) {
         showModal(ModalDestination.Filter(preSelectedFilters))
     }
 
     /**
      * Show confirmation dialog
      */
-    fun showConfirmation(
+    open fun showConfirmation(
         message: String,
         confirmText: String = "OK",
         cancelText: String = "Cancel"
@@ -99,7 +99,7 @@ class AppCoordinator(
     /**
      * Show submit review modal for a restaurant
      */
-    fun submitReview(restaurantId: String) {
+    open fun submitReview(restaurantId: String) {
         showModal(ModalDestination.SubmitReviewModal(restaurantId))
     }
 
@@ -129,7 +129,7 @@ class AppCoordinator(
     /**
      * Switch to a tab
      */
-    fun selectTab(tabId: String) {
+    open fun selectTab(tabId: String) {
         _navigationEvents.tryEmit(NavigationEvent.SelectTab(tabId))
     }
 
@@ -178,7 +178,7 @@ class AppCoordinator(
      * 
      * Called by platform layers to process navigation events and update state.
      */
-    fun reduceState(event: NavigationEvent) {
+    open fun reduceState(event: NavigationEvent) {
         val currentState = _navigationState.value
         val newState = NavigationReducer.reduce(currentState, event, routeHandlers)
         _navigationState.value = newState

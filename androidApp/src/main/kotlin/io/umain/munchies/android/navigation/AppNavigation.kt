@@ -18,7 +18,8 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
-import io.umain.munchies.android.deeplinks.DeepLinkConstants
+import io.umain.munchies.navigation.DeepLinkConstants
+import io.umain.munchies.navigation.DeepLinkProcessor
 import io.umain.munchies.navigation.AppCoordinator
 import io.umain.munchies.navigation.Destination
 import io.umain.munchies.navigation.NavigationEvent
@@ -401,61 +402,36 @@ private fun ModalDestination.toModalRoute(): ModalRoute {
 }
 
 private fun processPendingDeepLink(deepLinkUri: Uri, coordinator: AppCoordinator) {
-    when (deepLinkUri.host) {
-        DeepLinkConstants.HOST_RESTAURANTS -> handleRestaurantDeepLink(deepLinkUri, coordinator)
-        DeepLinkConstants.HOST_SETTINGS -> coordinator.selectTab(DeepLinkConstants.TAB_ID_SETTINGS)
-        DeepLinkConstants.HOST_MODAL -> handleModalDeepLink(deepLinkUri, coordinator)
+    val host = deepLinkUri.host ?: return
+    val pathSegments = deepLinkUri.pathSegments
+    
+    val queryParams = mutableMapOf<String, String>()
+    listOf(
+        DeepLinkConstants.QUERY_PARAM_FILTERS,
+        DeepLinkConstants.QUERY_PARAM_MESSAGE,
+        DeepLinkConstants.QUERY_PARAM_CONFIRM_TEXT,
+        DeepLinkConstants.QUERY_PARAM_CANCEL_TEXT,
+        DeepLinkConstants.QUERY_PARAM_INITIAL_DATE
+    ).forEach { param ->
+        val value = deepLinkUri.getQueryParameter(param)
+        if (value != null) {
+            queryParams[param] = value
+        }
     }
+    
+    DeepLinkProcessor.processDeepLink(
+        host = host,
+        pathSegments = pathSegments,
+        queryParams = queryParams,
+        coordinator = coordinator
+    )
 }
 
-private fun handleRestaurantDeepLink(data: Uri, coordinator: AppCoordinator) {
-    when {
-        data.pathSegments.isEmpty() -> {
-            coordinator.navigateToScreen(Destination.RestaurantList)
-        }
-        data.pathSegments.size == DeepLinkConstants.SINGLE_SEGMENT_PATH -> {
-            val restaurantId = data.pathSegments[DeepLinkConstants.RESTAURANT_ID_INDEX]
-            coordinator.navigateToScreen(Destination.RestaurantDetail(restaurantId))
-        }
-    }
-}
-
-private fun handleModalDeepLink(data: Uri, coordinator: AppCoordinator) {
-    if (data.pathSegments.isEmpty()) return
-    
-    val modalType = data.pathSegments[DeepLinkConstants.MODAL_TYPE_INDEX]
-    
-    when (modalType) {
-        DeepLinkConstants.PATH_FILTER.trimStart('/') -> {
-            val filtersParam = data.getQueryParameter(DeepLinkConstants.QUERY_PARAM_FILTERS) ?: ""
-            val preSelectedFilters = if (filtersParam.isNotEmpty()) {
-                filtersParam.split(",").map { it.trim() }
-            } else {
-                emptyList()
-            }
-            coordinator.showFilterModal(preSelectedFilters)
-        }
-        
-        DeepLinkConstants.PATH_SUBMIT_REVIEW.trimStart('/') -> {
-            if (data.pathSegments.size == DeepLinkConstants.TWO_SEGMENT_PATH) {
-                val restaurantId = data.pathSegments[DeepLinkConstants.SUBMIT_REVIEW_RESTAURANT_ID_INDEX]
-                coordinator.submitReview(restaurantId)
-            }
-        }
-        
-        DeepLinkConstants.PATH_CONFIRM.trimStart('/') -> {
-            val message = data.getQueryParameter(DeepLinkConstants.QUERY_PARAM_MESSAGE) 
-                ?: DeepLinkConstants.DEFAULT_CONFIRM_MESSAGE
-            val confirmText = data.getQueryParameter(DeepLinkConstants.QUERY_PARAM_CONFIRM_TEXT) 
-                ?: DeepLinkConstants.DEFAULT_CONFIRM_TEXT
-            val cancelText = data.getQueryParameter(DeepLinkConstants.QUERY_PARAM_CANCEL_TEXT) 
-                ?: DeepLinkConstants.DEFAULT_CANCEL_TEXT
-            coordinator.showConfirmation(message, confirmText, cancelText)
-        }
-        
-        DeepLinkConstants.PATH_DATE_PICKER.trimStart('/') -> {
-            val initialDate = data.getQueryParameter(DeepLinkConstants.QUERY_PARAM_INITIAL_DATE)
-            coordinator.showModal(ModalDestination.DatePicker(initialDate))
-        }
-    }
-}
+// Query parameter names for extraction (duplicated to avoid circular dependency)
+private val queryParamNames = listOf(
+    DeepLinkConstants.QUERY_PARAM_FILTERS,
+    DeepLinkConstants.QUERY_PARAM_MESSAGE,
+    DeepLinkConstants.QUERY_PARAM_CONFIRM_TEXT,
+    DeepLinkConstants.QUERY_PARAM_CANCEL_TEXT,
+    DeepLinkConstants.QUERY_PARAM_INITIAL_DATE
+)
