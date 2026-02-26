@@ -1,5 +1,6 @@
 package io.umain.munchies.android.navigation
 
+import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -17,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
+import io.umain.munchies.android.deeplinks.DeepLinkConstants
 import io.umain.munchies.navigation.AppCoordinator
 import io.umain.munchies.navigation.Destination
 import io.umain.munchies.navigation.NavigationEvent
@@ -38,6 +40,7 @@ import io.umain.munchies.android.features.settings.presentation.SettingsScreen
 import io.umain.munchies.android.features.restaurant.presentation.restaurantlist.RestaurantListScreen
 import io.umain.munchies.android.features.restaurant.presentation.restaurantdetail.RestaurantDetailScreen
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 val LocalRouteRegistry = compositionLocalOf<RouteRegistry> {
     error("RouteRegistry not provided")
@@ -46,11 +49,16 @@ val LocalRouteRegistry = compositionLocalOf<RouteRegistry> {
 @Composable
 fun AppNavigation(
     coordinator: AppCoordinator,
+    pendingDeepLinkUri: Uri? = null,
     routeProviders: List<RouteProvider> = AndroidAppRouteProviders.create().getAllProviders()
 ) {
     val navController = rememberNavController()
     val allHandlers = remember {
         routeProviders.flatMap { it.getRoutes() }.filterIsInstance<ScopedRouteHandler>()
+    }
+    
+    LaunchedEffect(allHandlers) {
+        coordinator.routeHandlers = allHandlers
     }
     val scopedRouteHandlerRegistry = remember { ScopedRouteHandlerRegistry(allHandlers) }
     val registry = remember { RouteRegistry(scopedRouteHandlerRegistry) }
@@ -76,24 +84,38 @@ fun AppNavigation(
             mapper.mapDestinationToNavRoute(io.umain.munchies.navigation.Destination.RestaurantList)
         }
     }
+    
+    val deepLinkProcessed = remember { mutableStateOf(pendingDeepLinkUri == null) }
 
     val navigationState = coordinator.navigationState.collectAsState().value
 
-    LaunchedEffect(coordinator) {
-        coordinator.navigationEvents.collectLatest { event ->
-            coordinator.reduceState(event)
-            handleNavigationEvent(
-                event, 
-                navController, 
-                trackedRouteKeys,
-                modalStack,
-                registry, 
-                navigationMappers,
-                allHandlers,
-                startDestination,
-                navigationState
-            )
+    LaunchedEffect(coordinator, pendingDeepLinkUri) {
+        // Collect navigation events
+        val collectJob = launch {
+            coordinator.navigationEvents.collectLatest { event ->
+                coordinator.reduceState(event)
+                handleNavigationEvent(
+                    event, 
+                    navController, 
+                    trackedRouteKeys,
+                    modalStack,
+                    registry, 
+                    navigationMappers,
+                    allHandlers,
+                    startDestination,
+                    navigationState
+                )
+            }
         }
+        
+        // Small delay to ensure event listener is active, then process deep link
+        kotlinx.coroutines.delay(10)
+        
+        if (pendingDeepLinkUri != null) {
+            processPendingDeepLink(pendingDeepLinkUri, coordinator)
+        }
+        
+        deepLinkProcessed.value = true
     }
 
     CompositionLocalProvider(
@@ -102,29 +124,32 @@ fun AppNavigation(
         val usesTabs = navigationState.usesTabs
         val tabNavState = navigationState.tabNavigation
 
-        if (usesTabs && tabNavState != null) {
-            TabNavigationScaffold(
-                tabNavigationState = tabNavState,
-                coordinator = coordinator,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                renderTabContent(tabNavState, coordinator)
-                renderModalsIfNeeded(modalStack, coordinator)
-            }
-        } else {
-            Box(
-                modifier = Modifier.fillMaxSize()
-            ) {
-                NavHost(
-                    navController = navController,
-                    startDestination = startDestination
+        // Only render navigation content after pending deep link has been processed
+        if (deepLinkProcessed.value) {
+            if (usesTabs && tabNavState != null) {
+                TabNavigationScaffold(
+                    tabNavigationState = tabNavState,
+                    coordinator = coordinator,
+                    modifier = Modifier.fillMaxSize()
                 ) {
-                    composableBuilders.forEach { builder ->
-                        builder.buildComposable(this, coordinator)
-                    }
+                    renderTabContent(tabNavState, coordinator)
+                    renderModalsIfNeeded(modalStack, coordinator)
                 }
-                
-                renderModalsIfNeeded(modalStack, coordinator)
+            } else {
+                Box(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    NavHost(
+                        navController = navController,
+                        startDestination = startDestination
+                    ) {
+                        composableBuilders.forEach { builder ->
+                            builder.buildComposable(this, coordinator)
+                        }
+                    }
+                    
+                    renderModalsIfNeeded(modalStack, coordinator)
+                }
             }
         }
     }
@@ -372,5 +397,65 @@ private fun ModalDestination.toModalRoute(): ModalRoute {
         is ModalDestination.SubmitReviewModal -> SubmitReviewModalRoute(restaurantId)
         is ModalDestination.ConfirmAction -> ConfirmActionModalRoute(message, confirmText, cancelText)
         is ModalDestination.DatePicker -> DatePickerModalRoute(initialDate)
+    }
+}
+
+private fun processPendingDeepLink(deepLinkUri: Uri, coordinator: AppCoordinator) {
+    when (deepLinkUri.host) {
+        DeepLinkConstants.HOST_RESTAURANTS -> handleRestaurantDeepLink(deepLinkUri, coordinator)
+        DeepLinkConstants.HOST_SETTINGS -> coordinator.selectTab(DeepLinkConstants.TAB_ID_SETTINGS)
+        DeepLinkConstants.HOST_MODAL -> handleModalDeepLink(deepLinkUri, coordinator)
+    }
+}
+
+private fun handleRestaurantDeepLink(data: Uri, coordinator: AppCoordinator) {
+    when {
+        data.pathSegments.isEmpty() -> {
+            coordinator.navigateToScreen(Destination.RestaurantList)
+        }
+        data.pathSegments.size == DeepLinkConstants.SINGLE_SEGMENT_PATH -> {
+            val restaurantId = data.pathSegments[DeepLinkConstants.RESTAURANT_ID_INDEX]
+            coordinator.navigateToScreen(Destination.RestaurantDetail(restaurantId))
+        }
+    }
+}
+
+private fun handleModalDeepLink(data: Uri, coordinator: AppCoordinator) {
+    if (data.pathSegments.isEmpty()) return
+    
+    val modalType = data.pathSegments[DeepLinkConstants.MODAL_TYPE_INDEX]
+    
+    when (modalType) {
+        DeepLinkConstants.PATH_FILTER.trimStart('/') -> {
+            val filtersParam = data.getQueryParameter(DeepLinkConstants.QUERY_PARAM_FILTERS) ?: ""
+            val preSelectedFilters = if (filtersParam.isNotEmpty()) {
+                filtersParam.split(",").map { it.trim() }
+            } else {
+                emptyList()
+            }
+            coordinator.showFilterModal(preSelectedFilters)
+        }
+        
+        DeepLinkConstants.PATH_SUBMIT_REVIEW.trimStart('/') -> {
+            if (data.pathSegments.size == DeepLinkConstants.TWO_SEGMENT_PATH) {
+                val restaurantId = data.pathSegments[DeepLinkConstants.SUBMIT_REVIEW_RESTAURANT_ID_INDEX]
+                coordinator.submitReview(restaurantId)
+            }
+        }
+        
+        DeepLinkConstants.PATH_CONFIRM.trimStart('/') -> {
+            val message = data.getQueryParameter(DeepLinkConstants.QUERY_PARAM_MESSAGE) 
+                ?: DeepLinkConstants.DEFAULT_CONFIRM_MESSAGE
+            val confirmText = data.getQueryParameter(DeepLinkConstants.QUERY_PARAM_CONFIRM_TEXT) 
+                ?: DeepLinkConstants.DEFAULT_CONFIRM_TEXT
+            val cancelText = data.getQueryParameter(DeepLinkConstants.QUERY_PARAM_CANCEL_TEXT) 
+                ?: DeepLinkConstants.DEFAULT_CANCEL_TEXT
+            coordinator.showConfirmation(message, confirmText, cancelText)
+        }
+        
+        DeepLinkConstants.PATH_DATE_PICKER.trimStart('/') -> {
+            val initialDate = data.getQueryParameter(DeepLinkConstants.QUERY_PARAM_INITIAL_DATE)
+            coordinator.showModal(ModalDestination.DatePicker(initialDate))
+        }
     }
 }

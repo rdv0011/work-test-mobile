@@ -1,5 +1,6 @@
 package io.umain.munchies.android
 
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -8,7 +9,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import io.umain.munchies.android.deeplinks.DeepLinkConstants
-import io.umain.munchies.android.di.registerAndroidNavigationModule
 import io.umain.munchies.android.navigation.AppNavigation
 import io.umain.munchies.android.ui.theme.MunchiesTheme
 import io.umain.munchies.navigation.AppCoordinator
@@ -23,7 +23,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        registerAndroidNavigationModule()
+        // Extract deep link URI before Compose rendering
+        // This will be processed after event listener is active
+        val pendingDeepLinkUri = extractDeepLinkUri(intent)
         
         setContent {
             MunchiesTheme {
@@ -31,25 +33,34 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    AppNavigation(coordinator)
+                    AppNavigation(coordinator, pendingDeepLinkUri)
                 }
             }
         }
-        
-        handleDeepLink(intent)
     }
     
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        
+        // When app is already running, process deep link immediately
+        // The event listener is already active
         handleDeepLink(intent)
+    }
+    
+    private fun extractDeepLinkUri(intent: android.content.Intent): Uri? {
+        val data = intent.data ?: return null
+        return if (data.scheme == DeepLinkConstants.SCHEME) data else null
     }
     
     private fun handleDeepLink(intent: android.content.Intent) {
         val data = intent.data ?: return
         
         if (data.scheme != DeepLinkConstants.SCHEME) return
-        
+        processDeepLinkUri(data)
+    }
+    
+    private fun processDeepLinkUri(data: Uri) {
         when (data.host) {
             DeepLinkConstants.HOST_RESTAURANTS -> handleRestaurantDeepLink(data)
             DeepLinkConstants.HOST_SETTINGS -> coordinator.selectTab(DeepLinkConstants.TAB_ID_SETTINGS)
