@@ -48,35 +48,45 @@ class NavigationCoordinator: ObservableObject {
     }
     
     func handle(event: NavigationEvent) {
+        print("🗂️  DEBUG: NavigationCoordinator.handle(event: \(type(of: event)))")
         coordinator.reduceState(event: event)
         
         switch event {
         case let push as NavigationEvent.Push:
+            print("🗂️  DEBUG: Handling Push for destination: \(push.destination)")
             handlePush(destination: push.destination)
          case is NavigationEvent.Pop:
-             if !routeStack.isEmpty {
-                 routeStack.removeLast()
-             }
-             recomputeTabStacks()
-             updateActiveRoutes()
-             syncCleanup()
-         case is NavigationEvent.PopToRoot:
-             routeStack.removeAll()
-             recomputeTabStacks()
-             activeRoutes.removeAll()
-             registry.cleanup(activeRoutes: [])
-        case let selectTab as NavigationEvent.SelectTab:
-            handleSelectTab(selectTab.tabId)
-        case let showModal as NavigationEvent.ShowModal:
-            handleShowModal(showModal.destination)
-        case is NavigationEvent.DismissModal:
-            handleDismissModal()
-        case is NavigationEvent.DismissAllModals:
-            handleDismissAllModals()
-        case let dismissUntil as NavigationEvent.DismissModalUntil:
-            handleDismissModalUntil(dismissUntil.predicate)
-        default:
-            break
+             print("🗂️  DEBUG: Handling Pop")
+              if !routeStack.isEmpty {
+                  routeStack.removeLast()
+              }
+              recomputeTabStacks()
+              updateActiveRoutes()
+              syncCleanup()
+          case is NavigationEvent.PopToRoot:
+              print("🗂️  DEBUG: Handling PopToRoot")
+              routeStack.removeAll()
+              recomputeTabStacks()
+              activeRoutes.removeAll()
+              registry.cleanup(activeRoutes: [])
+         case let selectTab as NavigationEvent.SelectTab:
+             print("🗂️  DEBUG: Handling SelectTab(\(selectTab.tabId))")
+             handleSelectTab(selectTab.tabId)
+         case let showModal as NavigationEvent.ShowModal:
+             print("🗂️  DEBUG: Handling ShowModal for \(type(of: showModal.destination))")
+             handleShowModal(showModal.destination)
+         case is NavigationEvent.DismissModal:
+             print("🗂️  DEBUG: Handling DismissModal")
+             handleDismissModal()
+         case is NavigationEvent.DismissAllModals:
+             print("🗂️  DEBUG: Handling DismissAllModals")
+             handleDismissAllModals()
+         case let dismissUntil as NavigationEvent.DismissModalUntil:
+             print("🗂️  DEBUG: Handling DismissModalUntil")
+             handleDismissModalUntil(dismissUntil.predicate)
+         default:
+             print("🗂️  DEBUG: Unhandled event type: \(type(of: event))")
+             break
         }
     }
     
@@ -88,37 +98,54 @@ class NavigationCoordinator: ObservableObject {
      }
     
      private func handlePush(destination: shared.Destination) {
-         for provider in routeProviders {
+         print("🗂️  DEBUG: handlePush - looking for route provider to handle \(type(of: destination))")
+         for (index, provider) in routeProviders.enumerated() {
+             print("🗂️  DEBUG:   Provider \(index): \(type(of: provider))")
              let handler = provider.getRoutes().first { 
                  $0.canHandle(destination: destination) 
              }
              
-             if let handler = handler,
-                let kmpRoute = handler.destinationToRoute(destination: destination),
-                let iosRoute = convertToIOSRoute(kmpRoute) {
-                 routeStack.append(iosRoute)
-                 recomputeTabStacks()
-                 updateActiveRoutes()
-                 syncCleanup()
-                 return
+             if let handler = handler {
+                 print("🗂️  DEBUG:   ✓ Found handler: \(type(of: handler))")
+                 if let kmpRoute = handler.destinationToRoute(destination: destination) {
+                     print("🗂️  DEBUG:     ✓ Converted to KMP route: \(kmpRoute)")
+                     if let iosRoute = convertToIOSRoute(kmpRoute) {
+                         print("🗂️  DEBUG:     ✓ Converted to iOS route: \(iosRoute)")
+                         routeStack.append(iosRoute)
+                         recomputeTabStacks()
+                         updateActiveRoutes()
+                         syncCleanup()
+                         return
+                     } else {
+                         print("🗂️  DEBUG:     ✗ Failed to convert KMP route to iOS route")
+                     }
+                 } else {
+                     print("🗂️  DEBUG:     ✗ Handler returned nil for destinationToRoute")
+                 }
              }
          }
          
+         print("🗂️  ERROR: No route provider found for destination: \(destination)")
          fatalError("No route provider found for destination: \(destination)")
      }
     
-    private func convertToIOSRoute(_ kmpRoute: shared.Route) -> Route? {
-        switch kmpRoute {
-        case _ as RestaurantListRoute:
-            return .restaurantList
-        case let detailRoute as RestaurantDetailRoute:
-            return .restaurantDetail(detailRoute.restaurantId)
-        case _ as SettingsRoute:
-            return .settings
-        default:
-            return nil
-        }
-    }
+     private func convertToIOSRoute(_ kmpRoute: shared.Route) -> Route? {
+         print("🗂️  DEBUG: convertToIOSRoute - converting \(type(of: kmpRoute))")
+         switch kmpRoute {
+         case _ as RestaurantListRoute:
+             print("🗂️  DEBUG:   ✓ RestaurantListRoute -> .restaurantList")
+             return .restaurantList
+         case let detailRoute as RestaurantDetailRoute:
+             print("🗂️  DEBUG:   ✓ RestaurantDetailRoute -> .restaurantDetail(\(detailRoute.restaurantId))")
+             return .restaurantDetail(detailRoute.restaurantId)
+         case _ as SettingsRoute:
+             print("🗂️  DEBUG:   ✓ SettingsRoute -> .settings")
+             return .settings
+         default:
+             print("🗂️  DEBUG:   ✗ Unknown route type: \(type(of: kmpRoute))")
+             return nil
+         }
+     }
     
     private func updateActiveRoutes() {
         activeRoutes.removeAll()

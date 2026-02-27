@@ -9,9 +9,13 @@ struct AppNavigationView: View {
             coordinator: coordinator,
             holderRegistry: RestaurantHolderProviderImpl()
         )
+        let settingsProvider = SettingsRouteProvider(
+            coordinator: coordinator,
+            holderProvider: SettingsHolderProviderImpl()
+        )
         _navigator = StateObject(wrappedValue: NavigationCoordinator(
             coordinator: coordinator,
-            routeProviders: [restaurantProvider]
+            routeProviders: [restaurantProvider, settingsProvider]
         ))
     }
     

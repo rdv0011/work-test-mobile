@@ -23,11 +23,17 @@ struct MunchiesApp: App {
     }
     
     private func handleDeepLink(_ url: URL) {
-        guard url.scheme == DeepLinkConstants.scheme else { return }
+        guard url.scheme == DeepLinkConstants().SCHEME else { return }
         
         let host = url.host ?? ""
         let path = url.path
         let pathComponents = path.split(separator: "/").map(String.init)
+        
+        print("🔗 DEBUG: handleDeepLink called")
+        print("  URL: \(url)")
+        print("  host: \(host)")
+        print("  path: \(path)")
+        print("  pathComponents: \(pathComponents)")
         
         // Extract query parameters
         var queryParams: [String: String] = [:]
@@ -38,13 +44,17 @@ struct MunchiesApp: App {
             }
         }
         
+        print("  queryParams: \(queryParams)")
+        
         // Use shared processor for routing
+        print("🔗 DEBUG: Calling DeepLinkProcessor.processDeepLink")
         DeepLinkProcessor.shared.processDeepLink(
             host: host,
             pathSegments: pathComponents,
             queryParams: queryParams,
             coordinator: coordinator
         )
+        print("🔗 DEBUG: DeepLinkProcessor.processDeepLink completed")
     }
 }
 
