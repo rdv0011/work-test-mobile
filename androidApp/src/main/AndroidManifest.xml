@@ -60,7 +60,7 @@
                 <data 
                     android:scheme="munchies" 
                     android:host="modal"
-                    android:pathPattern="/submit_review/[0-9]*" />
+                    android:pathPattern="/submit_review/[0-9]+" />
             </intent-filter>
             
             <!-- Deep links: munchies://modal/confirm?message=...&confirmText=...&cancelText=... -->
