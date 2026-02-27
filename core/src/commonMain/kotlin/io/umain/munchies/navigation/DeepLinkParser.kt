@@ -36,18 +36,18 @@ object DeepLinkParser {
      * Parse a deep link URL and return the corresponding navigation state.
      *
      * Examples:
-     * - "app://restaurant-list" → RestaurantListRoute
-     * - "app://restaurant-detail/123" → RestaurantDetailRoute("123")
-     * - "app://restaurant-list/filters" → Shows filter modal
-     * - "app://restaurant-detail/123?submit_review=true" → Detail + submit review modal
+     * - "munchies://restaurants" → RestaurantListRoute
+     * - "munchies://restaurants/123" → RestaurantDetailRoute("123")
+     * - "munchies://modal/filter?filters=tag1,tag2" → Shows filter modal
+     * - "munchies://modal/submit_review/123" → Detail + submit review modal
      */
     fun parseDeepLink(deepLink: String): NavigationState {
         return when {
             deepLink.isEmpty() -> NavigationState(
                 primaryStack = listOf(RestaurantListRoute())
             )
-            deepLink.startsWith("app://") -> {
-                parseAppScheme(deepLink.substring(6))
+            deepLink.startsWith("munchies://") -> {
+                parseAppScheme(deepLink.substring(11))
             }
             else -> NavigationState(
                 primaryStack = listOf(RestaurantListRoute())
@@ -67,21 +67,28 @@ object DeepLinkParser {
         }
         
         return when (segments[0]) {
-            "restaurant-list" -> {
+            "restaurants" -> {
+                val restaurantId = segments.getOrNull(1)
+                if (restaurantId != null) {
+                    // munchies://restaurants/{restaurantId}
+                    NavigationState(
+                        primaryStack = listOf(
+                            RestaurantListRoute(),
+                            RestaurantDetailRoute(restaurantId)
+                        ),
+                        modalStack = parseModalsFromQuery(queryParams)
+                    )
+                } else {
+                    // munchies://restaurants
+                    NavigationState(
+                        primaryStack = listOf(RestaurantListRoute()),
+                        modalStack = parseModalsFromQuery(queryParams)
+                    )
+                }
+            }
+            "settings" -> {
                 NavigationState(
                     primaryStack = listOf(RestaurantListRoute()),
-                    modalStack = parseModalsFromQuery(queryParams)
-                )
-            }
-            "restaurant-detail" -> {
-                val restaurantId = segments.getOrNull(1) ?: return NavigationState(
-                    primaryStack = listOf(RestaurantListRoute())
-                )
-                NavigationState(
-                    primaryStack = listOf(
-                        RestaurantListRoute(),
-                        RestaurantDetailRoute(restaurantId)
-                    ),
                     modalStack = parseModalsFromQuery(queryParams)
                 )
             }
