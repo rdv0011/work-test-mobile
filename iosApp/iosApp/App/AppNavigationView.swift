@@ -11,7 +11,7 @@ struct AppNavigationView: View {
         )
         let settingsProvider = SettingsRouteProvider(
             coordinator: coordinator,
-            holderProvider: SettingsHolderProviderImpl()
+            holderRegistry: SettingsHolderProviderImpl()
         )
         _navigator = StateObject(wrappedValue: NavigationCoordinator(
             coordinator: coordinator,
