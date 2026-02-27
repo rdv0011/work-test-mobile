@@ -25,7 +25,7 @@ Conducted comprehensive analysis of deep link route format alignment across:
 | 2 | `munchies://restaurants/{id}` | ✅ pathPattern="/[0-9]+" | ✅ RestaurantDetail(id) | ✅ restaurants/{id} | ✓ WORKS |
 | 3 | `munchies://settings` | ✅ host=settings | ✅ selectTab(settings) | ✅ settings | ✓ WORKS |
 | 4 | `munchies://modal/filter?filters=tag1,tag2` | ✅ path=/filter | ✅ showFilterModal | ✅ modal/filter | ✓ WORKS |
-| 5 | `munchies://modal/submit_review/{id}` | ✅ pathPattern="/submit_review/[0-9]*" | ✅ submitReview(id) | ✅ modal/submit_review | ✓ WORKS |
+| 5 | `munchies://modal/submit_review/{id}` | ✅ pathPattern="/submit_review/[0-9]+" | ✅ submitReview(id) | ✅ modal/submit_review | ✓ WORKS |
 | 6 | `munchies://modal/confirm?msg=...&confirm=...&cancel=...` | ✅ path=/confirm | ✅ showConfirmation | ✅ modal/confirm | ✓ WORKS |
 | 7 | `munchies://modal/date_picker?initialDate=...` | ✅ path=/date_picker | ✅ showModal(DatePicker) | ✅ modal/date_picker | ✓ WORKS |
 

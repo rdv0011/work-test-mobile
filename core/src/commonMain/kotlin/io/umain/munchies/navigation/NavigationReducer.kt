@@ -108,7 +108,8 @@ object NavigationReducer {
         _event: NavigationEvent.ShowModal,
         _handlers: List<RouteHandler>
     ): NavigationState {
-        // TODO: Implement modal route handling
+        // Modal state is managed at the UI layer (AppNavigation.kt, NavigationCoordinator.swift)
+        // This method exists for completeness but modals are not tracked in NavigationState
         return state
     }
 
