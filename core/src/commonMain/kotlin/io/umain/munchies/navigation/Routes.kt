@@ -30,4 +30,3 @@ data class SettingsRoute(
         const val KEY = "Settings"
     }
 }
-

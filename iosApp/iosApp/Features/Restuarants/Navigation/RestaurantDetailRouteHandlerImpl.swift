@@ -20,7 +20,7 @@ class RestaurantDetailRouteHandlerImpl: shared.RouteHandler {
     private init() {}
     
     var route: shared.Route {
-        RestaurantDetailRoute(restaurantId: "")
+        IosAggregatorKt.createRestaurantDetailRoute(restaurantId: "")
     }
     
     func toRouteString() -> String {
@@ -33,7 +33,7 @@ class RestaurantDetailRouteHandlerImpl: shared.RouteHandler {
     
     func destinationToRoute(destination: shared.Destination) -> shared.Route? {
         if let detail = destination as? Destination.RestaurantDetail {
-            return RestaurantDetailRoute(restaurantId: detail.restaurantId)
+            return IosAggregatorKt.createRestaurantDetailRoute(restaurantId: detail.restaurantId)
         }
         return nil
     }

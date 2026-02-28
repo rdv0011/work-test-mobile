@@ -17,7 +17,7 @@ class SettingsRouteHandlerSwift {
     }
     
     var route: shared.Route {
-        FeatureSettingsIosKt.createSettingsRoute()
+        IosAggregatorKt.createSettingsRoute()
     }
     
     var routeString: String {
