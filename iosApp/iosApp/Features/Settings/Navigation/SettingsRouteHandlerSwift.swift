@@ -17,7 +17,7 @@ class SettingsRouteHandlerSwift {
     }
     
     var route: shared.Route {
-        commonHandler.route
+        FeatureSettingsIosKt.createSettingsRoute()
     }
     
     var routeString: String {

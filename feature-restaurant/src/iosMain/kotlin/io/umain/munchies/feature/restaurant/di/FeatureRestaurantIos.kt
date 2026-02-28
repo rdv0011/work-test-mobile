@@ -1,6 +1,10 @@
 package io.umain.munchies.feature.restaurant.di
 
 import io.umain.munchies.di.getKoin
+import io.umain.munchies.feature.restaurant.navigation.ios.RestaurantDetailRouteHandlerImpl
+import io.umain.munchies.feature.restaurant.navigation.ios.RestaurantListRouteHandlerImpl
+import io.umain.munchies.navigation.RestaurantDetailRoute
+import io.umain.munchies.navigation.RestaurantListRoute
 import org.koin.core.qualifier.named
 import org.koin.core.scope.Scope
 
@@ -52,3 +56,12 @@ fun createRestaurantDetailScopeIos(restaurantId: String): Scope {
             qualifier = named(RestaurantDetailScope("").qualifierName)
         )
 }
+
+fun createRestaurantListRoute(): RestaurantListRoute = RestaurantListRoute()
+
+fun createRestaurantDetailRoute(restaurantId: String): RestaurantDetailRoute =
+    RestaurantDetailRoute(restaurantId)
+
+fun getRestaurantListRouteHandler() = RestaurantListRouteHandlerImpl
+
+fun getRestaurantDetailRouteHandler() = RestaurantDetailRouteHandlerImpl

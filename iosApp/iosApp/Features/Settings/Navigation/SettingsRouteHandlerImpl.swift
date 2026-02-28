@@ -7,7 +7,7 @@ class SettingsRouteHandlerImpl: shared.RouteHandler {
     private init() {}
     
     var route: shared.Route {
-        SettingsRoute()
+        FeatureSettingsIosKt.createSettingsRoute()
     }
     
     func toRouteString() -> String {
@@ -20,8 +20,9 @@ class SettingsRouteHandlerImpl: shared.RouteHandler {
     
     func destinationToRoute(destination: shared.Destination) -> shared.Route? {
         if destination is Destination.Settings {
-            return SettingsRoute()
+            return FeatureSettingsIosKt.createSettingsRoute()
         }
         return nil
     }
 }
+
