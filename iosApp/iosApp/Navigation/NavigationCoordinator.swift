@@ -47,6 +47,35 @@ class NavigationCoordinator: ObservableObject {
         }
     }
     
+    func processPendingDeepLink(_ url: URL) {
+        print("🔗 DEBUG: Processing pending deep link: \(url)")
+        
+        guard url.scheme == DeepLinkConstants().SCHEME else {
+            print("🔗 DEBUG: Invalid scheme: \(url.scheme ?? "nil")")
+            return
+        }
+        
+        let host = url.host ?? ""
+        let path = url.path
+        let pathComponents = path.split(separator: "/").map(String.init)
+        
+        print("🔗 DEBUG: Host: \(host), Path: \(path), Components: \(pathComponents)")
+        
+        var queryParams: [String: String] = [:]
+        if let components = URLComponents(url: url, resolvingAgainstBaseURL: false) {
+            components.queryItems?.forEach { item in
+                queryParams[item.name] = item.value ?? ""
+            }
+        }
+        
+        DeepLinkProcessor.shared.processDeepLink(
+            host: host,
+            pathSegments: pathComponents,
+            queryParams: queryParams,
+            coordinator: coordinator
+        )
+    }
+    
     func handle(event: NavigationEvent) {
         print("🗂️  DEBUG: NavigationCoordinator.handle(event: \(type(of: event)))")
         coordinator.reduceState(event: event)
