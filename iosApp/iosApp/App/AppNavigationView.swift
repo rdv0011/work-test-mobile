@@ -1,10 +1,10 @@
 import SwiftUI
 import shared
+import Combine
 
 struct AppNavigationView: View {
     @StateObject private var navigator: NavigationCoordinator
     @Binding var pendingDeepLinkUrl: URL?
-    @State private var lastProcessedUrl: URL?
     
     init(coordinator: AppCoordinator, pendingDeepLinkUrl: Binding<URL?>) {
         let restaurantProvider = RestaurantRouteProvider(
@@ -25,23 +25,18 @@ struct AppNavigationView: View {
     var body: some View {
         TabNavigationView(navigator: navigator)
             .onAppear {
-                handlePendingDeepLink()
+                processPendingDeepLinkIfAvailable()
             }
-            .onReceive([pendingDeepLinkUrl].publisher, perform: { _ in
-                if pendingDeepLinkUrl != lastProcessedUrl && pendingDeepLinkUrl != nil {
-                    handlePendingDeepLink()
-                }
-            })
+            .onReceive(Just(pendingDeepLinkUrl).compactMap { $0 }, perform: handlePendingDeepLink)
     }
     
-    private func handlePendingDeepLink() {
-        guard let url = pendingDeepLinkUrl else {
-            print("🔗 DEBUG: handlePendingDeepLink() called but pendingDeepLinkUrl is nil")
-            return
-        }
-        
+    private func processPendingDeepLinkIfAvailable() {
+        guard let url = pendingDeepLinkUrl else { return }
+        handlePendingDeepLink(url)
+    }
+    
+    private func handlePendingDeepLink(_ url: URL) {
         print("🔗 DEBUG: handlePendingDeepLink() processing: \(url)")
-        lastProcessedUrl = url
         
         Task {
             print("🔗 DEBUG: Waiting 50ms to ensure listener is fully subscribed...")
@@ -55,3 +50,4 @@ struct AppNavigationView: View {
         }
     }
 }
+
