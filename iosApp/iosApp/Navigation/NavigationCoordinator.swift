@@ -23,6 +23,7 @@ class NavigationCoordinator: ObservableObject {
     private let registry: RouteHolderRegistry
     private let routeProviders: [RouteProvider]
     private var routeStack: [Route] = []
+    private var isListenerActive = false
     
     init(
         coordinator: AppCoordinator,
@@ -37,18 +38,21 @@ class NavigationCoordinator: ObservableObject {
     func observeNavigationEvents() {
         Task { [weak self] in
             guard let self = self else { return }
+            print("🗂️  DEBUG: NavigationCoordinator starting to observe navigation events")
             await self.collectNavigationEvents()
         }
     }
 
     private func collectNavigationEvents() async {
+        isListenerActive = true
+        print("🗂️  DEBUG: NavigationCoordinator listener is now ACTIVE")
         for await event in asyncKotlinStream(coordinator.navigationEvents) as AsyncStream<NavigationEvent> {
             handle(event: event)
         }
     }
     
     func processPendingDeepLink(_ url: URL) {
-        print("🔗 DEBUG: Processing pending deep link: \(url)")
+        print("🔗 DEBUG: processPendingDeepLink called with: \(url), listenerActive=\(isListenerActive)")
         
         guard url.scheme == DeepLinkConstants().SCHEME else {
             print("🔗 DEBUG: Invalid scheme: \(url.scheme ?? "nil")")
@@ -59,7 +63,7 @@ class NavigationCoordinator: ObservableObject {
         let path = url.path
         let pathComponents = path.split(separator: "/").map(String.init)
         
-        print("🔗 DEBUG: Host: \(host), Path: \(path), Components: \(pathComponents)")
+        print("🔗 DEBUG: Parsed URL - host='\(host)', path='\(path)', components=\(pathComponents)")
         
         var queryParams: [String: String] = [:]
         if let components = URLComponents(url: url, resolvingAgainstBaseURL: false) {
@@ -68,12 +72,16 @@ class NavigationCoordinator: ObservableObject {
             }
         }
         
+        print("🔗 DEBUG: Calling DeepLinkProcessor.processDeepLink with host='\(host)', pathSegments=\(pathComponents), queryParams=\(queryParams)")
+        
         DeepLinkProcessor.shared.processDeepLink(
             host: host,
             pathSegments: pathComponents,
             queryParams: queryParams,
             coordinator: coordinator
         )
+        
+        print("🔗 DEBUG: DeepLinkProcessor.processDeepLink completed")
     }
     
     func handle(event: NavigationEvent) {
