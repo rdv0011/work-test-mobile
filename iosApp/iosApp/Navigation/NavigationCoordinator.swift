@@ -127,12 +127,11 @@ class NavigationCoordinator: ObservableObject {
         }
     }
     
-     private func handleSelectTab(_ tabId: String) {
-         let previousTabId = activeTabId
-         activeTabId = tabId
-         updateActiveRoutes()
-         syncCleanup()
-     }
+      private func handleSelectTab(_ tabId: String) {
+          activeTabId = tabId
+          updateActiveRoutes()
+          syncCleanup()
+      }
     
      private func handlePush(destination: shared.Destination) {
          print("🗂️  DEBUG: handlePush - looking for route provider to handle \(type(of: destination))")
