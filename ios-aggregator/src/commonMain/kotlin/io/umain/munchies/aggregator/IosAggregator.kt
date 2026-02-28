@@ -3,6 +3,7 @@ package io.umain.munchies.aggregator
 import io.umain.munchies.navigation.RestaurantListRoute
 import io.umain.munchies.navigation.RestaurantDetailRoute
 import io.umain.munchies.navigation.SettingsRoute
+import io.umain.munchies.navigation.DeepLinkProcessor
 
 object IosAggregator {
     const val VERSION = "1.0.0"
@@ -14,3 +15,5 @@ fun createRestaurantDetailRoute(restaurantId: String): RestaurantDetailRoute =
     RestaurantDetailRoute(restaurantId)
 
 fun createSettingsRoute(): SettingsRoute = SettingsRoute()
+
+fun getDeepLinkProcessor() = DeepLinkProcessor

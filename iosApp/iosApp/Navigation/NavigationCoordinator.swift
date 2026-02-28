@@ -74,7 +74,7 @@ class NavigationCoordinator: ObservableObject {
         
         print("🔗 DEBUG: Calling DeepLinkProcessor.processDeepLink with host='\(host)', pathSegments=\(pathComponents), queryParams=\(queryParams)")
         
-        DeepLinkProcessor.shared.processDeepLink(
+        shared.DeepLinkProcessor.shared.processDeepLink(
             host: host,
             pathSegments: pathComponents,
             queryParams: queryParams,
