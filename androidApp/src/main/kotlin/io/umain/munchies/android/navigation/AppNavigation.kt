@@ -91,29 +91,32 @@ fun AppNavigation(
     val navigationState = coordinator.navigationState.collectAsState().value
 
     LaunchedEffect(coordinator, pendingDeepLinkUri) {
-        // Collect navigation events
-        val collectJob = launch {
-            coordinator.navigationEvents.collectLatest { event ->
-                coordinator.reduceState(event)
-                handleNavigationEvent(
-                    event, 
-                    navController, 
-                    trackedRouteKeys,
-                    modalStack,
-                    registry, 
-                    navigationMappers,
-                    allHandlers,
-                    startDestination,
-                    navigationState
-                )
+        launch {
+            try {
+                coordinator.navigationEvents.collectLatest { event ->
+                    coordinator.reduceState(event)
+                    handleNavigationEvent(
+                        event, 
+                        navController, 
+                        trackedRouteKeys,
+                        modalStack,
+                        registry, 
+                        navigationMappers,
+                        allHandlers,
+                        startDestination,
+                        navigationState
+                    )
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
         
-        // Small delay to ensure event listener is active, then process deep link
-        kotlinx.coroutines.delay(10)
-        
+        // Process deep link (will be replayed to subscriber due to replay=1 on SharedFlow)
         if (pendingDeepLinkUri != null) {
             processPendingDeepLink(pendingDeepLinkUri, coordinator)
+        } else {
+            coordinator.markListenerReady()
         }
         
         deepLinkProcessed.value = true
@@ -245,7 +248,7 @@ private fun handleNavigationEvent(
             }
         }
         is NavigationEvent.ShowModal -> {
-            modalStack.value = modalStack.value + event.destination.toModalRoute()
+            modalStack.value += event.destination.toModalRoute()
         }
         is NavigationEvent.DismissModal -> {
             if (modalStack.value.isNotEmpty()) {
@@ -426,12 +429,3 @@ private fun processPendingDeepLink(deepLinkUri: Uri, coordinator: AppCoordinator
         coordinator = coordinator
     )
 }
-
-// Query parameter names for extraction (duplicated to avoid circular dependency)
-private val queryParamNames = listOf(
-    DeepLinkConstants.QUERY_PARAM_FILTERS,
-    DeepLinkConstants.QUERY_PARAM_MESSAGE,
-    DeepLinkConstants.QUERY_PARAM_CONFIRM_TEXT,
-    DeepLinkConstants.QUERY_PARAM_CANCEL_TEXT,
-    DeepLinkConstants.QUERY_PARAM_INITIAL_DATE
-)

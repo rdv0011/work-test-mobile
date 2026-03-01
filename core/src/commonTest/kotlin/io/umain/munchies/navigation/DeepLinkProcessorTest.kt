@@ -3,6 +3,7 @@ package io.umain.munchies.navigation
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.test.BeforeTest
 
 /**
  * Unit tests for DeepLinkProcessor.
@@ -16,6 +17,11 @@ import kotlin.test.assertTrue
 class DeepLinkProcessorTest {
     
     private val mockCoordinator = MockAppCoordinator()
+    
+    @BeforeTest
+    fun setUp() {
+        mockCoordinator.reset()
+    }
     
     // === RESTAURANT DEEP LINK TESTS ===
     
@@ -233,7 +239,6 @@ class MockAppCoordinator : AppCoordinator() {
     var callCount = 0
         private set
     
-    // Navigation tracking
     var navigateToScreenCalled = false
         private set
     var lastDestination: Destination? = null
@@ -267,6 +272,24 @@ class MockAppCoordinator : AppCoordinator() {
         private set
     var lastTabId: String? = null
         private set
+    
+    fun reset() {
+        callCount = 0
+        navigateToScreenCalled = false
+        lastDestination = null
+        showFilterModalCalled = false
+        lastFilterSelection = null
+        submitReviewCalled = false
+        lastReviewRestaurantId = null
+        showConfirmationCalled = false
+        lastConfirmMessage = null
+        lastConfirmText = null
+        lastCancelText = null
+        showModalCalled = false
+        lastDatePickerInitialDate = null
+        selectTabCalled = false
+        lastTabId = null
+    }
     
     override fun navigateToScreen(destination: Destination) {
         navigateToScreenCalled = true

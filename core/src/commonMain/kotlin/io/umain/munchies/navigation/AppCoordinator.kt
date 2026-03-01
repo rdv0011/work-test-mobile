@@ -31,22 +31,53 @@ open class AppCoordinator(
     // === EVENTS (for platform layer) ===
 
     private val _navigationEvents = MutableSharedFlow<NavigationEvent>(
+        replay = 1,
         extraBufferCapacity = 10
     )
     val navigationEvents: SharedFlow<NavigationEvent> = _navigationEvents.asSharedFlow()
 
-    // === ROUTE HANDLERS (injected) ===
+     // === ROUTE HANDLERS (injected) ===
 
-    var routeHandlers: List<RouteHandler> = emptyList()
+     var routeHandlers: List<RouteHandler> = emptyList()
 
-    // === PUBLIC API: SCREEN NAVIGATION ===
+      // === LISTENER READINESS ===
 
-    /**
-     * Navigate to a screen
-     */
-    open fun navigateToScreen(destination: Destination) {
-        _navigationEvents.tryEmit(NavigationEvent.Push(destination))
-    }
+      private var isListenerReady = false
+      private val pendingListenerCallbacks = mutableListOf<() -> Unit>()
+
+       /**
+        * Register a callback to execute when the navigation event listener is ready.
+        * 
+        * If called after listener is already ready, the callback executes immediately.
+        * This eliminates the need for hardcoded timing delays on platform layers.
+        * 
+        * @param action Lambda to execute when listener is ready
+        */
+       fun onListenerReady(action: () -> Unit) {
+           if (isListenerReady) {
+               action()
+           } else {
+               pendingListenerCallbacks.add(action)
+           }
+       }
+
+       fun markListenerReady() {
+           if (!isListenerReady) {
+               isListenerReady = true
+               val callbacks = pendingListenerCallbacks.toList()
+               pendingListenerCallbacks.clear()
+               callbacks.forEach { it() }
+           }
+       }
+
+     // === PUBLIC API: SCREEN NAVIGATION ===
+
+     /**
+      * Navigate to a screen
+      */
+      open fun navigateToScreen(destination: Destination) {
+          _navigationEvents.tryEmit(NavigationEvent.Push(destination))
+      }
 
     /**
      * Convenience method for restaurant detail
@@ -55,12 +86,12 @@ open class AppCoordinator(
         navigateToScreen(Destination.RestaurantDetail(restaurantId))
     }
 
-    /**
-     * Go back (pops modal if showing, else pops screen)
-     */
-    fun navigateBack() {
-        _navigationEvents.tryEmit(NavigationEvent.Pop)
-    }
+      /**
+       * Go back (pops modal if showing, else pops screen)
+       */
+       fun navigateBack() {
+           _navigationEvents.tryEmit(NavigationEvent.Pop)
+       }
 
     /**
      * Return to root screen(s)

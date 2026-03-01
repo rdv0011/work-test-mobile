@@ -22,32 +22,28 @@ struct AppNavigationView: View {
         _pendingDeepLinkUrl = pendingDeepLinkUrl
     }
     
-    var body: some View {
-        TabNavigationView(navigator: navigator)
-            .onAppear {
-                processPendingDeepLinkIfAvailable()
-            }
-            .onReceive(Just(pendingDeepLinkUrl).compactMap { $0 }, perform: handlePendingDeepLink)
-    }
-    
-    private func processPendingDeepLinkIfAvailable() {
-        guard let url = pendingDeepLinkUrl else { return }
-        handlePendingDeepLink(url)
-    }
-    
-    private func handlePendingDeepLink(_ url: URL) {
-        print("🔗 DEBUG: handlePendingDeepLink() processing: \(url)")
-        
-        Task {
-            print("🔗 DEBUG: Waiting 50ms to ensure listener is fully subscribed...")
-            try? await Task.sleep(nanoseconds: 50_000_000)
-            
-            print("🔗 DEBUG: Sleep complete, calling navigator.processPendingDeepLink()")
-            navigator.processPendingDeepLink(url)
-            
-            print("🔗 DEBUG: Clearing pendingDeepLinkUrl")
-            pendingDeepLinkUrl = nil
-        }
-    }
+     var body: some View {
+         TabNavigationView(navigator: navigator)
+             .onAppear {
+                 processPendingDeepLinkIfAvailable()
+             }
+             .onReceive(Just(pendingDeepLinkUrl).compactMap { $0 }, perform: handlePendingDeepLink)
+     }
+     
+     private func processPendingDeepLinkIfAvailable() {
+         guard let url = pendingDeepLinkUrl else { return }
+         navigator.coordinator.onListenerReady {
+             self.navigator.processPendingDeepLink(url)
+             self.pendingDeepLinkUrl = nil
+         }
+     }
+     
+     private func handlePendingDeepLink(_ url: URL) {
+         print("🔗 DEBUG: handlePendingDeepLink() processing: \(url)")
+         navigator.coordinator.onListenerReady {
+             self.navigator.processPendingDeepLink(url)
+             self.pendingDeepLinkUrl = nil
+         }
+     }
 }
 

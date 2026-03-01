@@ -35,21 +35,22 @@ class NavigationCoordinator: ObservableObject {
         observeNavigationEvents()
     }
     
-    func observeNavigationEvents() {
-        Task { [weak self] in
-            guard let self = self else { return }
-            print("🗂️  DEBUG: NavigationCoordinator starting to observe navigation events")
-            await self.collectNavigationEvents()
-        }
-    }
+     func observeNavigationEvents() {
+         Task { [weak self] in
+             guard let self = self else { return }
+             print("🗂️  DEBUG: NavigationCoordinator starting to observe navigation events")
+             await self.collectNavigationEvents()
+         }
+     }
 
-    private func collectNavigationEvents() async {
-        isListenerActive = true
-        print("🗂️  DEBUG: NavigationCoordinator listener is now ACTIVE")
-        for await event in asyncKotlinStream(coordinator.navigationEvents) as AsyncStream<NavigationEvent> {
-            handle(event: event)
-        }
-    }
+     private func collectNavigationEvents() async {
+         isListenerActive = true
+         print("🗂️  DEBUG: NavigationCoordinator listener is now ACTIVE")
+         coordinator.markListenerReady()
+         for await event in asyncKotlinStream(coordinator.navigationEvents) as AsyncStream<NavigationEvent> {
+             handle(event: event)
+         }
+     }
     
     func processPendingDeepLink(_ url: URL) {
         print("🔗 DEBUG: processPendingDeepLink called with: \(url), listenerActive=\(isListenerActive)")

@@ -37,7 +37,6 @@ object NavigationReducer {
             is NavigationEvent.ApplyNavigationState -> event.newState
         }
     }
-
     // === SCREEN NAVIGATION HANDLERS ===
 
     private fun handlePush(

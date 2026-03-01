@@ -22,8 +22,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // Extract deep link URI before Compose rendering
-        // This will be processed after event listener is active
         val pendingDeepLinkUri = extractDeepLinkUri(intent)
         
         setContent {

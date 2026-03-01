@@ -26,12 +26,15 @@ object DeepLinkProcessor {
         coordinator: AppCoordinator
     ) {
         when (host) {
-            DeepLinkConstants.HOST_RESTAURANTS -> 
+            DeepLinkConstants.HOST_RESTAURANTS -> {
                 routeRestaurantDeepLink(pathSegments, coordinator)
-            DeepLinkConstants.HOST_SETTINGS -> 
+            }
+            DeepLinkConstants.HOST_SETTINGS -> {
                 coordinator.selectTab(tabId = DeepLinkConstants.TAB_ID_SETTINGS)
-            DeepLinkConstants.HOST_MODAL -> 
+            }
+            DeepLinkConstants.HOST_MODAL -> {
                 routeModalDeepLink(pathSegments, queryParams, coordinator)
+            }
         }
     }
     
@@ -41,11 +44,9 @@ object DeepLinkProcessor {
     ) {
         when {
             pathSegments.isEmpty() -> {
-                // munchies://restaurants
                 coordinator.navigateToScreen(Destination.RestaurantList)
             }
-            pathSegments.size == DeepLinkConstants.SINGLE_SEGMENT_PATH -> {
-                // munchies://restaurants/{restaurantId}
+            pathSegments.size >= DeepLinkConstants.SINGLE_SEGMENT_PATH -> {
                 val restaurantId = pathSegments[DeepLinkConstants.RESTAURANT_ID_INDEX]
                 coordinator.navigateToScreen(Destination.RestaurantDetail(restaurantId))
             }
