@@ -10,7 +10,10 @@ import io.umain.munchies.navigation.RouteComposableBuilder
 import io.umain.munchies.navigation.RouteNavigationMapper
 import io.umain.munchies.navigation.ScopedRouteHandler
 import io.umain.munchies.android.features.restaurant.presentation.restaurantlist.RestaurantListScreen
+import io.umain.munchies.android.navigation.LocalRouteRegistry
 import io.umain.munchies.feature.restaurant.di.RestaurantListScope
+import io.umain.munchies.feature.restaurant.di.getRestaurantNavigationViewModel
+import io.umain.munchies.feature.restaurant.navigation.RestaurantNavigationViewModel
 import org.koin.core.context.GlobalContext
 import org.koin.core.qualifier.named
 import org.koin.core.scope.Scope
@@ -45,7 +48,10 @@ class RestaurantListRouteHandlerAndroid(
         coordinator: AppCoordinator
     ) {
         navGraphBuilder.composable(toRouteString()) {
-            RestaurantListScreen(coordinator)
+            val registry = LocalRouteRegistry.current
+            val scope = registry.createScopeForRoute(route)
+            val navigationViewModel = scope.getRestaurantNavigationViewModel()
+            RestaurantListScreen(navigationViewModel)
         }
     }
 

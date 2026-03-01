@@ -36,11 +36,12 @@ import io.umain.munchies.android.ui.components.FilterChipCompose
 import io.umain.munchies.android.ui.components.RestaurantCardCompose
 import io.umain.munchies.feature.restaurant.presentation.model.FilterChipData
 import io.umain.munchies.feature.restaurant.presentation.model.RestaurantCardData
+import io.umain.munchies.feature.restaurant.navigation.RestaurantNavigationViewModel
 import androidx.compose.runtime.remember
 
 @Composable
 fun RestaurantListScreen(
-    coordinator: AppCoordinator,
+    navigationViewModel: RestaurantNavigationViewModel,
     modifier: Modifier = Modifier
 ) {
     val registry = LocalRouteRegistry.current
@@ -120,7 +121,7 @@ fun RestaurantListScreen(
                     }
                     Button(
                         onClick = {
-                            viewModel.showFilterOptions(selectedFilterIds.toList())
+                            navigationViewModel.showFilterModal(selectedFilterIds.toList())
                         },
                         modifier = Modifier.padding(start = DesignTokens.Spacing.md.dp)
                     ) {
@@ -163,7 +164,7 @@ fun RestaurantListScreen(
                     RestaurantCardCompose(
                         data = restaurant,
                         onTap = {
-                            viewModel.navigateToRestaurantDetail(restaurant.id)
+                            navigationViewModel.showRestaurantDetail(restaurant.id)
                         },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -179,8 +180,5 @@ fun RestaurantListScreen(
 @Composable
 private fun RestaurantListScreenPreview() {
     MunchiesTheme {
-        RestaurantListScreen(
-            coordinator = AppCoordinator()
-        )
     }
 }

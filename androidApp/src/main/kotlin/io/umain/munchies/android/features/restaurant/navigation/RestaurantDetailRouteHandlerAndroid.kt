@@ -14,7 +14,9 @@ import io.umain.munchies.navigation.RouteConstants
 import io.umain.munchies.navigation.RouteNavigationMapper
 import io.umain.munchies.navigation.ScopedRouteHandler
 import io.umain.munchies.android.features.restaurant.presentation.restaurantdetail.RestaurantDetailScreen
+import io.umain.munchies.android.navigation.LocalRouteRegistry
 import io.umain.munchies.feature.restaurant.di.RestaurantDetailScope
+import io.umain.munchies.feature.restaurant.di.getRestaurantNavigationViewModel
 import io.umain.munchies.feature.restaurant.presentation.RestaurantDetailViewModel
 import org.koin.core.context.GlobalContext
 import org.koin.core.qualifier.named
@@ -61,9 +63,13 @@ class RestaurantDetailRouteHandlerAndroid(
             )
         ) { backStackEntry ->
             val restaurantId = backStackEntry.arguments?.getString(RouteConstants.PARAM_RESTAURANT_ID) ?: ""
+            val registry = LocalRouteRegistry.current
+            val route = RestaurantDetailRoute(restaurantId)
+            val scope = registry.createScopeForRoute(route)
+            val navigationViewModel = scope.getRestaurantNavigationViewModel()
             RestaurantDetailScreen(
                 restaurantId,
-                coordinator
+                navigationViewModel
             )
         }
     }

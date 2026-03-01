@@ -26,10 +26,11 @@ import io.umain.munchies.designtokens.DesignTokens
 import io.umain.munchies.navigation.AppCoordinator
 import io.umain.munchies.android.navigation.LocalRouteRegistry
 import io.umain.munchies.navigation.SettingsRoute
+import io.umain.munchies.feature.settings.navigation.SettingsNavigationViewModel
 
 @Composable
 fun SettingsScreen(
-    coordinator: AppCoordinator,
+    navigationViewModel: SettingsNavigationViewModel,
     modifier: Modifier = Modifier
 ) {
     val registry = LocalRouteRegistry.current

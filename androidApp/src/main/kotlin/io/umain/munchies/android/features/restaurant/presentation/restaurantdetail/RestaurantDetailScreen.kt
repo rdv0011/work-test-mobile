@@ -46,12 +46,13 @@ import io.umain.munchies.localization.tr
 import io.umain.munchies.navigation.AppCoordinator
 import io.umain.munchies.navigation.ModalDestination
 import io.umain.munchies.navigation.RestaurantDetailRoute
+import io.umain.munchies.feature.restaurant.navigation.RestaurantNavigationViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RestaurantDetailScreen(
     restaurantId: String,
-    coordinator: AppCoordinator,
+    navigationViewModel: RestaurantNavigationViewModel,
 ) {
     val registry = LocalRouteRegistry.current
     val route = remember { RestaurantDetailRoute(restaurantId) }
@@ -102,7 +103,7 @@ fun RestaurantDetailScreen(
                         )
 
                         IconButton(
-                            onClick = { viewModel.navigateBack() },
+                            onClick = { navigationViewModel.navigateBack() },
                             modifier = Modifier
                                 .align(Alignment.TopStart)
                                 .padding(start = 16.dp, top = 40.dp)
@@ -153,9 +154,7 @@ fun RestaurantDetailScreen(
                     ) {
                         Button(
                             onClick = {
-                                coordinator.showModal(
-                                    ModalDestination.SubmitReviewModal(restaurantId)
-                                )
+                                navigationViewModel.showSubmitReviewModal(restaurantId)
                             }
                         ) {
                             Text("Leave a Review")

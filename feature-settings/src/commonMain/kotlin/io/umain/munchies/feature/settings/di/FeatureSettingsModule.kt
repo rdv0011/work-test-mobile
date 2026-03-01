@@ -13,6 +13,6 @@ val featureSettingsModule = module {
     single { SettingsNavigationViewModel(get<NavigationDispatcher>()) }
 
     scope(named(SettingsScope.qualifierName)) {
-        scoped { SettingsViewModel(get()) }
+        scoped { SettingsViewModel() }
     }
 }

@@ -7,6 +7,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import io.umain.munchies.feature.restaurant.di.getRestaurantNavigationViewModel
+import io.umain.munchies.feature.restaurant.di.getRestaurantDetailViewModel
+import io.umain.munchies.feature.settings.di.getSettingsNavigationViewModel
 import androidx.compose.runtime.collectAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -176,10 +179,23 @@ private fun renderCurrentScreen(
     route: Route,
     coordinator: AppCoordinator
 ) {
+    val registry = LocalRouteRegistry.current
     when (route) {
-        is RestaurantListRoute -> RestaurantListScreen(coordinator)
-        is RestaurantDetailRoute -> RestaurantDetailScreen(route.restaurantId, coordinator)
-        is SettingsRoute -> SettingsScreen(coordinator)
+        is RestaurantListRoute -> {
+            val scope = registry.createScopeForRoute(route)
+            val navigationViewModel = scope.getRestaurantNavigationViewModel()
+            RestaurantListScreen(navigationViewModel)
+        }
+        is RestaurantDetailRoute -> {
+            val scope = registry.createScopeForRoute(route)
+            val navigationViewModel = scope.getRestaurantNavigationViewModel()
+            RestaurantDetailScreen(route.restaurantId, navigationViewModel)
+        }
+        is SettingsRoute -> {
+            val scope = registry.createScopeForRoute(route)
+            val navigationViewModel = scope.getSettingsNavigationViewModel()
+            SettingsScreen(navigationViewModel)
+        }
     }
 }
 
