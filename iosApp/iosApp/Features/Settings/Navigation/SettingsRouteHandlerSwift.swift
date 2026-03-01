@@ -50,11 +50,11 @@ class SettingsRouteHandlerSwift {
         return SettingsViewModelHolder(scope: scope)
     }
     
-    @ViewBuilder
-    func buildView(
-        holder: SettingsViewModelHolder,
-        coordinator: AppCoordinator
-    ) -> some View {
-        SettingsView(viewModel: holder.viewModel)
-    }
+     @ViewBuilder
+     func buildView(
+         holder: SettingsViewModelHolder,
+         coordinator: AppCoordinator
+     ) -> some View {
+         SettingsView(navigationViewModel: holder.navigationViewModel, viewModel: holder.viewModel)
+     }
 }

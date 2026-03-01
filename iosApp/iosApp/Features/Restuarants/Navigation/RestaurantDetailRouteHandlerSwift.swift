@@ -88,8 +88,8 @@ class RestaurantDetailRouteHandlerSwift {
     ///
     /// - Parameters:
     ///   - restaurantId: The ID of the restaurant to display
-    ///   - holder: The view model holder containing the view model
-    ///   - coordinator: The app coordinator for navigation
+    ///   - holder: The view model holder containing the view models
+    ///   - coordinator: The app coordinator for navigation (used for modals and deep links)
     /// - Returns: The restaurant detail view
     @ViewBuilder
     func buildView(
@@ -99,7 +99,7 @@ class RestaurantDetailRouteHandlerSwift {
     ) -> some View {
         RestaurantDetailView(
             restaurantId: restaurantId,
-            coordinator: coordinator,
+            navigationViewModel: holder.navigationViewModel,
             viewModel: holder.viewModel,
             holder: holder
         )

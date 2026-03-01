@@ -42,4 +42,11 @@ class NavigationDispatcher(
     fun selectTab(tabId: String) {
         coordinator.selectTab(tabId)
     }
+    
+    /**
+     * Navigate back in the current tab's stack.
+     */
+    fun navigateBack() {
+        coordinator.backInTab()
+    }
 }

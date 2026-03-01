@@ -52,52 +52,55 @@ struct TabNavigationView: View {
         .animation(.easeInOut(duration: 0.2), value: navigator.showingModalKey)
     }
     
-    @ViewBuilder
-    private var restaurantTab: some View {
-        NavigationStack(path: Binding(
-            get: { navigator.tabStacks["restaurants"] ?? NavigationPath() },
-            set: { navigator.tabStacks["restaurants"] = $0 }
-        )) {
-            let restaurantListHolder = navigator.restaurantListHolder()
-            RestaurantListView(
-                coordinator: navigator.coordinator,
-                viewModel: restaurantListHolder.viewModel
-            )
-            .navigationDestination(for: Route.self) { route in
-                destinationView(for: route)
-            }
-        }
-    }
+     @ViewBuilder
+     private var restaurantTab: some View {
+         NavigationStack(path: Binding(
+             get: { navigator.tabStacks["restaurants"] ?? NavigationPath() },
+             set: { navigator.tabStacks["restaurants"] = $0 }
+         )) {
+             let restaurantListHolder = navigator.restaurantListHolder()
+             RestaurantListView(
+                 navigationViewModel: restaurantListHolder.navigationViewModel,
+                 viewModel: restaurantListHolder.viewModel
+             )
+             .navigationDestination(for: Route.self) { route in
+                 destinationView(for: route)
+             }
+         }
+     }
     
-    @ViewBuilder
-    private var settingsTab: some View {
-        NavigationStack(path: Binding(
-            get: { navigator.tabStacks["settings"] ?? NavigationPath() },
-            set: { navigator.tabStacks["settings"] = $0 }
-        )) {
-            let settingsHolder = navigator.settingsHolder()
-            SettingsView(viewModel: settingsHolder.viewModel)
-                .navigationDestination(for: Route.self) { route in
-                    destinationView(for: route)
-                }
-        }
-    }
+     @ViewBuilder
+     private var settingsTab: some View {
+         NavigationStack(path: Binding(
+             get: { navigator.tabStacks["settings"] ?? NavigationPath() },
+             set: { navigator.tabStacks["settings"] = $0 }
+         )) {
+             let settingsHolder = navigator.settingsHolder()
+             SettingsView(
+                 navigationViewModel: settingsHolder.navigationViewModel,
+                 viewModel: settingsHolder.viewModel
+             )
+                 .navigationDestination(for: Route.self) { route in
+                     destinationView(for: route)
+                 }
+         }
+     }
     
-    @ViewBuilder
-    private func destinationView(for route: Route) -> some View {
-        switch route {
-        case .restaurantDetail(let restaurantId):
-            let holder = navigator.restaurantDetailHolder(restaurantId: restaurantId)
-            RestaurantDetailView(
-                restaurantId: restaurantId,
-                coordinator: navigator.coordinator,
-                viewModel: holder.viewModel,
-                holder: holder
-            )
-        case .restaurantList:
-            EmptyView()
-        case .settings:
-            EmptyView()
-        }
-    }
+     @ViewBuilder
+     private func destinationView(for route: Route) -> some View {
+         switch route {
+         case .restaurantDetail(let restaurantId):
+             let holder = navigator.restaurantDetailHolder(restaurantId: restaurantId)
+             RestaurantDetailView(
+                 restaurantId: restaurantId,
+                 navigationViewModel: holder.navigationViewModel,
+                 viewModel: holder.viewModel,
+                 holder: holder
+             )
+         case .restaurantList:
+             EmptyView()
+         case .settings:
+             EmptyView()
+         }
+     }
 }

@@ -9,7 +9,7 @@ import shared
 
 struct RestaurantDetailView: View {
     let restaurantId: String
-    let coordinator: AppCoordinator
+    let navigationViewModel: RestaurantNavigationViewModel
     let viewModel: RestaurantDetailViewModel
     
     /// Keep holder alive for view lifetime.
@@ -28,25 +28,25 @@ struct RestaurantDetailView: View {
          }
          .navigationTitle(tr(.restaurantDetailTitle))
          .navigationBarBackButtonHidden(true)
-         .toolbar {
-             ToolbarItem(placement: .navigationBarLeading) {
-                 Button(action: {
-                     coordinator.navigateBack()
-                 }) {
-                     HStack(spacing: 4) {
-                         Image(systemName: "chevron.left")
-                         Text("Back")
-                     }
-                 }
-             }
-             ToolbarItem(placement: .navigationBarTrailing) {
-                 Button(action: {
-                     coordinator.showModal(destination: ModalDestination.SubmitReviewModal(restaurantId: restaurantId))
-                 }) {
-                     Text("Leave a Review")
-                 }
-             }
-         }
+          .toolbar {
+              ToolbarItem(placement: .navigationBarLeading) {
+                  Button(action: {
+                      navigationViewModel.navigateBack()
+                  }) {
+                      HStack(spacing: 4) {
+                          Image(systemName: "chevron.left")
+                          Text("Back")
+                      }
+                  }
+              }
+              ToolbarItem(placement: .navigationBarTrailing) {
+                  Button(action: {
+                      navigationViewModel.showSubmitReviewModal(restaurantId: restaurantId)
+                  }) {
+                      Text("Leave a Review")
+                  }
+              }
+          }
          .task(id: viewModel) {
              await observe()
          }

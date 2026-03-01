@@ -6,6 +6,7 @@ import SwiftUI
 import shared
 
 struct SettingsView: View {
+    let navigationViewModel: SettingsNavigationViewModel
     let viewModel: SettingsViewModel
 
     @State private var uiState: SettingsUiState = SettingsUiState(

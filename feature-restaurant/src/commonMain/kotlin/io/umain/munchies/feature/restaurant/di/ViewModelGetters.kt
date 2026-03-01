@@ -1,5 +1,6 @@
 package io.umain.munchies.feature.restaurant.di
 
+import io.umain.munchies.feature.restaurant.navigation.RestaurantNavigationViewModel
 import io.umain.munchies.feature.restaurant.presentation.RestaurantDetailViewModel
 import io.umain.munchies.feature.restaurant.presentation.RestaurantListViewModel
 import org.koin.core.scope.Scope
@@ -19,3 +20,6 @@ fun Scope.getRestaurantListViewModel(): RestaurantListViewModel =
 
 fun Scope.getRestaurantDetailViewModel(restaurantId: String): RestaurantDetailViewModel =
     get(parameters = { parametersOf(restaurantId) })
+
+fun Scope.getRestaurantNavigationViewModel(): RestaurantNavigationViewModel =
+    get()

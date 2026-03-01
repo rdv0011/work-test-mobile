@@ -83,8 +83,8 @@ class RestaurantListRouteHandlerSwift {
     /// Builds the SwiftUI view for this route.
     ///
     /// - Parameters:
-    ///   - holder: The view model holder containing the view model
-    ///   - coordinator: The app coordinator for navigation
+    ///   - holder: The view model holder containing the view models
+    ///   - coordinator: The app coordinator for navigation (used for modals and deep links)
     /// - Returns: The restaurant list view
     @ViewBuilder
     func buildView(
@@ -92,7 +92,7 @@ class RestaurantListRouteHandlerSwift {
         coordinator: AppCoordinator
     ) -> some View {
         RestaurantListView(
-            coordinator: coordinator,
+            navigationViewModel: holder.navigationViewModel,
             viewModel: holder.viewModel
         )
     }

@@ -17,11 +17,13 @@ import shared
 /// 5. When this holder is deallocated, scope is already closed by Registry
 final class RestaurantListViewModelHolder: ObservableObject {
     let viewModel: RestaurantListViewModel
+    let navigationViewModel: RestaurantNavigationViewModel
     let scope: Scope
     
     init(scope: Scope) {
         self.scope = scope
         self.viewModel = scope.getRestaurantListViewModel()
+        self.navigationViewModel = scope.getRestaurantNavigationViewModel()
     }
     
     deinit {

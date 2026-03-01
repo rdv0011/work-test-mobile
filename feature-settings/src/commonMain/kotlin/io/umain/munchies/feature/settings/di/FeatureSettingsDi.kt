@@ -7,6 +7,3 @@ import org.koin.core.scope.Scope
 fun registerFeatureSettingsModule() {
     loadKoinModules(featureSettingsModule)
 }
-
-fun Scope.getSettingsViewModel(): SettingsViewModel =
-    get()

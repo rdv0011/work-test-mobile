@@ -24,4 +24,12 @@ class RestaurantNavigationViewModel(
     fun showFilterModal(preSelectedFilters: List<String> = emptyList()) {
         dispatcher.presentModal(ModalDestination.Filter(preSelectedFilters))
     }
+    
+    fun showSubmitReviewModal(restaurantId: String) {
+        dispatcher.presentModal(ModalDestination.SubmitReviewModal(restaurantId))
+    }
+    
+    fun navigateBack() {
+        dispatcher.navigateBack()
+    }
 }

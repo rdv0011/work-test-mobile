@@ -3,11 +3,13 @@ import shared
 
 class SettingsViewModelHolder {
     let viewModel: SettingsViewModel
+    let navigationViewModel: SettingsNavigationViewModel
     let scope: Scope
     
     init(scope: Scope) {
         self.scope = scope
         self.viewModel = scope.getSettingsViewModel()
+        self.navigationViewModel = scope.getSettingsNavigationViewModel()
     }
     
     deinit {

@@ -8,7 +8,7 @@ import SwiftUI
 import shared
 
 struct RestaurantListView: View {
-    let coordinator: AppCoordinator
+    let navigationViewModel: RestaurantNavigationViewModel
     let viewModel: RestaurantListViewModel
     
     @State private var uiState: RestaurantListUiState = RestaurantListUiState.Loading()
@@ -47,7 +47,7 @@ struct RestaurantListView: View {
                     VStack(spacing: .spacingUI.lg) {
                         ForEach(filteredRestaurants, id: \.id) { restaurant in
                             RestaurantCardView(data: restaurant) {
-                                coordinator.navigateToRestaurantDetail(restaurantId: restaurant.id)
+                                navigationViewModel.showRestaurantDetail(restaurantId: restaurant.id)
                             }
                         }
                     }
@@ -61,7 +61,7 @@ struct RestaurantListView: View {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: {
                     let selectedFilterIds = (uiState as? RestaurantListUiState.Success)?.filters.map { $0.id } ?? []
-                    coordinator.showModal(destination: ModalDestination.Filter(preSelectedFilters: selectedFilterIds as [String]))
+                    navigationViewModel.showFilterModal(preSelected: selectedFilterIds as [String])
                 }) {
                     Text("Filters")
                 }
