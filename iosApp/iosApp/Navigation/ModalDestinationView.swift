@@ -209,7 +209,7 @@ struct ReviewsModalView: View {
                         HStack(spacing: 4) {
                             ForEach(1...5, id: \.self) { star in
                                 Image(systemName: star <= rating ? "star.fill" : "star")
-                                    .foregroundColor(star <= rating ? Color(0xFFB800) : Color.gray)
+                                    .foregroundColor(star <= rating ? Color(hex: "#FFB800") : Color.gray)
                                     .font(.system(size: 24))
                             }
                         }
