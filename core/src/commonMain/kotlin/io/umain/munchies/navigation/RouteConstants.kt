@@ -8,11 +8,11 @@ package io.umain.munchies.navigation
  * but all refer to these constants for consistency.
  */
 object RouteConstants {
-    // ===== ROUTE PARAMETERS =====
+    // == ROUTE PARAMETERS ==
     
     const val PARAM_RESTAURANT_ID = "restaurantId"
     
-    // ===== ROUTE NAMES =====
+    // == ROUTE NAMES ==
     
     const val ROUTE_RESTAURANT_LIST = "restaurantList"
     
@@ -20,7 +20,7 @@ object RouteConstants {
     
     const val ROUTE_RESTAURANT_DETAIL_PATTERN = "$ROUTE_RESTAURANT_DETAIL/{$PARAM_RESTAURANT_ID}"
     
-    // ===== ROUTE KEYS (for scope/holder identification) =====
+    // == ROUTE KEYS (for scope/holder identification) ==
     
     const val KEY_RESTAURANT_LIST = "RestaurantList"
     

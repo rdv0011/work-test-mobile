@@ -23,7 +23,7 @@ class NavigationReducerTest {
     private val testRoute3 = TestRoute("route3", false)
     private val rootRoute = TestRoute("root", true)
 
-    // === SCREEN NAVIGATION TESTS ===
+    //  SCREEN NAVIGATION TESTS
 
     @Test
     fun testPushWithoutHandlersDoesNothing() {
@@ -106,7 +106,7 @@ class NavigationReducerTest {
         assertEquals(initialState, newState)
     }
 
-    // === MODAL NAVIGATION TESTS ===
+    //  MODAL NAVIGATION TESTS
 
     @Test
     fun testDismissModalRemovesTopModal() {
@@ -207,7 +207,7 @@ class NavigationReducerTest {
         assertEquals(initialState.primaryStack, newState.primaryStack)
     }
 
-    // === TAB NAVIGATION TESTS ===
+    //  TAB NAVIGATION TESTS
 
     @Test
     fun testSelectTabChangesActiveTab() {
@@ -378,7 +378,7 @@ class NavigationReducerTest {
         assertEquals(testRoute2, tab1Stack?.last())
     }
 
-    // === DEEP LINKING TESTS ===
+    //  DEEP LINKING TESTS
 
     @Test
     fun testApplyNavigationStateReplacesEntireState() {
@@ -429,7 +429,7 @@ class NavigationReducerTest {
         assertEquals(newState, result)
     }
 
-    // === STATE IMMUTABILITY TESTS ===
+    //  STATE IMMUTABILITY TESTS
 
     @Test
     fun testReducerDoesNotMutateOriginalState() {
@@ -483,7 +483,7 @@ class NavigationReducerTest {
         assertEquals(originalTabStacks, tabNav.stacksByTab)
     }
 
-    // === COMPUTED PROPERTY TESTS ===
+    //  COMPUTED PROPERTY TESTS
 
     @Test
     fun testCurrentStackReturnsPrimaryWhenNoTabs() {
@@ -548,7 +548,7 @@ class NavigationReducerTest {
         assertNull(initialState.topModal)
     }
 
-    // === TEST HELPERS ===
+    //  TEST HELPERS
 
     private data class TestRoute(
         override val key: String,

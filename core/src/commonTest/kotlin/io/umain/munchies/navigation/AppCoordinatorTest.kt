@@ -20,7 +20,7 @@ class AppCoordinatorTest {
     private val testRoute2 = TestRoute("route2", false)
     private val rootRoute = TestRoute("root", true)
 
-    // === STATE MANAGEMENT TESTS ===
+    //  STATE MANAGEMENT TESTS
 
     @Test
     fun testInitialStateMatchesConstructorParameter() {
@@ -44,7 +44,7 @@ class AppCoordinatorTest {
         assertEquals(2, state.tabNavigation?.tabDefinitions?.size) // restaurants + settings
     }
 
-    // === REDUCER STATE INTEGRATION TESTS ===
+    //  REDUCER STATE INTEGRATION TESTS
 
     @Test
     fun testReduceStatePushUpdatesState() {
@@ -105,7 +105,7 @@ class AppCoordinatorTest {
         assertEquals(testRoute2, finalState.currentStack.last())
     }
 
-    // === CONVENIENCE METHOD TESTS ===
+    //  CONVENIENCE METHOD TESTS
 
     @Test
     fun testNavigateToScreenUpdatesStateAfterReduce() {
@@ -173,7 +173,7 @@ class AppCoordinatorTest {
         assertEquals("restaurants", currentState.tabNavigation?.activeTabId)
     }
 
-    // === TAB NAVIGATION STATE TESTS ===
+    //  TAB NAVIGATION STATE TESTS
 
     @Test
     fun testSelectTabUpdatesTabState() {
@@ -218,7 +218,7 @@ class AppCoordinatorTest {
         assertEquals(2, newState.tabNavigation?.getActiveTabStack()?.size)
     }
 
-    // === ROUTE HANDLER TESTS ===
+    //  ROUTE HANDLER TESTS
 
     @Test
     fun testRouteHandlerIntegration() {
@@ -246,7 +246,7 @@ class AppCoordinatorTest {
         assertEquals(initialState, afterState)
     }
 
-    // === MODAL OPERATIONS TESTS ===
+    //  MODAL OPERATIONS TESTS
 
     @Test
     fun testDismissModalUpdatesState() {
@@ -312,7 +312,7 @@ class AppCoordinatorTest {
         assertEquals(newState, currentState)
     }
 
-    // === LISTENER READINESS TESTS (CRITICAL FOR DEEP LINKS) ===
+    //  LISTENER READINESS TESTS (CRITICAL FOR DEEP LINKS)
 
     @Test
     fun testOnListenerReadyCallbackExecutesImmediatelyWhenAlreadyReady() {
@@ -398,7 +398,7 @@ class AppCoordinatorTest {
         )
     }
 
-    // === EDGE CASE: MULTIPLE QUEUED DEEP LINKS ===
+    //  EDGE CASE: MULTIPLE QUEUED DEEP LINKS
 
     @Test
     fun testMultipleDeepLinksProcessedSequentially() {
@@ -427,7 +427,7 @@ class AppCoordinatorTest {
         assertEquals(testRoute2, coordinator.getCurrentState().primaryStack.last(), "Final state should reflect last navigation")
     }
 
-    // === EDGE CASE: NAVIGATION DURING READINESS PHASE ===
+    //  EDGE CASE: NAVIGATION DURING READINESS PHASE
 
     @Test
     fun testNavigationEventsDuringReadinessPhase() {
@@ -455,7 +455,7 @@ class AppCoordinatorTest {
         )
     }
 
-    // === EDGE CASE: NO EVENTS DURING INITIALIZATION ===
+    //  EDGE CASE: NO EVENTS DURING INITIALIZATION
 
     @Test
     fun testListenerReadyWithoutAnyNavigationEvents() {
@@ -469,7 +469,7 @@ class AppCoordinatorTest {
         assertTrue(readyCallbackExecuted, "Readiness callback should execute even with no navigation events")
     }
 
-    // === EDGE CASE: RAPID STATE CHANGES ===
+    //  EDGE CASE: RAPID STATE CHANGES
 
     @Test
     fun testRapidStateChangesBeforeReadiness() {
@@ -496,7 +496,7 @@ class AppCoordinatorTest {
         assertEquals(1, readinessCallbackCount.size, "Callback should execute exactly once after markListenerReady")
     }
 
-    // === TEST HELPERS ===
+    //  TEST HELPERS
 
     private data class TestRoute(
         override val key: String,

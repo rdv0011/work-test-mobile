@@ -189,7 +189,7 @@ package io.umain.munchies.navigation
  * and are emitted by the NavigationCoordinator.
  */
 sealed class NavigationEvent {
-    // === SCREEN NAVIGATION ===
+    //  SCREEN NAVIGATION 
     
     /**
      * Navigate to a new screen (push to primary stack)
@@ -206,7 +206,7 @@ sealed class NavigationEvent {
      */
     data object PopToRoot : NavigationEvent()
     
-    // === MODAL NAVIGATION ===
+    //  MODAL NAVIGATION 
     
     /**
      * Show a modal overlay
@@ -230,7 +230,7 @@ sealed class NavigationEvent {
         val predicate: (ModalRoute) -> Boolean
     ) : NavigationEvent()
     
-    // === TAB NAVIGATION ===
+    //  TAB NAVIGATION 
     
     /**
      * Switch to a different tab
@@ -247,7 +247,7 @@ sealed class NavigationEvent {
      */
     data object PopInTab : NavigationEvent()
     
-    // === DEEP LINKING ===
+    //  DEEP LINKING 
     
     /**
      * Apply a complete navigation state (for deep links)
@@ -310,7 +310,7 @@ object NavigationReducer {
         }
     }
     
-    // === SCREEN NAVIGATION HANDLERS ===
+    //  SCREEN NAVIGATION HANDLERS 
     
     private fun handlePush(
         state: NavigationState,
@@ -373,7 +373,7 @@ object NavigationReducer {
         }
     }
     
-    // === MODAL NAVIGATION HANDLERS ===
+    //  MODAL NAVIGATION HANDLERS 
     
     private fun handleShowModal(
         state: NavigationState,
@@ -422,7 +422,7 @@ object NavigationReducer {
         }
     }
     
-    // === TAB NAVIGATION HANDLERS ===
+    //  TAB NAVIGATION HANDLERS 
     
     private fun handleSelectTab(
         state: NavigationState,
@@ -529,23 +529,23 @@ class NavigationCoordinator(
         primaryStack = listOf(RestaurantListRoute())
     )
 ) {
-    // === INTERNAL STATE ===
+    //  INTERNAL STATE 
     
     private val _navigationState = MutableStateFlow(initialState)
     val navigationState: StateFlow<NavigationState> = _navigationState.asStateFlow()
     
-    // === EVENTS (for platform layer) ===
+    //  EVENTS (for platform layer) 
     
     private val _navigationEvents = MutableSharedFlow<NavigationEvent>(
         extraBufferCapacity = 10
     )
     val navigationEvents: SharedFlow<NavigationEvent> = _navigationEvents.asSharedFlow()
     
-    // === ROUTE HANDLERS (injected) ===
+    //  ROUTE HANDLERS (injected) 
     
     var routeHandlers: List<RouteHandler> = emptyList()
     
-    // === PUBLIC API: SCREEN NAVIGATION ===
+    //  PUBLIC API: SCREEN NAVIGATION 
     
     /**
      * Navigate to a screen
@@ -575,7 +575,7 @@ class NavigationCoordinator(
         _navigationEvents.tryEmit(NavigationEvent.PopToRoot)
     }
     
-    // === PUBLIC API: MODAL NAVIGATION ===
+    //  PUBLIC API: MODAL NAVIGATION 
     
     /**
      * Show a modal dialog
@@ -630,7 +630,7 @@ class NavigationCoordinator(
         _navigationEvents.tryEmit(NavigationEvent.DismissModalUntil(predicate))
     }
     
-    // === PUBLIC API: TAB NAVIGATION ===
+    //  PUBLIC API: TAB NAVIGATION 
     
     /**
      * Switch to a tab
@@ -653,7 +653,7 @@ class NavigationCoordinator(
         _navigationEvents.tryEmit(NavigationEvent.PopInTab)
     }
     
-    // === PUBLIC API: STATE MANAGEMENT ===
+    //  PUBLIC API: STATE MANAGEMENT 
     
     /**
      * Apply a complete navigation state (for deep links)

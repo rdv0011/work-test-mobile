@@ -102,7 +102,7 @@ fun RestaurantDetailScreen(
                         )
 
                         IconButton(
-                            onClick = { coordinator.navigateBack() },
+                            onClick = { viewModel.navigateBack() },
                             modifier = Modifier
                                 .align(Alignment.TopStart)
                                 .padding(start = 16.dp, top = 40.dp)

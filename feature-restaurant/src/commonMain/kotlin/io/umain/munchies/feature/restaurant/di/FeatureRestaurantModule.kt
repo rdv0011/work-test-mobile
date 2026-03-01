@@ -1,9 +1,11 @@
 package io.umain.munchies.feature.restaurant.di
 
 import io.ktor.client.HttpClient
+import io.umain.munchies.core.navigation.NavigationDispatcher
 import io.umain.munchies.feature.restaurant.data.remote.KtorRestaurantApi
 import io.umain.munchies.feature.restaurant.data.repository.RestaurantRepositoryImpl
 import io.umain.munchies.feature.restaurant.domain.repository.RestaurantRepository
+import io.umain.munchies.feature.restaurant.navigation.RestaurantNavigationViewModel
 import io.umain.munchies.feature.restaurant.presentation.RestaurantDetailViewModel
 import io.umain.munchies.feature.restaurant.presentation.RestaurantListViewModel
 import org.koin.dsl.module
@@ -20,9 +22,11 @@ val featureRestaurantModule = module {
         RestaurantRepositoryImpl(api)
     }
 
+    single { RestaurantNavigationViewModel(get<NavigationDispatcher>()) }
+
     // Restaurant List scope (singleton per app session, managed by RouteRegistry)
     scope(named(RestaurantListScope.qualifierName)) {
-        scoped { RestaurantListViewModel(get()) }
+        scoped { RestaurantListViewModel(get(), get()) }
     }
 
     // Restaurant Detail scope (parameterized per restaurant, managed by RouteRegistry)
@@ -30,7 +34,8 @@ val featureRestaurantModule = module {
         scoped { (restaurantId: String) ->
             RestaurantDetailViewModel(
                 restaurantId = restaurantId,
-                repository = get()
+                repository = get(),
+                navigationViewModel = get()
             )
         }
     }

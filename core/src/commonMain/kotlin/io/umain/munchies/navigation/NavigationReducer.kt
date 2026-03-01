@@ -37,7 +37,7 @@ object NavigationReducer {
             is NavigationEvent.ApplyNavigationState -> event.newState
         }
     }
-    // === SCREEN NAVIGATION HANDLERS ===
+    //  SCREEN NAVIGATION HANDLERS
 
     private fun handlePush(
         state: NavigationState,
@@ -99,7 +99,7 @@ object NavigationReducer {
         }
     }
 
-    // === MODAL NAVIGATION HANDLERS ===
+    //  MODAL NAVIGATION HANDLERS
 
     @Suppress("UNUSED_PARAMETER")
     private fun handleShowModal(
@@ -139,7 +139,7 @@ object NavigationReducer {
         }
     }
 
-    // === TAB NAVIGATION HANDLERS ===
+    //  TAB NAVIGATION HANDLERS
 
     private fun handleSelectTab(
         state: NavigationState,

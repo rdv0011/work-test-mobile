@@ -25,21 +25,30 @@ private data class ConfirmActionModal(
 /**
  * Handles deep link URL parsing and navigation state reconstruction.
  *
- * Supports three URL schemes:
- * - Linear: /screen/route/params
- * - Modal: /modal/type?params
- * - Tabs: /tabs/tabId/screen/route?params
+ * Supports host-based routing with path segments and query parameters:
+ * - Restaurant host: /restaurants[/{restaurantId}]
+ * - Modal host: /modal/{modalType}[?queryParams]
+ * - Settings host: /settings
  */
 object DeepLinkParser {
     
     /**
      * Parse a deep link URL and return the corresponding navigation state.
      *
-     * Examples:
+     * Supported deep link formats:
+     * 
+     * Restaurant navigation:
      * - "munchies://restaurants" → RestaurantListRoute
      * - "munchies://restaurants/123" → RestaurantDetailRoute("123")
-     * - "munchies://modal/filter?filters=tag1,tag2" → Shows filter modal
-     * - "munchies://modal/submit_review/123" → Detail + submit review modal
+     * 
+     * Modal dialogs:
+     * - "munchies://modal/filter?filters=tag1,tag2" → FilterModal with selected tags
+     * - "munchies://modal/submit_review/123" → SubmitReviewModal for restaurant 123
+     * - "munchies://modal/confirm?message=...&confirmText=...&cancelText=..." → ConfirmActionModal
+     * - "munchies://modal/date_picker?initialDate=2026-02-25" → DatePickerModal with initial date
+     * 
+     * Settings tab:
+     * - "munchies://settings" → Shows settings screen
      */
     fun parseDeepLink(deepLink: String): NavigationState {
         return when {

@@ -9,7 +9,7 @@ package io.umain.munchies.navigation
  * The reducer processes these events to transform NavigationState.
  */
 sealed class NavigationEvent {
-    // === SCREEN NAVIGATION ===
+    // SCREEN NAVIGATION
 
     /**
      * Navigate to a new screen (push to primary stack or active tab stack)
@@ -26,7 +26,7 @@ sealed class NavigationEvent {
      */
     data object PopToRoot : NavigationEvent()
 
-    // === MODAL NAVIGATION ===
+    //  MODAL NAVIGATION
 
     /**
      * Show a modal overlay
@@ -50,7 +50,7 @@ sealed class NavigationEvent {
         val predicate: (ModalRoute) -> Boolean
     ) : NavigationEvent()
 
-    // === TAB NAVIGATION ===
+    // TAB NAVIGATION
 
     /**
      * Switch to a different tab
@@ -67,7 +67,7 @@ sealed class NavigationEvent {
      */
     data object PopInTab : NavigationEvent()
 
-    // === DEEP LINKING ===
+    // DEEP LINKING
 
     /**
      * Apply a complete navigation state (for deep links)

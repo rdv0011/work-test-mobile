@@ -2,6 +2,7 @@ package io.umain.munchies.feature.restaurant.presentation
 
 import io.umain.munchies.core.lifecycle.KmpViewModel
 import io.umain.munchies.core.state.ViewModelState
+import io.umain.munchies.feature.restaurant.navigation.RestaurantNavigationViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -12,6 +13,7 @@ import io.umain.munchies.feature.restaurant.domain.model.Filter
 
 class RestaurantListViewModel(
     private val repository: RestaurantRepository,
+    private val navigationViewModel: RestaurantNavigationViewModel,
 ): KmpViewModel(), ViewModelState<RestaurantListUiState> {
     private val _stateFlow = MutableStateFlow<RestaurantListUiState>(RestaurantListUiState.Loading)
     override val stateFlow: StateFlow<RestaurantListUiState> = _stateFlow
@@ -58,5 +60,13 @@ class RestaurantListViewModel(
                 _stateFlow.value = RestaurantListUiState.Error(message = t.message ?: "Unknown error")
             }
         }
+    }
+
+    fun navigateToRestaurantDetail(restaurantId: String) {
+        navigationViewModel.showRestaurantDetail(restaurantId)
+    }
+
+    fun showFilterOptions(preSelected: List<String>) {
+        navigationViewModel.showFilterModal(preSelected)
     }
 }

@@ -23,12 +23,12 @@ import io.umain.munchies.core.ui.IconId
 open class AppCoordinator(
     initialState: NavigationState = createInitialTabNavigationState()
 ) {
-    // === INTERNAL STATE ===
+    // INTERNAL STATE
 
     private val _navigationState = MutableStateFlow(initialState)
     val navigationState: StateFlow<NavigationState> = _navigationState.asStateFlow()
 
-    // === EVENTS (for platform layer) ===
+    // EVENTS (for platform layer)
 
     private val _navigationEvents = MutableSharedFlow<NavigationEvent>(
         replay = 1,
@@ -36,11 +36,11 @@ open class AppCoordinator(
     )
     val navigationEvents: SharedFlow<NavigationEvent> = _navigationEvents.asSharedFlow()
 
-     // === ROUTE HANDLERS (injected) ===
+     // ROUTE HANDLERS (injected)
 
      var routeHandlers: List<RouteHandler> = emptyList()
 
-      // === LISTENER READINESS ===
+      // LISTENER READINESS
 
       private var isListenerReady = false
       private val pendingListenerCallbacks = mutableListOf<() -> Unit>()
@@ -70,7 +70,7 @@ open class AppCoordinator(
            }
        }
 
-     // === PUBLIC API: SCREEN NAVIGATION ===
+     // PUBLIC API: SCREEN NAVIGATION
 
      /**
       * Navigate to a screen
@@ -100,7 +100,7 @@ open class AppCoordinator(
         _navigationEvents.tryEmit(NavigationEvent.PopToRoot)
     }
 
-    // === PUBLIC API: MODAL NAVIGATION ===
+    // PUBLIC API: MODAL NAVIGATION
 
     /**
      * Show a modal dialog
@@ -155,7 +155,7 @@ open class AppCoordinator(
         _navigationEvents.tryEmit(NavigationEvent.DismissModalUntil(predicate))
     }
 
-    // === PUBLIC API: TAB NAVIGATION ===
+    // PUBLIC API: TAB NAVIGATION
 
     /**
      * Switch to a tab
@@ -178,7 +178,7 @@ open class AppCoordinator(
         _navigationEvents.tryEmit(NavigationEvent.PopInTab)
     }
 
-    // === PUBLIC API: STATE MANAGEMENT ===
+    // PUBLIC API: STATE MANAGEMENT
 
     /**
      * Apply a complete navigation state (for deep links)

@@ -120,9 +120,7 @@ fun RestaurantListScreen(
                     }
                     Button(
                         onClick = {
-                            coordinator.showModal(
-                                ModalDestination.Filter(selectedFilterIds.toList())
-                            )
+                            viewModel.showFilterOptions(selectedFilterIds.toList())
                         },
                         modifier = Modifier.padding(start = DesignTokens.Spacing.md.dp)
                     ) {
@@ -165,7 +163,7 @@ fun RestaurantListScreen(
                     RestaurantCardCompose(
                         data = restaurant,
                         onTap = {
-                            coordinator.navigateToRestaurantDetail(restaurant.id)
+                            viewModel.navigateToRestaurantDetail(restaurant.id)
                         },
                         modifier = Modifier
                             .fillMaxWidth()

@@ -82,7 +82,7 @@ fun AppNavigation(
     
     val startDestination = remember {
         navigationMappers.firstNotNullOf { mapper ->
-            mapper.mapDestinationToNavRoute(io.umain.munchies.navigation.Destination.RestaurantList)
+            mapper.mapDestinationToNavRoute(Destination.RestaurantList)
         }
     }
     

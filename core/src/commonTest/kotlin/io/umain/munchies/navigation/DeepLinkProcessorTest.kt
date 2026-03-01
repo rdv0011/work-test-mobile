@@ -23,7 +23,7 @@ class DeepLinkProcessorTest {
         mockCoordinator.reset()
     }
     
-    // === RESTAURANT DEEP LINK TESTS ===
+    //  RESTAURANT DEEP LINK TESTS
     
     @Test
     fun testRestaurantListDeepLink() {
@@ -68,7 +68,7 @@ class DeepLinkProcessorTest {
         assertEquals(Destination.RestaurantDetail(restaurantId), mockCoordinator.lastDestination)
     }
     
-    // === MODAL DEEP LINK TESTS ===
+    //  MODAL DEEP LINK TESTS
     
     @Test
     fun testFilterModalDeepLink() {
@@ -166,7 +166,7 @@ class DeepLinkProcessorTest {
         assertEquals(initialDate, mockCoordinator.lastDatePickerInitialDate)
     }
     
-    // === SETTINGS DEEP LINK TESTS ===
+    //  SETTINGS DEEP LINK TESTS
     
     @Test
     fun testSettingsTabDeepLink() {
@@ -181,7 +181,7 @@ class DeepLinkProcessorTest {
         assertEquals(DeepLinkConstants.TAB_ID_SETTINGS, mockCoordinator.lastTabId)
     }
     
-    // === EDGE CASES ===
+    //  EDGE CASES
     
     @Test
     fun testInvalidHostIsIgnored() {

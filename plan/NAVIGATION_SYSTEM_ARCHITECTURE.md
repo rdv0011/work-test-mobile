@@ -1216,7 +1216,7 @@ class NavigationCoordinator {
     )
     val navigationEvents: SharedFlow<NavigationEvent> = _navigationEvents.asSharedFlow()
     
-    // === SCREEN NAVIGATION ===
+    //  SCREEN NAVIGATION 
     fun navigateToScreen(destination: Destination) {
         _navigationEvents.tryEmit(NavigationEvent.Push(destination))
     }
@@ -1229,7 +1229,7 @@ class NavigationCoordinator {
         _navigationEvents.tryEmit(NavigationEvent.PopToRoot)
     }
     
-    // === MODAL NAVIGATION ===
+    //  MODAL NAVIGATION 
     fun showModal(modalDestination: ModalDestination) {
         _navigationEvents.tryEmit(NavigationEvent.ShowModal(modalDestination))
     }
@@ -1242,7 +1242,7 @@ class NavigationCoordinator {
         _navigationEvents.tryEmit(NavigationEvent.DismissAllModals)
     }
     
-    // === TAB NAVIGATION ===
+    //  TAB NAVIGATION 
     fun selectTab(tabId: String) {
         _navigationEvents.tryEmit(NavigationEvent.SelectTab(tabId))
     }
@@ -1251,7 +1251,7 @@ class NavigationCoordinator {
         _navigationEvents.tryEmit(NavigationEvent.PushInTab(destination))
     }
     
-    // === STATE MANAGEMENT (Internal) ===
+    //  STATE MANAGEMENT (Internal) 
     fun applyNavigationState(newState: NavigationState) {
         _navigationState.value = newState
     }

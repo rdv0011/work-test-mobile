@@ -2,10 +2,13 @@ package io.umain.munchies.feature.settings.presentation
 
 import io.umain.munchies.core.lifecycle.KmpViewModel
 import io.umain.munchies.core.state.ViewModelState
+import io.umain.munchies.feature.settings.navigation.SettingsNavigationViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
-class SettingsViewModel : KmpViewModel(), ViewModelState<SettingsUiState> {
+class SettingsViewModel(
+    private val navigationViewModel: SettingsNavigationViewModel
+) : KmpViewModel(), ViewModelState<SettingsUiState> {
     private val _stateFlow = MutableStateFlow(SettingsUiState())
     override val stateFlow: StateFlow<SettingsUiState> = _stateFlow
 
@@ -19,5 +22,9 @@ class SettingsViewModel : KmpViewModel(), ViewModelState<SettingsUiState> {
         _stateFlow.value = _stateFlow.value.copy(
             notificationsEnabled = !_stateFlow.value.notificationsEnabled
         )
+    }
+
+    fun navigateBack() {
+        navigationViewModel.showSettings()
     }
 }
