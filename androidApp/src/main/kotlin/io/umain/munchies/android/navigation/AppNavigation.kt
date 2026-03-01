@@ -140,7 +140,7 @@ fun AppNavigation(
                     modifier = Modifier.fillMaxSize()
                 ) {
                     renderTabContent(tabNavState, coordinator)
-                    renderModalsIfNeeded(modalStack, coordinator)
+                    renderModalsIfNeeded(modalStack, coordinator, registry)
                 }
             } else {
                 Box(
@@ -155,7 +155,7 @@ fun AppNavigation(
                         }
                     }
                     
-                    renderModalsIfNeeded(modalStack, coordinator)
+                    renderModalsIfNeeded(modalStack, coordinator, registry)
                 }
             }
         }
@@ -202,7 +202,8 @@ private fun renderCurrentScreen(
 @Composable
 private fun renderModalsIfNeeded(
     modalStack: androidx.compose.runtime.MutableState<List<ModalRoute>>,
-    coordinator: AppCoordinator
+    coordinator: AppCoordinator,
+    registry: RouteRegistry
 ) {
     if (modalStack.value.isNotEmpty()) {
         val currentModal = modalStack.value.last()
@@ -220,6 +221,19 @@ private fun renderModalsIfNeeded(
                 coordinator = coordinator,
                 onDismiss = {
                     modalStack.value = modalStack.value.dropLast(1)
+                },
+                viewModelProvider = {
+                    if (currentModal is SubmitReviewModalRoute) {
+                        try {
+                            val route = RestaurantDetailRoute(currentModal.restaurantId)
+                            val scope = registry.createScopeForRoute(route)
+                            scope.get<io.umain.munchies.feature.restaurant.presentation.RestaurantDetailViewModel>()
+                        } catch (e: Exception) {
+                            null
+                        }
+                    } else {
+                        null
+                    }
                 }
             )
         }

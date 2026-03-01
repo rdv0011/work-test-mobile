@@ -41,7 +41,8 @@ struct TabNavigationView: View {
                             modal: topModal,
                             onDismiss: {
                                 navigator.coordinator.dismissModal()
-                            }
+                            },
+                            viewModel: getViewModelForModal(topModal, navigator: navigator)
                         )
                         Spacer()
                     }
@@ -85,22 +86,30 @@ struct TabNavigationView: View {
                  }
          }
      }
-    
-     @ViewBuilder
-     private func destinationView(for route: Route) -> some View {
-         switch route {
-         case .restaurantDetail(let restaurantId):
-             let holder = navigator.restaurantDetailHolder(restaurantId: restaurantId)
-             RestaurantDetailView(
-                 restaurantId: restaurantId,
-                 navigationViewModel: holder.navigationViewModel,
-                 viewModel: holder.viewModel,
-                 holder: holder
-             )
-         case .restaurantList:
-             EmptyView()
-         case .settings:
-             EmptyView()
-         }
-     }
+     
+      @ViewBuilder
+      private func destinationView(for route: Route) -> some View {
+          switch route {
+          case .restaurantDetail(let restaurantId):
+              let holder = navigator.restaurantDetailHolder(restaurantId: restaurantId)
+              RestaurantDetailView(
+                  restaurantId: restaurantId,
+                  navigationViewModel: holder.navigationViewModel,
+                  viewModel: holder.viewModel,
+                  holder: holder
+              )
+          case .restaurantList:
+              EmptyView()
+          case .settings:
+              EmptyView()
+          }
+      }
+      
+      private func getViewModelForModal(_ modal: shared.ModalRoute, navigator: NavigationCoordinator) -> RestaurantDetailViewModel? {
+          if let submitReview = modal as? SubmitReviewModalRoute {
+              let holder = navigator.restaurantDetailHolder(restaurantId: submitReview.restaurantId)
+              return holder.viewModel
+          }
+          return nil
+      }
 }
