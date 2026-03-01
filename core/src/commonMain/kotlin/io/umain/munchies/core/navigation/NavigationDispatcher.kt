@@ -47,6 +47,6 @@ class NavigationDispatcher(
      * Navigate back in the current tab's stack.
      */
     fun navigateBack() {
-        coordinator.backInTab()
+        coordinator.navigateBack()
     }
 }

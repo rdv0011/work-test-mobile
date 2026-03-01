@@ -61,7 +61,7 @@ struct RestaurantListView: View {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: {
                     let selectedFilterIds = (uiState as? RestaurantListUiState.Success)?.filters.map { $0.id } ?? []
-                    navigationViewModel.showFilterModal(preSelected: selectedFilterIds as [String])
+                    navigationViewModel.showFilterModal(preSelectedFilters: selectedFilterIds as [String])
                 }) {
                     Text("Filters")
                 }
