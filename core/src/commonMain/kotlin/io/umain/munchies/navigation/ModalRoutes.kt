@@ -45,3 +45,23 @@ data class DatePickerModalRoute(
     override val key: String = "date_picker"
     override val presentationStyle: ModalPresentationStyle = ModalPresentationStyle.SHEET
 }
+
+/**
+ * Modal route for review submission success feedback.
+ * Displays a confirmation message after successful review submission.
+ */
+data object ReviewSuccessModalRoute : ModalRoute {
+    override val key: String = "review_success"
+    override val presentationStyle: ModalPresentationStyle = ModalPresentationStyle.DIALOG
+}
+
+/**
+ * Modal route for review submission error feedback.
+ * Displays an error message when review submission fails.
+ */
+data class ReviewErrorAlertRoute(
+    val message: String
+) : ModalRoute {
+    override val key: String = "review_error"
+    override val presentationStyle: ModalPresentationStyle = ModalPresentationStyle.DIALOG
+}

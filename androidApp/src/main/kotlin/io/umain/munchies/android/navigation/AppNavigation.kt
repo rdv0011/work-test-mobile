@@ -40,6 +40,8 @@ import io.umain.munchies.navigation.FilterModalRoute
 import io.umain.munchies.navigation.SubmitReviewModalRoute
 import io.umain.munchies.navigation.ConfirmActionModalRoute
 import io.umain.munchies.navigation.DatePickerModalRoute
+import io.umain.munchies.navigation.ReviewSuccessModalRoute
+import io.umain.munchies.navigation.ReviewErrorAlertRoute
 import io.umain.munchies.android.features.settings.presentation.SettingsScreen
 import io.umain.munchies.android.features.restaurant.presentation.restaurantlist.RestaurantListScreen
 import io.umain.munchies.android.features.restaurant.presentation.restaurantdetail.RestaurantDetailScreen
@@ -139,8 +141,8 @@ fun AppNavigation(
                     coordinator = coordinator,
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    renderTabContent(tabNavState, coordinator)
-                    renderModalsIfNeeded(modalStack, coordinator, registry)
+                    renderTabContent(tabNavState)
+                    renderModalsIfNeeded(modalStack, registry)
                 }
             } else {
                 Box(
@@ -155,7 +157,7 @@ fun AppNavigation(
                         }
                     }
                     
-                    renderModalsIfNeeded(modalStack, coordinator, registry)
+                    renderModalsIfNeeded(modalStack, registry)
                 }
             }
         }
@@ -165,19 +167,17 @@ fun AppNavigation(
 @Composable
 private fun renderTabContent(
     tabNavState: io.umain.munchies.navigation.TabNavigationState,
-    coordinator: AppCoordinator
 ) {
     val activeStack = tabNavState.getActiveTabStack()
     if (activeStack.isNotEmpty()) {
         val topRoute = activeStack.last()
-        renderCurrentScreen(topRoute, coordinator)
+        renderCurrentScreen(topRoute)
     }
 }
 
 @Composable
 private fun renderCurrentScreen(
     route: Route,
-    coordinator: AppCoordinator
 ) {
     val registry = LocalRouteRegistry.current
     when (route) {
@@ -202,7 +202,6 @@ private fun renderCurrentScreen(
 @Composable
 private fun renderModalsIfNeeded(
     modalStack: androidx.compose.runtime.MutableState<List<ModalRoute>>,
-    coordinator: AppCoordinator,
     registry: RouteRegistry
 ) {
     if (modalStack.value.isNotEmpty()) {
@@ -218,7 +217,6 @@ private fun renderModalsIfNeeded(
         ) {
             ModalDestinationComposable(
                 modal = currentModal,
-                coordinator = coordinator,
                 onDismiss = {
                     modalStack.value = modalStack.value.dropLast(1)
                 },
@@ -431,6 +429,8 @@ private fun ModalDestination.toModalRoute(): ModalRoute {
         is ModalDestination.SubmitReviewModal -> SubmitReviewModalRoute(restaurantId)
         is ModalDestination.ConfirmAction -> ConfirmActionModalRoute(message, confirmText, cancelText)
         is ModalDestination.DatePicker -> DatePickerModalRoute(initialDate)
+        is ModalDestination.ReviewErrorAlert -> ReviewErrorAlertRoute(message)
+        ModalDestination.ReviewSuccessModal -> ReviewSuccessModalRoute
     }
 }
 
