@@ -136,14 +136,14 @@ fun AppNavigation(
         // Only render navigation content after pending deep link has been processed
         if (deepLinkProcessed.value) {
             if (usesTabs && tabNavState != null) {
-                TabNavigationScaffold(
-                    tabNavigationState = tabNavState,
-                    coordinator = coordinator,
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    renderTabContent(tabNavState)
-                    renderModalsIfNeeded(modalStack, registry)
-                }
+                    TabNavigationScaffold(
+                        tabNavigationState = tabNavState,
+                        coordinator = coordinator,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        renderTabContent(tabNavState)
+                        renderModalsIfNeeded(modalStack, registry, coordinator)
+                    }
             } else {
                 Box(
                     modifier = Modifier.fillMaxSize()
@@ -157,7 +157,7 @@ fun AppNavigation(
                         }
                     }
                     
-                    renderModalsIfNeeded(modalStack, registry)
+                    renderModalsIfNeeded(modalStack, registry, coordinator)
                 }
             }
         }
@@ -202,7 +202,8 @@ private fun renderCurrentScreen(
 @Composable
 private fun renderModalsIfNeeded(
     modalStack: androidx.compose.runtime.MutableState<List<ModalRoute>>,
-    registry: RouteRegistry
+    registry: RouteRegistry,
+    coordinator: AppCoordinator
 ) {
     if (modalStack.value.isNotEmpty()) {
         val currentModal = modalStack.value.last()
@@ -217,6 +218,7 @@ private fun renderModalsIfNeeded(
         ) {
             ModalDestinationComposable(
                 modal = currentModal,
+                coordinator = coordinator,
                 onDismiss = {
                     modalStack.value = modalStack.value.dropLast(1)
                 },
