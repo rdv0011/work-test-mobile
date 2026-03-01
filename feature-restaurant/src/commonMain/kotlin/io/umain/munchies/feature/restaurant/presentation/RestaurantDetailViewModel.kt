@@ -3,6 +3,7 @@ package io.umain.munchies.feature.restaurant.presentation
 import io.umain.munchies.core.lifecycle.KmpViewModel
 import io.umain.munchies.core.state.ViewModelState
 import io.umain.munchies.core.viewmodel.ScopedViewModel
+import io.umain.munchies.feature.restaurant.navigation.RestaurantNavigationViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -12,6 +13,7 @@ import io.umain.munchies.feature.restaurant.presentation.state.RestaurantDetailU
 class RestaurantDetailViewModel(
     private val restaurantId: String,
     private val repository: RestaurantRepository,
+    private val navigationViewModel: RestaurantNavigationViewModel,
 ) : KmpViewModel(), ScopedViewModel, ViewModelState<RestaurantDetailUiState> {
 
     private val _stateFlow =
@@ -43,6 +45,21 @@ class RestaurantDetailViewModel(
                     RestaurantDetailUiState.Error(
                         t.message ?: "Unknown error"
                     )
+            }
+        }
+    }
+
+    fun submitReview(rating: Int, comment: String) {
+        scope.launch {
+            try {
+                val success = repository.submitReview(restaurantId, rating, comment)
+                if (success) {
+                    navigationViewModel.showReviewSuccessModal()
+                } else {
+                    navigationViewModel.showReviewErrorAlert("Failed to submit review")
+                }
+            } catch (t: Throwable) {
+                navigationViewModel.showReviewErrorAlert(t.message ?: "Unknown error")
             }
         }
     }

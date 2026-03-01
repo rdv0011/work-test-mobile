@@ -26,4 +26,15 @@ class KtorRestaurantApi(private val client: HttpClient, private val baseUrl: Str
         if (resp.status.isSuccess()) return resp.body()
         throw RuntimeException("Failed to load restaurant: ${resp.status}")
     }
+
+    override suspend fun submitReview(restaurantId: String, rating: Int, comment: String): Boolean {
+        val resp: HttpResponse = client.post("$baseUrl/api/v1/restaurants/$restaurantId/review") {
+            contentType(ContentType.Application.Json)
+            setBody(mapOf(
+                "rating" to rating,
+                "comment" to comment
+            ))
+        }
+        return resp.status.isSuccess()
+    }
 }

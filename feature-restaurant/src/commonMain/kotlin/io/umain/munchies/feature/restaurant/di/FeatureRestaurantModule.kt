@@ -34,7 +34,8 @@ val featureRestaurantModule = module {
         scoped { (restaurantId: String) ->
             RestaurantDetailViewModel(
                 restaurantId = restaurantId,
-                repository = get()
+                repository = get(),
+                navigationViewModel = get()
             )
         }
     }

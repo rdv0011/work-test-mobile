@@ -14,6 +14,7 @@ interface RestaurantApi {
     suspend fun getFilter(id: String): FilterDto?
     suspend fun getRestaurants(): RestaurantContainerDto
     suspend fun getOpen(id: String): RestaurantOpenDto?
+    suspend fun submitReview(restaurantId: String, rating: Int, comment: String): Boolean
 }
 
 @Serializable

@@ -17,16 +17,20 @@ class RestaurantNavigationViewModel(
         dispatcher.navigate(Destination.RestaurantDetail(restaurantId))
     }
     
-    fun showRestaurantList() {
-        dispatcher.navigate(Destination.RestaurantList)
-    }
-    
     fun showFilterModal(preSelectedFilters: List<String> = emptyList()) {
         dispatcher.presentModal(ModalDestination.Filter(preSelectedFilters))
     }
     
     fun showSubmitReviewModal(restaurantId: String) {
         dispatcher.presentModal(ModalDestination.SubmitReviewModal(restaurantId))
+    }
+    
+    fun showReviewSuccessModal() {
+        dispatcher.presentModal(ModalDestination.ReviewSuccessModal)
+    }
+    
+    fun showReviewErrorAlert(message: String) {
+        dispatcher.presentModal(ModalDestination.ReviewErrorAlert(message))
     }
     
     fun navigateBack() {

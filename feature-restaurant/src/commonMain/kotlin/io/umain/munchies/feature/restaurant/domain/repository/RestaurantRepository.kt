@@ -8,4 +8,5 @@ interface RestaurantRepository {
     suspend fun getFilterById(id: String): Filter?
     suspend fun getRestaurants(): List<Restaurant>
     suspend fun getRestaurantsOpenById(id: String): RestaurantStatus
+    suspend fun submitReview(restaurantId: String, rating: Int, comment: String): Boolean
 }

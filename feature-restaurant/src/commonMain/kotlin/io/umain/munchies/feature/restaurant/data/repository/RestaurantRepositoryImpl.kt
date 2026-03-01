@@ -22,4 +22,9 @@ class RestaurantRepositoryImpl(
         api?.let { remote ->
             remote.getOpen(id)?.toDomain()
         } ?: RestaurantStatus.CLOSED
+
+    override suspend fun submitReview(restaurantId: String, rating: Int, comment: String): Boolean =
+        api?.let { remote ->
+            remote.submitReview(restaurantId, rating, comment)
+        } ?: false
 }

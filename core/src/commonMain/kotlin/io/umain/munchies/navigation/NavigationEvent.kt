@@ -100,4 +100,10 @@ sealed class ModalDestination {
     data class SubmitReviewModal(
         val restaurantId: String
     ) : ModalDestination()
+
+    data object ReviewSuccessModal : ModalDestination()
+
+    data class ReviewErrorAlert(
+        val message: String
+    ) : ModalDestination()
 }
