@@ -40,36 +40,21 @@ open class AppCoordinator(
 
       var routeHandlers: List<RouteHandler> = emptyList()
 
-      private val analyticsListeners = mutableListOf<Any>()
-
-      fun addAnalyticsListener(listener: Any) {
-          analyticsListeners.add(listener)
-      }
-
-      fun removeAnalyticsListener(listener: Any) {
-          analyticsListeners.remove(listener)
-      }
-
       /**
        * ANALYTICS ARCHITECTURE NOTE (Phase 3):
        *
-       * Current Implementation: Observer Pattern (Pull-based)
+       * Implementation: Observer Pattern (Pull-based)
        * - NavigationAnalyticsListener observes this.navigationState StateFlow
        * - Listener independently tracks changes without AppCoordinator involvement
        * - Decoupled: AppCoordinator is unaware of analytics, no tight coupling
        * - Thread-safe: State changes are processed by NavigationAnalyticsListener's internal coroutine
        *
-       * The addAnalyticsListener/removeAnalyticsListener methods above represent a potential
-       * future refactor to a Dispatcher Pattern (Push-based) where:
-       * - AppCoordinator would notify listeners of navigation changes
-       * - Would require implementing a listener interface/contract
-       * - Would centralize navigation event distribution
-       *
-       * Current observer pattern was chosen because:
+       * Why Observer Pattern was chosen:
        * 1. NavigationAnalyticsListener can be created/destroyed independently of coordinator
        * 2. No need to pass through AppCoordinator initialization
        * 3. Simpler lifecycle: listener cleanup in Activity.onDestroy()
        * 4. Less state mutation in coordinator (single responsibility)
+       * 5. No need for listener registration/deregistration methods
        */
 
       // LISTENER READINESS
