@@ -20,15 +20,17 @@ import org.koin.android.ext.android.inject
 class MainActivity : ComponentActivity() {
     
     private val coordinator: AppCoordinator by inject()
+    private var analyticsListener: NavigationAnalyticsListener? = null
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        val analyticsListener = NavigationAnalyticsListener(
+        analyticsListener = NavigationAnalyticsListener(
             FirebaseAnalyticsService(),
             coordinator.navigationState
-        )
-        analyticsListener.startTracking()
+        ).apply {
+            startTracking()
+        }
         
         val pendingDeepLinkUri = extractDeepLinkUri(intent)
         
@@ -42,6 +44,12 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+    
+    override fun onDestroy() {
+        analyticsListener?.close()
+        analyticsListener = null
+        super.onDestroy()
     }
     
     override fun onNewIntent(intent: android.content.Intent) {
