@@ -29,4 +29,7 @@ object Versions {
     
     // Image loading
     const val coil = "2.5.0"
+    
+    // Firebase (BOM)
+    const val firebaseBom = "32.7.0"
 }

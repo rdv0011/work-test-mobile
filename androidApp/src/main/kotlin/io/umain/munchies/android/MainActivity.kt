@@ -13,6 +13,8 @@ import io.umain.munchies.navigation.DeepLinkProcessor
 import io.umain.munchies.android.navigation.AppNavigation
 import io.umain.munchies.android.ui.theme.MunchiesTheme
 import io.umain.munchies.navigation.AppCoordinator
+import io.umain.munchies.core.analytics.NavigationAnalyticsListener
+import io.umain.munchies.android.analytics.FirebaseAnalyticsService
 import org.koin.android.ext.android.inject
 
 class MainActivity : ComponentActivity() {
@@ -21,6 +23,12 @@ class MainActivity : ComponentActivity() {
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        val analyticsListener = NavigationAnalyticsListener(
+            FirebaseAnalyticsService(),
+            coordinator.navigationState
+        )
+        analyticsListener.startTracking()
         
         val pendingDeepLinkUri = extractDeepLinkUri(intent)
         
