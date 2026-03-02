@@ -36,9 +36,19 @@ open class AppCoordinator(
     )
     val navigationEvents: SharedFlow<NavigationEvent> = _navigationEvents.asSharedFlow()
 
-     // ROUTE HANDLERS (injected)
+      // ROUTE HANDLERS (injected)
 
-     var routeHandlers: List<RouteHandler> = emptyList()
+      var routeHandlers: List<RouteHandler> = emptyList()
+
+      private val analyticsListeners = mutableListOf<Any>()
+
+      fun addAnalyticsListener(listener: Any) {
+          analyticsListeners.add(listener)
+      }
+
+      fun removeAnalyticsListener(listener: Any) {
+          analyticsListeners.remove(listener)
+      }
 
       // LISTENER READINESS
 
