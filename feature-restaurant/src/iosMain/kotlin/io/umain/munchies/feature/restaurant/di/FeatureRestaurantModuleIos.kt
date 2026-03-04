@@ -6,20 +6,20 @@ import io.umain.munchies.feature.restaurant.data.remote.KtorRestaurantApi
 import io.umain.munchies.feature.restaurant.data.repository.RestaurantRepositoryImpl
 import io.umain.munchies.feature.restaurant.domain.repository.RestaurantRepository
 import io.umain.munchies.feature.restaurant.navigation.RestaurantNavigationViewModel
-import io.umain.munchies.feature.restaurant.navigation.RestaurantDetailRouteHandler
-import io.umain.munchies.feature.restaurant.navigation.RestaurantListRouteHandler
+import io.umain.munchies.feature.restaurant.navigation.ios.RestaurantDetailRouteHandlerImpl
+import io.umain.munchies.feature.restaurant.navigation.ios.RestaurantListRouteHandlerImpl
 import io.umain.munchies.feature.restaurant.presentation.RestaurantDetailViewModel
 import io.umain.munchies.feature.restaurant.presentation.RestaurantListViewModel
 import io.umain.munchies.navigation.RouteHandler
+import io.umain.munchies.logging.logInfo
 import org.koin.dsl.bind
 import org.koin.dsl.module
-import org.koin.core.qualifier.TypeQualifier
 import org.koin.core.qualifier.named
 
-val featureRestaurantModule = module {
-
+val featureRestaurantModuleIos = module {
+    logInfo("FeatureRestaurantModuleIos", "🔧 Building iOS-specific restaurant module")
+    
     single<RestaurantRepository> {
-        // Resolve the shared HttpClient from Koin
         val client: HttpClient = get()
         val baseUrl = "https://food-delivery.umain.io"
         val api = KtorRestaurantApi(client, baseUrl)
@@ -28,16 +28,20 @@ val featureRestaurantModule = module {
 
     single { RestaurantNavigationViewModel(get<NavigationDispatcher>()) }
 
-    // Register route handlers
-    single { RestaurantListRouteHandler } bind RouteHandler::class
-    single { RestaurantDetailRouteHandler } bind RouteHandler::class
+    // Register iOS-specific route handlers (bind to RouteHandler so getAll<RouteHandler>() finds them all)
+    single { 
+        logInfo("FeatureRestaurantModuleIos", "📝 Registering RestaurantListRouteHandlerImpl")
+        RestaurantListRouteHandlerImpl 
+    } bind RouteHandler::class
+    single { 
+        logInfo("FeatureRestaurantModuleIos", "📝 Registering RestaurantDetailRouteHandlerImpl")
+        RestaurantDetailRouteHandlerImpl 
+    } bind RouteHandler::class
 
-    // Restaurant List scope (singleton per app session, managed by RouteRegistry)
     scope(named(RestaurantListScope.qualifierName)) {
         scoped { RestaurantListViewModel(get()) }
     }
 
-    // Restaurant Detail scope (parameterized per restaurant, managed by RouteRegistry)
     scope(named(RestaurantDetailScope("").qualifierName)) {
         scoped { (restaurantId: String) ->
             RestaurantDetailViewModel(
@@ -47,4 +51,7 @@ val featureRestaurantModule = module {
             )
         }
     }
+    
+    logInfo("FeatureRestaurantModuleIos", "✅ iOS-specific restaurant module built")
 }
+

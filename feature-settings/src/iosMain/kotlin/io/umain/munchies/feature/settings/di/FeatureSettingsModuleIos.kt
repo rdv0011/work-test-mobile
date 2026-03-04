@@ -2,22 +2,28 @@ package io.umain.munchies.feature.settings.di
 
 import io.umain.munchies.core.navigation.NavigationDispatcher
 import io.umain.munchies.feature.settings.navigation.SettingsNavigationViewModel
-import io.umain.munchies.feature.settings.navigation.SettingsRouteHandler
+import io.umain.munchies.feature.settings.navigation.ios.SettingsRouteHandlerImpl
 import io.umain.munchies.feature.settings.presentation.SettingsViewModel
 import io.umain.munchies.navigation.RouteHandler
-import org.koin.core.parameter.parametersOf
+import io.umain.munchies.logging.logInfo
 import org.koin.dsl.bind
 import org.koin.dsl.module
 import org.koin.core.qualifier.named
-import org.koin.core.scope.Scope
 
-val featureSettingsModule = module {
-
+val featureSettingsModuleIos = module {
+    logInfo("FeatureSettingsModuleIos", "🔧 Building iOS-specific settings module")
+    
     single { SettingsNavigationViewModel(get<NavigationDispatcher>()) }
 
-    single { SettingsRouteHandler } bind RouteHandler::class
+    single {
+        logInfo("FeatureSettingsModuleIos", "📝 Registering SettingsRouteHandlerImpl")
+        SettingsRouteHandlerImpl
+    } bind RouteHandler::class
 
     scope(named(SettingsScope.qualifierName)) {
         scoped { SettingsViewModel() }
     }
+    
+    logInfo("FeatureSettingsModuleIos", "✅ iOS-specific settings module built")
 }
+
