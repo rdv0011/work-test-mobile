@@ -46,21 +46,21 @@ class AppCoordinatorTest {
 
     //  REDUCER STATE INTEGRATION TESTS
 
-    @Test
-    fun testReduceStatePushUpdatesState() {
-        val coordinator = AppCoordinator()
-        coordinator.routeHandlers = listOf(
-            TestRouteHandler(Destination.RestaurantList, testRoute1)
-        )
-        val initialState = coordinator.getCurrentState()
-        val initialStackSize = initialState.currentStack.size
-        
-        coordinator.reduceState(NavigationEvent.PushInTab(Destination.RestaurantList))
-        val newState = coordinator.getCurrentState()
-        
-        assertEquals(initialStackSize + 1, newState.currentStack.size)
-        assertEquals(testRoute1, newState.currentStack.last())
-    }
+     @Test
+     fun testReduceStatePushUpdatesState() {
+         val handlers = listOf(
+             TestRouteHandler(Destination.RestaurantList, testRoute1)
+         )
+         val coordinator = AppCoordinator(routeHandlers = handlers)
+         val initialState = coordinator.getCurrentState()
+         val initialStackSize = initialState.currentStack.size
+         
+         coordinator.reduceState(NavigationEvent.PushInTab(Destination.RestaurantList))
+         val newState = coordinator.getCurrentState()
+         
+         assertEquals(initialStackSize + 1, newState.currentStack.size)
+         assertEquals(testRoute1, newState.currentStack.last())
+     }
 
     @Test
     fun testReduceStatePopRemovesScreen() {
@@ -87,58 +87,58 @@ class AppCoordinatorTest {
         assertEquals(1, newState.primaryStack.size)
     }
 
-    @Test
-    fun testSequentialReduceStateUpdates() {
-        val coordinator = AppCoordinator()
-        coordinator.routeHandlers = listOf(
-            TestRouteHandler(Destination.RestaurantList, testRoute1),
-            TestRouteHandler(Destination.RestaurantDetail("1"), testRoute2)
-        )
-        
-        val initialStackSize = coordinator.getCurrentState().currentStack.size
-        
-        coordinator.reduceState(NavigationEvent.PushInTab(Destination.RestaurantList))
-        coordinator.reduceState(NavigationEvent.PushInTab(Destination.RestaurantDetail("1")))
-        
-        val finalState = coordinator.getCurrentState()
-        assertEquals(initialStackSize + 2, finalState.currentStack.size)
-        assertEquals(testRoute2, finalState.currentStack.last())
-    }
+     @Test
+     fun testSequentialReduceStateUpdates() {
+         val handlers = listOf(
+             TestRouteHandler(Destination.RestaurantList, testRoute1),
+             TestRouteHandler(Destination.RestaurantDetail("1"), testRoute2)
+         )
+         val coordinator = AppCoordinator(routeHandlers = handlers)
+         
+         val initialStackSize = coordinator.getCurrentState().currentStack.size
+         
+         coordinator.reduceState(NavigationEvent.PushInTab(Destination.RestaurantList))
+         coordinator.reduceState(NavigationEvent.PushInTab(Destination.RestaurantDetail("1")))
+         
+         val finalState = coordinator.getCurrentState()
+         assertEquals(initialStackSize + 2, finalState.currentStack.size)
+         assertEquals(testRoute2, finalState.currentStack.last())
+     }
 
     //  CONVENIENCE METHOD TESTS
 
-    @Test
-    fun testNavigateToScreenUpdatesStateAfterReduce() {
-        val coordinator = AppCoordinator()
-        coordinator.routeHandlers = listOf(
-            TestRouteHandler(Destination.RestaurantList, testRoute1)
-        )
-        
-        val initialStackSize = coordinator.getCurrentState().currentStack.size
-        
-        coordinator.navigateToScreen(Destination.RestaurantList)
-        val event = NavigationEvent.PushInTab(Destination.RestaurantList)
-        coordinator.reduceState(event)
-        
-        val newState = coordinator.getCurrentState()
-        assertEquals(initialStackSize + 1, newState.currentStack.size)
-    }
+     @Test
+     fun testNavigateToScreenUpdatesStateAfterReduce() {
+         val handlers = listOf(
+             TestRouteHandler(Destination.RestaurantList, testRoute1)
+         )
+         val coordinator = AppCoordinator(routeHandlers = handlers)
+         
+         val initialStackSize = coordinator.getCurrentState().currentStack.size
+         
+         coordinator.navigateToScreen(Destination.RestaurantList)
+         val event = NavigationEvent.PushInTab(Destination.RestaurantList)
+         coordinator.reduceState(event)
+         
+         val newState = coordinator.getCurrentState()
+         assertEquals(initialStackSize + 1, newState.currentStack.size)
+     }
 
-    @Test
-    fun testNavigateToRestaurantDetailWithId() {
-        val coordinator = AppCoordinator()
-        coordinator.routeHandlers = listOf(
-            TestRouteHandler(Destination.RestaurantDetail("123"), testRoute2)
-        )
-        
-        val initialStackSize = coordinator.getCurrentState().currentStack.size
-        
-        coordinator.navigateToRestaurantDetail("123")
-        coordinator.reduceState(NavigationEvent.PushInTab(Destination.RestaurantDetail("123")))
-        
-        val newState = coordinator.getCurrentState()
-        assertEquals(initialStackSize + 1, newState.currentStack.size)
-    }
+     @Test
+     fun testNavigateToRestaurantDetailWithId() {
+         val handlers = listOf(
+             TestRouteHandler(Destination.RestaurantDetail("123"), testRoute2)
+         )
+         val coordinator = AppCoordinator(routeHandlers = handlers)
+         
+         val initialStackSize = coordinator.getCurrentState().currentStack.size
+         
+         coordinator.navigateToRestaurantDetail("123")
+         coordinator.reduceState(NavigationEvent.PushInTab(Destination.RestaurantDetail("123")))
+         
+         val newState = coordinator.getCurrentState()
+         assertEquals(initialStackSize + 1, newState.currentStack.size)
+     }
 
     @Test
     fun testShowFilterModalCreatesFilterEvent() {
@@ -197,43 +197,45 @@ class AppCoordinatorTest {
         assertEquals("tab2", newState.tabNavigation?.activeTabId)
     }
 
-    @Test
-    fun testNavigateInTabUpdatesTabStack() {
-        val tabDef1 = createTabDefinition("tab1", rootRoute)
-        val tabNav = TabNavigationState(
-            tabDefinitions = listOf(tabDef1),
-            stacksByTab = mapOf("tab1" to listOf(rootRoute)),
-            activeTabId = "tab1"
-        )
-        val coordinator = AppCoordinator(
-            NavigationState(usesTabs = true, tabNavigation = tabNav)
-        )
-        coordinator.routeHandlers = listOf(
-            TestRouteHandler(Destination.RestaurantList, testRoute1)
-        )
-        
-        coordinator.reduceState(NavigationEvent.PushInTab(Destination.RestaurantList))
-        val newState = coordinator.getCurrentState()
-        
-        assertEquals(2, newState.tabNavigation?.getActiveTabStack()?.size)
-    }
+     @Test
+     fun testNavigateInTabUpdatesTabStack() {
+         val tabDef1 = createTabDefinition("tab1", rootRoute)
+         val tabNav = TabNavigationState(
+             tabDefinitions = listOf(tabDef1),
+             stacksByTab = mapOf("tab1" to listOf(rootRoute)),
+             activeTabId = "tab1"
+         )
+         val handlers = listOf(
+             TestRouteHandler(Destination.RestaurantList, testRoute1)
+         )
+         val coordinator = AppCoordinator(
+             NavigationState(usesTabs = true, tabNavigation = tabNav),
+             routeHandlers = handlers
+         )
+         
+         coordinator.reduceState(NavigationEvent.PushInTab(Destination.RestaurantList))
+         val newState = coordinator.getCurrentState()
+         
+         assertEquals(2, newState.tabNavigation?.getActiveTabStack()?.size)
+     }
 
     //  ROUTE HANDLER TESTS
 
-    @Test
-    fun testRouteHandlerIntegration() {
-        val coordinator = AppCoordinator()
-        val handler = TestRouteHandler(Destination.RestaurantList, testRoute1)
-        
-        assertTrue(coordinator.routeHandlers.isEmpty())
-        
-        coordinator.routeHandlers = listOf(handler)
-        val initialStackSize = coordinator.getCurrentState().currentStack.size
-        coordinator.reduceState(NavigationEvent.PushInTab(Destination.RestaurantList))
-        
-        val newState = coordinator.getCurrentState()
-        assertEquals(initialStackSize + 1, newState.currentStack.size)
-    }
+     @Test
+     fun testRouteHandlerIntegration() {
+         val handler = TestRouteHandler(Destination.RestaurantList, testRoute1)
+         val coordinatorWithoutHandlers = AppCoordinator()
+         
+         assertTrue(coordinatorWithoutHandlers.navigationState.value.currentStack.isEmpty() || 
+                   coordinatorWithoutHandlers.navigationState.value.usesTabs)
+         
+         val coordinatorWithHandlers = AppCoordinator(routeHandlers = listOf(handler))
+         val initialStackSize = coordinatorWithHandlers.getCurrentState().currentStack.size
+         coordinatorWithHandlers.reduceState(NavigationEvent.PushInTab(Destination.RestaurantList))
+         
+         val newState = coordinatorWithHandlers.getCurrentState()
+         assertEquals(initialStackSize + 1, newState.currentStack.size)
+     }
 
     @Test
     fun testNoHandlerLeavesStateUnchanged() {
@@ -400,60 +402,60 @@ class AppCoordinatorTest {
 
     //  EDGE CASE: MULTIPLE QUEUED DEEP LINKS
 
-    @Test
-    fun testMultipleDeepLinksProcessedSequentially() {
-        val coordinator = AppCoordinator()
-        coordinator.routeHandlers = listOf(
-            TestRouteHandler(Destination.RestaurantList, testRoute1),
-            TestRouteHandler(Destination.RestaurantDetail("123"), testRoute2)
-        )
-        
-        val processedDestinations = mutableListOf<String>()
-        
-        coordinator.onListenerReady {
-            processedDestinations.add("ready")
-        }
-        
-        val state1 = NavigationState(primaryStack = listOf(rootRoute, testRoute1))
-        coordinator.reduceState(NavigationEvent.ApplyNavigationState(state1))
-        
-        val state2 = NavigationState(primaryStack = listOf(rootRoute, testRoute2))
-        coordinator.reduceState(NavigationEvent.ApplyNavigationState(state2))
-        
-        assertEquals(0, processedDestinations.size, "Callback should not execute until markListenerReady is called")
-        
-        coordinator.markListenerReady()
-        assertEquals(listOf("ready"), processedDestinations, "Readiness callback should execute once")
-        assertEquals(testRoute2, coordinator.getCurrentState().primaryStack.last(), "Final state should reflect last navigation")
-    }
+     @Test
+     fun testMultipleDeepLinksProcessedSequentially() {
+         val handlers = listOf(
+             TestRouteHandler(Destination.RestaurantList, testRoute1),
+             TestRouteHandler(Destination.RestaurantDetail("123"), testRoute2)
+         )
+         val coordinator = AppCoordinator(routeHandlers = handlers)
+         
+         val processedDestinations = mutableListOf<String>()
+         
+         coordinator.onListenerReady {
+             processedDestinations.add("ready")
+         }
+         
+         val state1 = NavigationState(primaryStack = listOf(rootRoute, testRoute1))
+         coordinator.reduceState(NavigationEvent.ApplyNavigationState(state1))
+         
+         val state2 = NavigationState(primaryStack = listOf(rootRoute, testRoute2))
+         coordinator.reduceState(NavigationEvent.ApplyNavigationState(state2))
+         
+         assertEquals(0, processedDestinations.size, "Callback should not execute until markListenerReady is called")
+         
+         coordinator.markListenerReady()
+         assertEquals(listOf("ready"), processedDestinations, "Readiness callback should execute once")
+         assertEquals(testRoute2, coordinator.getCurrentState().primaryStack.last(), "Final state should reflect last navigation")
+     }
 
     //  EDGE CASE: NAVIGATION DURING READINESS PHASE
 
-    @Test
-    fun testNavigationEventsDuringReadinessPhase() {
-        val coordinator = AppCoordinator()
-        coordinator.routeHandlers = listOf(
-            TestRouteHandler(Destination.RestaurantList, testRoute1),
-            TestRouteHandler(Destination.RestaurantDetail("123"), testRoute2)
-        )
-        
-        val eventLog = mutableListOf<String>()
-        
-        coordinator.onListenerReady {
-            eventLog.add("listener_ready")
-            coordinator.navigateInTab(Destination.RestaurantDetail("123"))
-        }
-        
-        eventLog.add("before_mark_ready")
-        coordinator.markListenerReady()
-        eventLog.add("after_mark_ready")
-        
-        assertEquals(
-            listOf("before_mark_ready", "listener_ready", "after_mark_ready"),
-            eventLog,
-            "Events should be processed in correct order"
-        )
-    }
+     @Test
+     fun testNavigationEventsDuringReadinessPhase() {
+         val handlers = listOf(
+             TestRouteHandler(Destination.RestaurantList, testRoute1),
+             TestRouteHandler(Destination.RestaurantDetail("123"), testRoute2)
+         )
+         val coordinator = AppCoordinator(routeHandlers = handlers)
+         
+         val eventLog = mutableListOf<String>()
+         
+         coordinator.onListenerReady {
+             eventLog.add("listener_ready")
+             coordinator.navigateInTab(Destination.RestaurantDetail("123"))
+         }
+         
+         eventLog.add("before_mark_ready")
+         coordinator.markListenerReady()
+         eventLog.add("after_mark_ready")
+         
+         assertEquals(
+             listOf("before_mark_ready", "listener_ready", "after_mark_ready"),
+             eventLog,
+             "Events should be processed in correct order"
+         )
+     }
 
     //  EDGE CASE: NO EVENTS DURING INITIALIZATION
 
@@ -471,30 +473,30 @@ class AppCoordinatorTest {
 
     //  EDGE CASE: RAPID STATE CHANGES
 
-    @Test
-    fun testRapidStateChangesBeforeReadiness() {
-        val coordinator = AppCoordinator()
-        coordinator.routeHandlers = listOf(
-            TestRouteHandler(Destination.RestaurantList, testRoute1),
-            TestRouteHandler(Destination.RestaurantDetail("1"), testRoute2),
-            TestRouteHandler(Destination.RestaurantDetail("2"), TestRoute("route3", false))
-        )
-        
-        val readinessCallbackCount = mutableListOf<Int>()
-        var callbackIndex = 0
-        
-        coordinator.onListenerReady { readinessCallbackCount.add(callbackIndex++) }
-        
-        coordinator.reduceState(NavigationEvent.PushInTab(Destination.RestaurantList))
-        coordinator.reduceState(NavigationEvent.PushInTab(Destination.RestaurantDetail("1")))
-        coordinator.reduceState(NavigationEvent.PushInTab(Destination.RestaurantDetail("2")))
-        
-        assertEquals(0, readinessCallbackCount.size, "Callback should not execute before markListenerReady")
-        
-        coordinator.markListenerReady()
-        
-        assertEquals(1, readinessCallbackCount.size, "Callback should execute exactly once after markListenerReady")
-    }
+     @Test
+     fun testRapidStateChangesBeforeReadiness() {
+         val handlers = listOf(
+             TestRouteHandler(Destination.RestaurantList, testRoute1),
+             TestRouteHandler(Destination.RestaurantDetail("1"), testRoute2),
+             TestRouteHandler(Destination.RestaurantDetail("2"), TestRoute("route3", false))
+         )
+         val coordinator = AppCoordinator(routeHandlers = handlers)
+         
+         val readinessCallbackCount = mutableListOf<Int>()
+         var callbackIndex = 0
+         
+         coordinator.onListenerReady { readinessCallbackCount.add(callbackIndex++) }
+         
+         coordinator.reduceState(NavigationEvent.PushInTab(Destination.RestaurantList))
+         coordinator.reduceState(NavigationEvent.PushInTab(Destination.RestaurantDetail("1")))
+         coordinator.reduceState(NavigationEvent.PushInTab(Destination.RestaurantDetail("2")))
+         
+         assertEquals(0, readinessCallbackCount.size, "Callback should not execute before markListenerReady")
+         
+         coordinator.markListenerReady()
+         
+         assertEquals(1, readinessCallbackCount.size, "Callback should execute exactly once after markListenerReady")
+     }
 
     //  TEST HELPERS
 

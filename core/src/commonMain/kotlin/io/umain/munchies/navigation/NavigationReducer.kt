@@ -1,5 +1,7 @@
 package io.umain.munchies.navigation
 
+import io.umain.munchies.logging.logInfo
+
 /**
  * Pure functions for reducing NavigationState based on NavigationEvents.
  *
@@ -44,17 +46,21 @@ object NavigationReducer {
         event: NavigationEvent.Push,
         handlers: List<RouteHandler>
     ): NavigationState {
+        logInfo("NavigationReducer", "📥 handlePush: destination=${event.destination::class.simpleName}, handlers available=${handlers.size}")
         // Convert Destination to Route via handlers
         val route = handlers.firstNotNullOfOrNull { handler ->
             if (handler.canHandle(event.destination)) {
+                logInfo("NavigationReducer", "  ✓ Handler found: ${handler::class.simpleName}")
                 handler.destinationToRoute(event.destination)
             } else null
         }
 
         if (route == null) {
+            logInfo("NavigationReducer", "  ✗ No route created - returning same state")
             return state
         }
 
+        logInfo("NavigationReducer", "  ✓ Route created: ${route::class.simpleName}, proceeding to handlePushInTab")
         return if (state.usesTabs) {
             // Push in current tab
             handlePushInTab(state, NavigationEvent.PushInTab(event.destination), handlers)

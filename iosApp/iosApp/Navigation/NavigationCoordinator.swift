@@ -7,6 +7,8 @@
 import SwiftUI
 import shared
 
+private let tag = "NavigationCoordinator"
+
 @MainActor
 class NavigationCoordinator: ObservableObject {
     @Published var activeTabId = "restaurants"
@@ -35,98 +37,98 @@ class NavigationCoordinator: ObservableObject {
         observeNavigationEvents()
     }
     
-     func observeNavigationEvents() {
-         Task { [weak self] in
-             guard let self = self else { return }
-             print("🗂️  DEBUG: NavigationCoordinator starting to observe navigation events")
-             await self.collectNavigationEvents()
-         }
-     }
+      func observeNavigationEvents() {
+          Task { [weak self] in
+              guard let self = self else { return }
+              logInfo(tag: tag, message: "🗂️  starting to observe navigation events")
+              await self.collectNavigationEvents()
+          }
+      }
 
-     private func collectNavigationEvents() async {
-         isListenerActive = true
-         print("🗂️  DEBUG: NavigationCoordinator listener is now ACTIVE")
-         coordinator.markListenerReady()
-         for await event in asyncKotlinStream(coordinator.navigationEvents) as AsyncStream<NavigationEvent> {
-             handle(event: event)
+      private func collectNavigationEvents() async {
+          isListenerActive = true
+          logInfo(tag: tag, message: "🗂️  listener is now ACTIVE")
+          coordinator.markListenerReady()
+          for await event in asyncKotlinStream(coordinator.navigationEvents) as AsyncStream<NavigationEvent> {
+              handle(event: event)
+          }
+      }
+    
+     func processPendingDeepLink(_ url: URL) {
+         logInfo(tag: tag, message: "🔗 processPendingDeepLink called with: \(url), listenerActive=\(isListenerActive)")
+         
+         guard url.scheme == DeepLinkConstants().SCHEME else {
+             logInfo(tag: tag, message: "🔗 Invalid scheme: \(url.scheme ?? "nil")")
+             return
          }
+         
+         let host = url.host ?? ""
+         let path = url.path
+         let pathComponents = path.split(separator: "/").map(String.init)
+         
+         logInfo(tag: tag, message: "🔗 Parsed URL - host='\(host)', path='\(path)', components=\(pathComponents)")
+         
+         var queryParams: [String: String] = [:]
+         if let components = URLComponents(url: url, resolvingAgainstBaseURL: false) {
+             components.queryItems?.forEach { item in
+                 queryParams[item.name] = item.value ?? ""
+             }
+         }
+         
+         logInfo(tag: tag, message: "🔗 Calling DeepLinkProcessor.processDeepLink with host='\(host)', pathSegments=\(pathComponents), queryParams=\(queryParams)")
+         
+         shared.DeepLinkProcessor.shared.processDeepLink(
+             host: host,
+             pathSegments: pathComponents,
+             queryParams: queryParams,
+             coordinator: coordinator
+         )
+         
+         logInfo(tag: tag, message: "🔗 DeepLinkProcessor.processDeepLink completed")
      }
     
-    func processPendingDeepLink(_ url: URL) {
-        print("🔗 DEBUG: processPendingDeepLink called with: \(url), listenerActive=\(isListenerActive)")
-        
-        guard url.scheme == DeepLinkConstants().SCHEME else {
-            print("🔗 DEBUG: Invalid scheme: \(url.scheme ?? "nil")")
-            return
-        }
-        
-        let host = url.host ?? ""
-        let path = url.path
-        let pathComponents = path.split(separator: "/").map(String.init)
-        
-        print("🔗 DEBUG: Parsed URL - host='\(host)', path='\(path)', components=\(pathComponents)")
-        
-        var queryParams: [String: String] = [:]
-        if let components = URLComponents(url: url, resolvingAgainstBaseURL: false) {
-            components.queryItems?.forEach { item in
-                queryParams[item.name] = item.value ?? ""
-            }
-        }
-        
-        print("🔗 DEBUG: Calling DeepLinkProcessor.processDeepLink with host='\(host)', pathSegments=\(pathComponents), queryParams=\(queryParams)")
-        
-        shared.DeepLinkProcessor.shared.processDeepLink(
-            host: host,
-            pathSegments: pathComponents,
-            queryParams: queryParams,
-            coordinator: coordinator
-        )
-        
-        print("🔗 DEBUG: DeepLinkProcessor.processDeepLink completed")
-    }
-    
-    func handle(event: NavigationEvent) {
-        print("🗂️  DEBUG: NavigationCoordinator.handle(event: \(type(of: event)))")
-        coordinator.reduceState(event: event)
-        
-        switch event {
-        case let push as NavigationEvent.Push:
-            print("🗂️  DEBUG: Handling Push for destination: \(push.destination)")
-            handlePush(destination: push.destination)
-         case is NavigationEvent.Pop:
-             print("🗂️  DEBUG: Handling Pop")
-              if !routeStack.isEmpty {
-                  routeStack.removeLast()
-              }
-              recomputeTabStacks()
-              updateActiveRoutes()
-              syncCleanup()
-          case is NavigationEvent.PopToRoot:
-              print("🗂️  DEBUG: Handling PopToRoot")
-              routeStack.removeAll()
-              recomputeTabStacks()
-              activeRoutes.removeAll()
-              registry.cleanup(activeRoutes: [])
-         case let selectTab as NavigationEvent.SelectTab:
-             print("🗂️  DEBUG: Handling SelectTab(\(selectTab.tabId))")
-             handleSelectTab(selectTab.tabId)
-         case let showModal as NavigationEvent.ShowModal:
-             print("🗂️  DEBUG: Handling ShowModal for \(type(of: showModal.destination))")
-             handleShowModal(showModal.destination)
-         case is NavigationEvent.DismissModal:
-             print("🗂️  DEBUG: Handling DismissModal")
-             handleDismissModal()
-         case is NavigationEvent.DismissAllModals:
-             print("🗂️  DEBUG: Handling DismissAllModals")
-             handleDismissAllModals()
-         case let dismissUntil as NavigationEvent.DismissModalUntil:
-             print("🗂️  DEBUG: Handling DismissModalUntil")
-             handleDismissModalUntil(dismissUntil.predicate)
-         default:
-             print("🗂️  DEBUG: Unhandled event type: \(type(of: event))")
-             break
-        }
-    }
+     func handle(event: NavigationEvent) {
+         logInfo(tag: tag, message: "🗂️  handle(event: \(type(of: event)))")
+         coordinator.reduceState(event: event)
+         
+         switch event {
+         case let push as NavigationEvent.Push:
+             logInfo(tag: tag, message: "🗂️  Handling Push for destination: \(push.destination)")
+             handlePush(destination: push.destination)
+          case is NavigationEvent.Pop:
+              logInfo(tag: tag, message: "🗂️  Handling Pop")
+               if !routeStack.isEmpty {
+                   routeStack.removeLast()
+               }
+               recomputeTabStacks()
+               updateActiveRoutes()
+               syncCleanup()
+           case is NavigationEvent.PopToRoot:
+               logInfo(tag: tag, message: "🗂️  Handling PopToRoot")
+               routeStack.removeAll()
+               recomputeTabStacks()
+               activeRoutes.removeAll()
+               registry.cleanup(activeRoutes: [])
+          case let selectTab as NavigationEvent.SelectTab:
+              logInfo(tag: tag, message: "🗂️  Handling SelectTab(\(selectTab.tabId))")
+              handleSelectTab(selectTab.tabId)
+          case let showModal as NavigationEvent.ShowModal:
+              logInfo(tag: tag, message: "🗂️  Handling ShowModal for \(type(of: showModal.destination))")
+              handleShowModal(showModal.destination)
+          case is NavigationEvent.DismissModal:
+              logInfo(tag: tag, message: "🗂️  Handling DismissModal")
+              handleDismissModal()
+          case is NavigationEvent.DismissAllModals:
+              logInfo(tag: tag, message: "🗂️  Handling DismissAllModals")
+              handleDismissAllModals()
+          case let dismissUntil as NavigationEvent.DismissModalUntil:
+              logInfo(tag: tag, message: "🗂️  Handling DismissModalUntil")
+              handleDismissModalUntil(dismissUntil.predicate)
+          default:
+              logInfo(tag: tag, message: "🗂️  Unhandled event type: \(type(of: event))")
+              break
+         }
+     }
     
       private func handleSelectTab(_ tabId: String) {
           activeTabId = tabId
@@ -134,55 +136,55 @@ class NavigationCoordinator: ObservableObject {
           syncCleanup()
       }
     
-     private func handlePush(destination: shared.Destination) {
-         print("🗂️  DEBUG: handlePush - looking for route provider to handle \(type(of: destination))")
-         for (index, provider) in routeProviders.enumerated() {
-             print("🗂️  DEBUG:   Provider \(index): \(type(of: provider))")
-             let handler = provider.getRoutes().first { 
-                 $0.canHandle(destination: destination) 
-             }
-             
-             if let handler = handler {
-                 print("🗂️  DEBUG:   ✓ Found handler: \(type(of: handler))")
-                 if let kmpRoute = handler.destinationToRoute(destination: destination) {
-                     print("🗂️  DEBUG:     ✓ Converted to KMP route: \(kmpRoute)")
-                     if let iosRoute = convertToIOSRoute(kmpRoute) {
-                         print("🗂️  DEBUG:     ✓ Converted to iOS route: \(iosRoute)")
-                         routeStack.append(iosRoute)
-                         recomputeTabStacks()
-                         updateActiveRoutes()
-                         syncCleanup()
-                         return
-                     } else {
-                         print("🗂️  DEBUG:     ✗ Failed to convert KMP route to iOS route")
-                     }
-                 } else {
-                     print("🗂️  DEBUG:     ✗ Handler returned nil for destinationToRoute")
-                 }
-             }
-         }
-         
-         print("🗂️  ERROR: No route provider found for destination: \(destination)")
-         fatalError("No route provider found for destination: \(destination)")
-     }
+      private func handlePush(destination: shared.Destination) {
+          logInfo(tag: tag, message: "🗂️  handlePush - looking for route provider to handle \(type(of: destination))")
+          for (index, provider) in routeProviders.enumerated() {
+              logInfo(tag: tag, message: "🗂️    Provider \(index): \(type(of: provider))")
+              let handler = provider.getRoutes().first { 
+                  $0.canHandle(destination: destination) 
+              }
+              
+              if let handler = handler {
+                  logInfo(tag: tag, message: "🗂️    ✓ Found handler: \(type(of: handler))")
+                  if let kmpRoute = handler.destinationToRoute(destination: destination) {
+                      logInfo(tag: tag, message: "🗂️      ✓ Converted to KMP route: \(kmpRoute)")
+                      if let iosRoute = convertToIOSRoute(kmpRoute) {
+                          logInfo(tag: tag, message: "🗂️      ✓ Converted to iOS route: \(iosRoute)")
+                          routeStack.append(iosRoute)
+                          recomputeTabStacks()
+                          updateActiveRoutes()
+                          syncCleanup()
+                          return
+                      } else {
+                          logInfo(tag: tag, message: "🗂️      ✗ Failed to convert KMP route to iOS route")
+                      }
+                  } else {
+                      logInfo(tag: tag, message: "🗂️      ✗ Handler returned nil for destinationToRoute")
+                  }
+              }
+          }
+          
+          logInfo(tag: tag, message: "🗂️  ERROR: No route provider found for destination: \(destination)")
+          fatalError("No route provider found for destination: \(destination)")
+      }
     
-     private func convertToIOSRoute(_ kmpRoute: shared.Route) -> Route? {
-         print("🗂️  DEBUG: convertToIOSRoute - converting \(type(of: kmpRoute))")
-         switch kmpRoute {
-         case _ as RestaurantListRoute:
-             print("🗂️  DEBUG:   ✓ RestaurantListRoute -> .restaurantList")
-             return .restaurantList
-         case let detailRoute as RestaurantDetailRoute:
-             print("🗂️  DEBUG:   ✓ RestaurantDetailRoute -> .restaurantDetail(\(detailRoute.restaurantId))")
-             return .restaurantDetail(detailRoute.restaurantId)
-         case _ as SettingsRoute:
-             print("🗂️  DEBUG:   ✓ SettingsRoute -> .settings")
-             return .settings
-         default:
-             print("🗂️  DEBUG:   ✗ Unknown route type: \(type(of: kmpRoute))")
-             return nil
-         }
-     }
+      private func convertToIOSRoute(_ kmpRoute: shared.Route) -> Route? {
+          logInfo(tag: tag, message: "🗂️  convertToIOSRoute - converting \(type(of: kmpRoute))")
+          switch kmpRoute {
+          case _ as RestaurantListRoute:
+              logInfo(tag: tag, message: "🗂️    ✓ RestaurantListRoute -> .restaurantList")
+              return .restaurantList
+          case let detailRoute as RestaurantDetailRoute:
+              logInfo(tag: tag, message: "🗂️    ✓ RestaurantDetailRoute -> .restaurantDetail(\(detailRoute.restaurantId))")
+              return .restaurantDetail(detailRoute.restaurantId)
+          case _ as SettingsRoute:
+              logInfo(tag: tag, message: "🗂️    ✓ SettingsRoute -> .settings")
+              return .settings
+          default:
+              logInfo(tag: tag, message: "🗂️    ✗ Unknown route type: \(type(of: kmpRoute))")
+              return nil
+          }
+      }
     
     private func updateActiveRoutes() {
         activeRoutes.removeAll()

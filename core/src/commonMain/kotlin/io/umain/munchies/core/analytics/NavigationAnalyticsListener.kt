@@ -5,6 +5,7 @@ import io.umain.munchies.navigation.Route
 import io.umain.munchies.navigation.RestaurantDetailRoute
 import io.umain.munchies.core.lifecycle.KmpViewModel
 import io.umain.munchies.core.util.currentTimeMillis
+import io.umain.munchies.logging.logInfo
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.CoroutineDispatcher
@@ -18,12 +19,23 @@ class NavigationAnalyticsListener(
 
     private var previousState: NavigationState? = null
     private val modalOpenTimes = mutableMapOf<String, Long>()
+    private var emissionCount = 0
 
     fun startTracking() {
+        logInfo("NavigationAnalyticsListener", "🎬 startTracking() called - subscribing to navigationStateFlow")
         scope.launch(dispatcher) {
-            navigationStateFlow.collect { newState ->
-                trackStateChanges(previousState, newState)
-                previousState = newState
+            logInfo("NavigationAnalyticsListener", "📡 Coroutine launched, about to start collecting state changes")
+            try {
+                navigationStateFlow.collect { newState ->
+                    emissionCount++
+                    logInfo("NavigationAnalyticsListener", "📥 Received state emission #$emissionCount")
+                    logInfo("NavigationAnalyticsListener", "   Current route: ${getCurrentRoute(newState)?.key}")
+                    logInfo("NavigationAnalyticsListener", "   Previous state was null: ${previousState == null}")
+                    trackStateChanges(previousState, newState)
+                    previousState = newState
+                }
+            } catch (e: Exception) {
+                logInfo("NavigationAnalyticsListener", "⚠️ Collection ended with exception: ${e.message}")
             }
         }
     }
@@ -33,10 +45,12 @@ class NavigationAnalyticsListener(
         currentState: NavigationState
     ) {
         if (previousState == null) {
+            logInfo("NavigationAnalyticsListener", "🌟 Initial screen - calling trackInitialScreen")
             trackInitialScreen(currentState)
             return
         }
 
+        logInfo("NavigationAnalyticsListener", "🔄 State change detected - checking screen/tab/modal changes")
         trackScreenChanges(previousState, currentState)
         trackTabChanges(previousState, currentState)
         trackModalChanges(previousState, currentState)
@@ -44,6 +58,7 @@ class NavigationAnalyticsListener(
 
     private suspend fun trackInitialScreen(state: NavigationState) {
         val initialRoute = getCurrentRoute(state)
+        logInfo("NavigationAnalyticsListener", "📍 trackInitialScreen: route = ${initialRoute?.key}")
         initialRoute?.let {
             analyticsService.trackEvent(
                 AnalyticsEvent.ScreenView(
@@ -61,8 +76,11 @@ class NavigationAnalyticsListener(
     ) {
         val previousRoute = getCurrentRoute(previousState)
         val currentRoute = getCurrentRoute(currentState)
+        
+        logInfo("NavigationAnalyticsListener", "   trackScreenChanges: prev=${previousRoute?.key} curr=${currentRoute?.key}")
 
         if (previousRoute?.key != currentRoute?.key) {
+            logInfo("NavigationAnalyticsListener", "   ✓ Screen changed! Tracking: ${currentRoute?.key}")
             currentRoute?.let {
                 analyticsService.trackEvent(
                     AnalyticsEvent.ScreenView(
@@ -73,6 +91,8 @@ class NavigationAnalyticsListener(
                     )
                 )
             }
+        } else {
+            logInfo("NavigationAnalyticsListener", "   ✗ Screen did not change")
         }
     }
 
@@ -83,13 +103,18 @@ class NavigationAnalyticsListener(
         val previousTabId = previousState.tabNavigation?.activeTabId
         val currentTabId = currentState.tabNavigation?.activeTabId
 
+        logInfo("NavigationAnalyticsListener", "   trackTabChanges: prev=$previousTabId curr=$currentTabId")
+
         if (previousTabId != currentTabId && currentTabId != null) {
+            logInfo("NavigationAnalyticsListener", "   ✓ Tab switched! Tracking: $currentTabId")
             analyticsService.trackEvent(
                 AnalyticsEvent.TabSwitch(
                     tabId = currentTabId,
                     tabName = getTabLabel(currentState, currentTabId)
                 )
             )
+        } else {
+            logInfo("NavigationAnalyticsListener", "   ✗ Tab did not change")
         }
     }
 
@@ -100,8 +125,11 @@ class NavigationAnalyticsListener(
         val previousModals = previousState.modalStack
         val currentModals = currentState.modalStack
 
+        logInfo("NavigationAnalyticsListener", "   trackModalChanges: prev size=${previousModals.size} curr size=${currentModals.size}")
+
         if (currentModals.size > previousModals.size) {
             currentModals.lastOrNull()?.let { newModal ->
+                logInfo("NavigationAnalyticsListener", "   ✓ Modal opened! Tracking: ${newModal.key}")
                 modalOpenTimes[newModal.key] = currentTimeMillis()
                 analyticsService.trackEvent(
                     AnalyticsEvent.ModalOpen(
@@ -116,6 +144,7 @@ class NavigationAnalyticsListener(
         if (currentModals.size < previousModals.size) {
             val dismissedModal = previousModals.getOrNull(currentModals.size)
             dismissedModal?.let { modal ->
+                logInfo("NavigationAnalyticsListener", "   ✓ Modal dismissed! Tracking: ${modal.key}")
                 val timeSpent = currentTimeMillis() -
                     (modalOpenTimes.remove(modal.key) ?: currentTimeMillis())
                 analyticsService.trackEvent(
@@ -125,6 +154,10 @@ class NavigationAnalyticsListener(
                     )
                 )
             }
+        }
+        
+        if (previousModals.size == currentModals.size) {
+            logInfo("NavigationAnalyticsListener", "   ✗ Modal stack size unchanged")
         }
     }
 

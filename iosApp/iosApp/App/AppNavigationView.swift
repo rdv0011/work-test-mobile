@@ -2,6 +2,8 @@ import SwiftUI
 import shared
 import Combine
 
+private let logTag = "AppNavigationView"
+
 struct AppNavigationView: View {
     @StateObject private var navigator: NavigationCoordinator
     @Binding var pendingDeepLinkUrl: URL?
@@ -38,12 +40,12 @@ struct AppNavigationView: View {
          }
      }
      
-     private func handlePendingDeepLink(_ url: URL) {
-         print("🔗 DEBUG: handlePendingDeepLink() processing: \(url)")
-         navigator.coordinator.onListenerReady {
-             self.navigator.processPendingDeepLink(url)
-             self.pendingDeepLinkUrl = nil
-         }
-     }
+      private func handlePendingDeepLink(_ url: URL) {
+          logInfo(tag: logTag, message: "🔗 handlePendingDeepLink() processing: \(url)")
+          navigator.coordinator.onListenerReady {
+              self.navigator.processPendingDeepLink(url)
+              self.pendingDeepLinkUrl = nil
+          }
+      }
 }
 

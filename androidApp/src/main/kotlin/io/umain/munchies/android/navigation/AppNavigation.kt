@@ -63,9 +63,6 @@ fun AppNavigation(
         routeProviders.flatMap { it.getRoutes() }.filterIsInstance<ScopedRouteHandler>()
     }
     
-    LaunchedEffect(allHandlers) {
-        coordinator.routeHandlers = allHandlers
-    }
     val scopedRouteHandlerRegistry = remember { ScopedRouteHandlerRegistry(allHandlers) }
     val registry = remember { RouteRegistry(scopedRouteHandlerRegistry) }
     

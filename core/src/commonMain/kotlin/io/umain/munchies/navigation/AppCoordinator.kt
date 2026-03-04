@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import io.umain.munchies.core.ui.TextId
 import io.umain.munchies.core.ui.IconId
+import io.umain.munchies.logging.logInfo
 
 /**
  * Central coordinator for all navigation in the application.
@@ -21,7 +22,8 @@ import io.umain.munchies.core.ui.IconId
  * Uses Redux pattern: events are dispatched, reduced to new state, and emitted.
  */
 open class AppCoordinator(
-    initialState: NavigationState = createInitialTabNavigationState()
+    initialState: NavigationState = createInitialTabNavigationState(),
+    private val routeHandlers: List<RouteHandler> = emptyList()
 ) {
     // INTERNAL STATE
 
@@ -35,10 +37,6 @@ open class AppCoordinator(
         extraBufferCapacity = 10
     )
     val navigationEvents: SharedFlow<NavigationEvent> = _navigationEvents.asSharedFlow()
-
-      // ROUTE HANDLERS (injected)
-
-      var routeHandlers: List<RouteHandler> = emptyList()
 
       /**
        * ANALYTICS ARCHITECTURE NOTE (Phase 3):
@@ -228,8 +226,21 @@ open class AppCoordinator(
      */
     open fun reduceState(event: NavigationEvent) {
         val currentState = _navigationState.value
+        logInfo("AppCoordinator", "🔄 reduceState: Event=${event::class.simpleName}, handlers=${routeHandlers.size}")
         val newState = NavigationReducer.reduce(currentState, event, routeHandlers)
+        logInfo("AppCoordinator", "🔄 reduceState: Event=${event::class.simpleName}, Old route=${getRouteKey(currentState)}, New route=${getRouteKey(newState)}")
         _navigationState.value = newState
+        logInfo("AppCoordinator", "✅ State updated and emitted via StateFlow")
+    }
+    
+    private fun getRouteKey(state: NavigationState): String {
+        return if (state.modalStack.isNotEmpty()) {
+            "modal:${state.modalStack.last().key}"
+        } else {
+            state.tabNavigation?.stacksByTab
+                ?.get(state.tabNavigation.activeTabId)
+                ?.lastOrNull()?.key ?: "unknown"
+        }
     }
 
     companion object {
