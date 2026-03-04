@@ -3,6 +3,7 @@ package io.umain.munchies.core.analytics
 import io.umain.munchies.navigation.NavigationState
 import io.umain.munchies.navigation.Route
 import io.umain.munchies.navigation.RestaurantDetailRoute
+import io.umain.munchies.navigation.TabNavigationState
 import io.umain.munchies.core.lifecycle.KmpViewModel
 import io.umain.munchies.core.util.currentTimeMillis
 import io.umain.munchies.logging.logInfo
@@ -100,17 +101,27 @@ class NavigationAnalyticsListener(
         previousState: NavigationState,
         currentState: NavigationState
     ) {
-        val previousTabId = previousState.tabNavigation?.activeTabId
-        val currentTabId = currentState.tabNavigation?.activeTabId
+        val previousTabNav = previousState.tabNavigation
+        val currentTabNav = currentState.tabNavigation
+        
+        // Skip if tabs not in use
+        if (currentTabNav == null) {
+            logInfo("NavigationAnalyticsListener", "   trackTabChanges: tabs not in use, skipping")
+            return
+        }
+
+        val previousTabId = previousTabNav?.activeTabId
+        val currentTabId = currentTabNav.activeTabId
 
         logInfo("NavigationAnalyticsListener", "   trackTabChanges: prev=$previousTabId curr=$currentTabId")
 
-        if (previousTabId != currentTabId && currentTabId != null) {
+        // Track when activeTabId changes
+        if (previousTabId != currentTabId) {
             logInfo("NavigationAnalyticsListener", "   ✓ Tab switched! Tracking: $currentTabId")
             analyticsService.trackEvent(
                 AnalyticsEvent.TabSwitch(
                     tabId = currentTabId,
-                    tabName = getTabLabel(currentState, currentTabId)
+                    tabName = getTabLabel(currentTabNav, currentTabId)
                 )
             )
         } else {
@@ -171,9 +182,9 @@ class NavigationAnalyticsListener(
         }
     }
 
-    private fun getTabLabel(state: NavigationState, tabId: String): String {
-        return state.tabNavigation?.tabDefinitions
-            ?.find { it.id == tabId }
+    private fun getTabLabel(tabNav: TabNavigationState, tabId: String): String {
+        return tabNav.tabDefinitions
+            .find { it.id == tabId }
             ?.label
             ?.toString() ?: tabId
     }
