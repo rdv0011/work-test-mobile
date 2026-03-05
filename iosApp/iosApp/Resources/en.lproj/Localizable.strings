@@ -20,3 +20,13 @@
 "error.loading" = "Failed to load data";
 "error.network" = "Network error";
 "loading" = "Loading…";
+
+/* Navigation Tabs */
+"tab.restaurants" = "Restaurants";
+"tab.settings" = "Settings";
+
+/* Settings Screen */
+"settings.title" = "Settings";
+"settings.dark.mode" = "Dark Mode";
+"settings.notifications" = "Notifications";
+"settings.about" = "About";
