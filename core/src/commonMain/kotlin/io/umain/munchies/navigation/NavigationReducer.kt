@@ -110,12 +110,33 @@ object NavigationReducer {
     @Suppress("UNUSED_PARAMETER")
     private fun handleShowModal(
         state: NavigationState,
-        _event: NavigationEvent.ShowModal,
+        event: NavigationEvent.ShowModal,
         _handlers: List<RouteHandler>
     ): NavigationState {
-        // Modal state is managed at the UI layer (AppNavigation.kt, NavigationCoordinator.swift)
-        // This method exists for completeness but modals are not tracked in NavigationState
-        return state
+        val modalRoute = destinationToModalRoute(event.destination)
+        logInfo("NavigationReducer", "📥 handleShowModal: destination=${event.destination::class.simpleName} -> modalRoute=${modalRoute?.key ?: "null"}")
+        
+        return if (modalRoute != null) {
+            state.copy(modalStack = state.modalStack + modalRoute)
+        } else {
+            logInfo("NavigationReducer", "  ✗ Failed to convert ModalDestination to ModalRoute")
+            state
+        }
+    }
+
+    private fun destinationToModalRoute(destination: ModalDestination): ModalRoute? {
+        return when (destination) {
+            is ModalDestination.Filter -> FilterModalRoute(destination.preSelectedFilters)
+            is ModalDestination.SubmitReviewModal -> SubmitReviewModalRoute(destination.restaurantId)
+            is ModalDestination.ConfirmAction -> ConfirmActionModalRoute(
+                destination.message,
+                destination.confirmText,
+                destination.cancelText
+            )
+            is ModalDestination.DatePicker -> DatePickerModalRoute(destination.initialDate)
+            is ModalDestination.ReviewSuccessModal -> ReviewSuccessModalRoute
+            is ModalDestination.ReviewErrorAlert -> ReviewErrorAlertRoute(destination.message)
+        }
     }
 
     private fun handleDismissModal(state: NavigationState): NavigationState {

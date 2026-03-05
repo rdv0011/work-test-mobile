@@ -11,7 +11,14 @@ private let tag = "NavigationCoordinator"
 
 @MainActor
 class NavigationCoordinator: ObservableObject {
-    @Published var activeTabId = "restaurants"
+    @Published var activeTabId = "restaurants" {
+        didSet {
+            if activeTabId != oldValue {
+                logInfo(tag: tag, message: "🗂️  activeTabId changed from \(oldValue) to \(activeTabId) - calling selectTab()")
+                coordinator.selectTab(tabId: activeTabId)
+            }
+        }
+    }
     @Published var tabStacks: [String: NavigationPath] = [
         "restaurants": NavigationPath(),
         "settings": NavigationPath()
