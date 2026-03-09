@@ -30,6 +30,7 @@ struct RestaurantListView: View {
             )
         }
     }
+    private let R = StringResources.shared
     
     var body: some View {
         VStack(spacing: .zero) {
@@ -56,7 +57,7 @@ struct RestaurantListView: View {
                 }
             }
         }
-        .navigationTitle(tr(.restaurantListTitle))
+        .navigationTitle(stringResource(key: R.restaurant_list_title))
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: {

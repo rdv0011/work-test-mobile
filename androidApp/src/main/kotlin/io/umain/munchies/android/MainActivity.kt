@@ -15,6 +15,7 @@ import io.umain.munchies.android.ui.theme.MunchiesTheme
 import io.umain.munchies.navigation.AppCoordinator
 import io.umain.munchies.core.analytics.NavigationAnalyticsListener
 import io.umain.munchies.android.analytics.FirebaseAnalyticsService
+import io.umain.munchies.core.localization.setApplicationContext
 import org.koin.android.ext.android.inject
 
 class MainActivity : ComponentActivity() {
@@ -24,6 +25,8 @@ class MainActivity : ComponentActivity() {
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        setApplicationContext(this)
         
         analyticsListener = NavigationAnalyticsListener(
             FirebaseAnalyticsService(),

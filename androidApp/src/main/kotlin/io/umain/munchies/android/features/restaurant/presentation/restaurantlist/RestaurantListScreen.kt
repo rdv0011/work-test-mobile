@@ -18,7 +18,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.collectAsState
 import io.umain.munchies.feature.restaurant.presentation.state.RestaurantListUiState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,11 +25,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.umain.munchies.android.ui.theme.MunchiesTheme
-import io.umain.munchies.core.ui.TextId
+import io.umain.munchies.core.localization.stringResource
+import io.umain.munchies.core.localization.StringResources
 import io.umain.munchies.designtokens.DesignTokens
-import io.umain.munchies.localization.tr
-import io.umain.munchies.navigation.AppCoordinator
-import io.umain.munchies.navigation.ModalDestination
 import io.umain.munchies.android.navigation.LocalRouteRegistry
 import io.umain.munchies.android.ui.components.FilterChipCompose
 import io.umain.munchies.android.ui.components.RestaurantCardCompose
@@ -110,11 +107,11 @@ fun RestaurantListScreen(
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(
-                            text = tr(TextId.AppTitle),
+                            text = stringResource(StringResources.app_title),
                             style = MaterialTheme.typography.headlineLarge
                         )
                         Text(
-                            text = tr(TextId.RestaurantListTitle),
+                            text = stringResource(StringResources.restaurant_list_title),
                             style = MaterialTheme.typography.titleMedium,
                             modifier = Modifier.padding(top = DesignTokens.Spacing.sm.dp)
                         )

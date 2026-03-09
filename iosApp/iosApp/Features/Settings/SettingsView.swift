@@ -14,28 +14,30 @@ struct SettingsView: View {
         notificationsEnabled: false,
         appVersion: ""
     )
+    
+    private let R = StringResources.shared
 
     var body: some View {
         VStack(spacing: .zero) {
             ScrollView {
                 VStack(alignment: .leading, spacing: .spacingUI.lg) {
-                    Text(tr(.settingsTitle))
+                    Text(stringResource(key: R.settings_title))
                         .font(.headline)
                         .padding(.horizontal, .spacingUI.lg)
 
                     VStack(spacing: .spacingUI.md) {
-                        Toggle(tr(.darkMode), isOn: Binding(
+                        Toggle(stringResource(key: R.settings_dark_mode), isOn: Binding(
                             get: { uiState.darkModeEnabled },
                             set: { _ in viewModel.toggleDarkMode() }
                         ))
 
-                        Toggle(tr(.notifications), isOn: Binding(
+                        Toggle(stringResource(key: R.settings_notifications), isOn: Binding(
                             get: { uiState.notificationsEnabled },
                             set: { _ in viewModel.toggleNotifications() }
                         ))
 
                         HStack {
-                            Text(tr(.about))
+                            Text(stringResource(key: R.settings_about))
                             Spacer()
                             Text(uiState.appVersion)
                                 .foregroundColor(.gray)
@@ -45,7 +47,7 @@ struct SettingsView: View {
                 }
             }
         }
-        .navigationTitle(tr(.settingsTitle))
+        .navigationTitle(stringResource(key: R.settings_title))
         .task(id: viewModel) {
             await observe()
         }

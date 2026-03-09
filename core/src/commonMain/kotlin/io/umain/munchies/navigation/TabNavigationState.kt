@@ -1,8 +1,7 @@
 package io.umain.munchies.navigation
 
 import io.umain.munchies.core.ui.IconId
-import io.umain.munchies.core.ui.TextId
-import kotlinx.serialization.Serializable
+import io.umain.munchies.core.localization.StringKey
 
 /**
  * State for tab-based navigation.
@@ -58,7 +57,7 @@ data class TabNavigationState(
  */
 data class TabDefinition(
     val id: String,
-    val label: TextId,
+    val label: StringKey,
     val icon: IconId,
     val rootRoute: Route
 )

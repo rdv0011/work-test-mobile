@@ -13,8 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import io.umain.munchies.core.ui.IconId
-import io.umain.munchies.core.ui.TextId
-import io.umain.munchies.localization.tr
+import io.umain.munchies.core.localization.stringResource
 import io.umain.munchies.navigation.AppCoordinator
 import io.umain.munchies.navigation.TabNavigationState
 
@@ -56,11 +55,11 @@ fun TabNavigationScaffold(
                                 IconId.Settings -> Icons.Filled.Settings
                                 else -> Icons.Filled.Home
                             },
-                            contentDescription = tr(tabDef.label)
+                            contentDescription = stringResource(tabDef.label)
                         )
                     },
                     label = {
-                        Text(text = tr(tabDef.label))
+                        Text(text = stringResource(tabDef.label))
                     }
                 )
             }

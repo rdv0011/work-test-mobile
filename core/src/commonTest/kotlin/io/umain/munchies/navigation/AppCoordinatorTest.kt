@@ -526,7 +526,7 @@ class AppCoordinatorTest {
     private fun createTabDefinition(tabId: String, rootRoute: Route): TabDefinition {
         return TabDefinition(
             id = tabId,
-            label = io.umain.munchies.core.ui.TextId.RestaurantListTitle,
+            label = io.umain.munchies.core.localization.StringResources.app_title,
             icon = io.umain.munchies.core.ui.IconId.Logo,
             rootRoute = rootRoute
         )

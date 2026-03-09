@@ -17,6 +17,7 @@ struct RestaurantDetailView: View {
     let holder: RestaurantDetailViewModelHolder
     
     @State private var uiState: RestaurantDetailUiState = RestaurantDetailUiState.Loading()
+    private let R = StringResources.shared
 
      var body: some View {
          ZStack {
@@ -26,19 +27,19 @@ struct RestaurantDetailView: View {
                  loadingOverlay()
              }
          }
-         .navigationTitle(tr(.restaurantDetailTitle))
-         .navigationBarBackButtonHidden(true)
-          .toolbar {
-              ToolbarItem(placement: .navigationBarLeading) {
-                  Button(action: {
-                      navigationViewModel.navigateBack()
-                  }) {
-                      HStack(spacing: 4) {
-                          Image(systemName: "chevron.left")
-                          Text("Back")
-                      }
-                  }
-              }
+         .navigationTitle(stringResource(key: R.restaurant_detail_title))
+          .navigationBarBackButtonHidden(true)
+           .toolbar {
+               ToolbarItem(placement: .navigationBarLeading) {
+                   Button(action: {
+                       navigationViewModel.navigateBack()
+                   }) {
+                       HStack(spacing: 4) {
+                           Image(systemName: "chevron.left")
+                           Text(stringResource(key: R.accessibility_back_button))
+                       }
+                   }
+               }
               ToolbarItem(placement: .navigationBarTrailing) {
                   Button(action: {
                       navigationViewModel.showSubmitReviewModal(restaurantId: restaurantId)
@@ -134,12 +135,12 @@ struct RestaurantDetailView: View {
         return ""
     }
     
-    private func statusText() -> String {
-        if let success = uiState as? RestaurantDetailUiState.Success {
-            return success.status == RestaurantStatus.open ? tr(.restaurantStatusOpen) : tr(.restaurantStatusClosed)
-        }
-        return ""
-    }
+     private func statusText() -> String {
+         if let success = uiState as? RestaurantDetailUiState.Success {
+             return stringResource(key: success.status == RestaurantStatus.open ? R.restaurant_status_open: R.restaurant_status_closed)
+         }
+         return ""
+     }
     
     private func statusColor() -> String {
         if let success = uiState as? RestaurantDetailUiState.Success {

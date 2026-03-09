@@ -36,15 +36,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import io.umain.munchies.android.navigation.LocalRouteRegistry
 import io.umain.munchies.android.ui.components.DetailCardCompose
-import io.umain.munchies.core.ui.TextId
+import io.umain.munchies.core.localization.stringResource
+import io.umain.munchies.core.localization.StringResources
 import io.umain.munchies.designtokens.DesignTokens
 import io.umain.munchies.feature.restaurant.domain.model.RestaurantStatus
 import io.umain.munchies.feature.restaurant.presentation.RestaurantDetailViewModel
 import io.umain.munchies.feature.restaurant.presentation.model.DetailCardData
 import io.umain.munchies.feature.restaurant.presentation.state.RestaurantDetailUiState
-import io.umain.munchies.localization.tr
-import io.umain.munchies.navigation.AppCoordinator
-import io.umain.munchies.navigation.ModalDestination
 import io.umain.munchies.navigation.RestaurantDetailRoute
 import io.umain.munchies.feature.restaurant.navigation.RestaurantNavigationViewModel
 
@@ -112,26 +110,26 @@ fun RestaurantDetailScreen(
                                 .background(Color.Transparent)
                                 .shadow(4.dp, CircleShape, clip = false)
                         ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = tr(TextId.AccessibilityBackButton)
-                            )
-                        }
-                    }
+                             Icon(
+                                  imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                  contentDescription = stringResource(StringResources.accessibility_back_button)
+                              )
+                         }
+                     }
 
-                    val statusColor =
-                        if (status == RestaurantStatus.OPEN) {
-                            DesignTokens.Colors.Accent.positive
-                        } else {
-                            DesignTokens.Colors.Accent.negative
-                        }
+                     val statusColor =
+                         if (status == RestaurantStatus.OPEN) {
+                             DesignTokens.Colors.Accent.positive
+                         } else {
+                             DesignTokens.Colors.Accent.negative
+                         }
 
-                    val statusText =
-                        if (status == RestaurantStatus.OPEN) {
-                            tr(TextId.RestaurantStatusOpen)
-                        } else {
-                            tr(TextId.RestaurantStatusClosed)
-                        }
+                      val statusText =
+                          if (status == RestaurantStatus.OPEN) {
+                              stringResource(StringResources.restaurant_status_open)
+                          } else {
+                              stringResource(StringResources.restaurant_status_closed)
+                          }
 
                     DetailCardCompose(
                         data = DetailCardData(

@@ -12,7 +12,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -20,10 +19,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.umain.munchies.feature.settings.presentation.SettingsViewModel
-import io.umain.munchies.localization.tr
-import io.umain.munchies.core.ui.TextId
+import io.umain.munchies.core.localization.stringResource
+import io.umain.munchies.core.localization.StringResources
 import io.umain.munchies.designtokens.DesignTokens
-import io.umain.munchies.navigation.AppCoordinator
 import io.umain.munchies.android.navigation.LocalRouteRegistry
 import io.umain.munchies.navigation.SettingsRoute
 import io.umain.munchies.feature.settings.navigation.SettingsNavigationViewModel
@@ -52,7 +50,7 @@ fun SettingsScreen(
                 .padding(DesignTokens.Spacing.lg.dp)
         ) {
             Text(
-                text = tr(TextId.SettingsTitle),
+                text = stringResource(StringResources.settings_title),
                 style = MaterialTheme.typography.headlineLarge
             )
 
@@ -65,7 +63,7 @@ fun SettingsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = tr(TextId.DarkMode),
+                    text = stringResource(StringResources.settings_dark_mode),
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.bodyLarge
                 )
@@ -82,7 +80,7 @@ fun SettingsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = tr(TextId.Notifications),
+                    text = stringResource(StringResources.settings_notifications),
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.bodyLarge
                 )
@@ -99,7 +97,7 @@ fun SettingsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = tr(TextId.About),
+                    text = stringResource(StringResources.settings_about),
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.bodyLarge
                 )

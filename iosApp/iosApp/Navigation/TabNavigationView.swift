@@ -8,19 +8,20 @@ import shared
 
 struct TabNavigationView: View {
     @ObservedObject var navigator: NavigationCoordinator
+    private let R = StringResources.shared
     
     var body: some View {
         ZStack {
             TabView(selection: $navigator.activeTabId) {
                 restaurantTab
                     .tabItem {
-                        Label(tr(.restaurants), systemImage: "house.fill")
+                        Label(stringResource(key: R.tab_restaurants), systemImage: "house.fill")
                     }
                     .tag("restaurants")
                 
                 settingsTab
                     .tabItem {
-                        Label(tr(.settings), systemImage: "gear")
+                        Label(stringResource(key: R.tab_settings), systemImage: "gear")
                     }
                     .tag("settings")
             }

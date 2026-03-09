@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import io.umain.munchies.core.ui.TextId
+import io.umain.munchies.core.localization.StringResources
 import io.umain.munchies.core.ui.IconId
 import io.umain.munchies.logging.logInfo
 
@@ -250,14 +250,14 @@ open class AppCoordinator(
         private fun createInitialTabNavigationState(): NavigationState {
             val restaurantsTab = TabDefinition(
                 id = "restaurants",
-                label = TextId.Restaurants,
+                label = StringResources.tab_restaurants,
                 icon = IconId.Restaurant,
                 rootRoute = RestaurantListRoute()
             )
 
             val settingsTab = TabDefinition(
                 id = "settings",
-                label = TextId.Settings,
+                label = StringResources.tab_settings,
                 icon = IconId.Settings,
                 rootRoute = SettingsRoute()
             )

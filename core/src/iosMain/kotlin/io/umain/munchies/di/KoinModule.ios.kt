@@ -1,7 +1,5 @@
 package io.umain.munchies.di
 
-import io.umain.munchies.localization.PlatformTranslationService
-import io.umain.munchies.localization.TranslationService
 import io.umain.munchies.navigation.AppCoordinator
 import io.umain.munchies.navigation.RouteHandler
 import io.umain.munchies.network.provideHttpClientEngine
@@ -14,9 +12,6 @@ import org.koin.dsl.module
 private var koinCallCounter = 0
 
 actual val platformModule = module {
-    single<TranslationService> { 
-        PlatformTranslationService()
-    }
     single { provideHttpClientEngine() }
 }
 
