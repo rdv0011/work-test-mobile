@@ -8,6 +8,7 @@ plan/
 /local.properties
 .idea/
 build/
+build-ios/
 /captures
 .externalNativeBuild
 .cxx
