@@ -1,6 +1,0 @@
-Command line invocation:
-    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -scheme iosApp -configuration Debug -derivedDataPath /tmp/ios_build
-
-2026-02-28 15:38:22.081 xcodebuild[13256:36576796] Writing error result bundle to /var/folders/4n/n3q9cy_n36b8vtf00f9pyy680000gn/T/ResultBundle_2026-28-02_15-38-0022.xcresult
-xcodebuild: error: The directory /Users/rybakdmy/Development/private/work-test-mobile does not contain an Xcode project, workspace or package.
-
