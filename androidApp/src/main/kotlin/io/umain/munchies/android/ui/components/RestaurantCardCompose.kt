@@ -1,21 +1,27 @@
 package io.umain.munchies.android.ui.components
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.core.graphics.toColorInt
+import coil.compose.AsyncImage
 import io.umain.munchies.designtokens.DesignTokens
 import io.umain.munchies.feature.restaurant.presentation.model.RestaurantCardData
+import io.umain.munchies.android.ui.toComposeColor
+import io.umain.munchies.android.ui.toComposeTextStyle
 
 @Composable
 fun RestaurantCardCompose(
@@ -23,10 +29,6 @@ fun RestaurantCardCompose(
     onTap: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val titleStyle = DesignTokens.Typography.TextStyles.title1
-    val tagStyle = DesignTokens.Typography.TextStyles.subtitle1
-    val metaStyle = DesignTokens.Typography.TextStyles.footer1
-    
     val shape = RoundedCornerShape(
         topStart = DesignTokens.BorderRadius.md.dp,
         topEnd = DesignTokens.BorderRadius.md.dp,
@@ -38,44 +40,77 @@ fun RestaurantCardCompose(
         modifier = modifier
             .semantics { contentDescription = data.contentDescription },
         shape = shape,
-        colors = CardDefaults.cardColors(containerColor = Color(DesignTokens.Colors.Background.card.toColorInt())),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = DesignTokens.Colors.Background.card.toComposeColor()
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         onClick = onTap
     ) {
-        Text(
-            text = data.restaurantName,
-            style = TextStyle(
-                fontWeight = FontWeight(titleStyle.fontWeight),
-                fontSize = titleStyle.fontSize.sp
-            ),
-            color = Color(DesignTokens.Colors.Text.dark.toColorInt())
-        )
-        
-        Text(
-            text = data.tags.joinToString(" • "),
-            style = TextStyle(
-                fontWeight = FontWeight(tagStyle.fontWeight),
-                fontSize = tagStyle.fontSize.sp
-            ),
-            color = Color(DesignTokens.Colors.Text.subtitle.toColorInt())
-        )
-        
-        Text(
-            text = "${data.deliveryTime} - ${data.distance}",
-            style = TextStyle(
-                fontWeight = FontWeight(metaStyle.fontWeight),
-                fontSize = metaStyle.fontSize.sp
-            ),
-            color = Color(DesignTokens.Colors.Text.footer.toColorInt())
-        )
-        
-        Text(
-            text = "★ " + String.format("%.1f", data.rating),
-            style = TextStyle(
-                fontWeight = FontWeight.Bold,
-                fontSize = 10.sp
-            ),
-            color = Color(DesignTokens.Colors.Accent.star.toColorInt())
-        )
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.Top
+        ) {
+            // Image Section
+            AsyncImage(
+                model = data.imageUrl,
+                contentDescription = "${data.restaurantName} restaurant image",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(132.dp),
+                contentScale = ContentScale.Crop
+            )
+            
+            // Content Section
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(DesignTokens.Spacing.sm.dp),
+                horizontalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.xl.dp),
+                verticalAlignment = Alignment.Top
+            ) {
+                // Left Column: Text
+                Column(
+                    modifier = Modifier
+                        .weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.xs.dp)
+                ) {
+                    Text(
+                        text = data.restaurantName,
+                        style = DesignTokens.Typography.TextStyles.title1.toComposeTextStyle(),
+                        color = DesignTokens.Colors.Text.dark.toComposeColor()
+                    )
+                    
+                    Text(
+                        text = data.tags.joinToString(" • "),
+                        style = DesignTokens.Typography.TextStyles.subtitle1.toComposeTextStyle(),
+                        color = DesignTokens.Colors.Text.subtitle.toComposeColor()
+                    )
+                    
+                    Text(
+                        text = "${data.deliveryTime} - ${data.distance}",
+                        style = DesignTokens.Typography.TextStyles.footer1.toComposeTextStyle(),
+                        color = DesignTokens.Colors.Text.footer.toComposeColor()
+                    )
+                }
+                
+                // Right Column: Rating
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(3.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "★",
+                        style = DesignTokens.Typography.TextStyles.footer1.toComposeTextStyle(),
+                        color = DesignTokens.Colors.Accent.star.toComposeColor()
+                    )
+                    
+                    Text(
+                        text = String.format("%.1f", data.rating),
+                        style = DesignTokens.Typography.TextStyles.footer1.toComposeTextStyle(),
+                        color = DesignTokens.Colors.Accent.star.toComposeColor()
+                    )
+                }
+            }
+        }
     }
 }

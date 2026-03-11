@@ -35,7 +35,21 @@ import io.umain.munchies.feature.restaurant.presentation.model.FilterChipData
 import io.umain.munchies.feature.restaurant.presentation.model.RestaurantCardData
 import io.umain.munchies.feature.restaurant.navigation.RestaurantNavigationViewModel
 import androidx.compose.runtime.remember
+import io.umain.munchies.android.ui.toComposeTextStyle
+import io.umain.munchies.android.ui.toComposeColor
 
+/**
+ * Restaurant List Screen
+ * 
+ * Displays a list of restaurants with filter capabilities.
+ * 
+ * Design Token Usage:
+ * - Spacing: [DesignTokens.Spacing] for all margins and padding
+ * - Sizes: [DesignTokens.Sizes] for component dimensions
+ * - Typography: [DesignTokens.Typography.TextStyles] converted via [toComposeTextStyle]
+ * 
+ * See: figma/figma_css_normalization_pipeline.md - "Android Implementation" section
+ */
 @Composable
 fun RestaurantListScreen(
     navigationViewModel: RestaurantNavigationViewModel,
@@ -82,6 +96,7 @@ fun RestaurantListScreen(
     }
     
     Scaffold(
+        containerColor = DesignTokens.Colors.Background.primary.toComposeColor(),
         modifier = modifier.fillMaxSize()
     ) { paddingValues ->
         Column(
@@ -108,11 +123,11 @@ fun RestaurantListScreen(
                     ) {
                         Text(
                             text = stringResource(StringResources.app_title),
-                            style = MaterialTheme.typography.headlineLarge
+                            style = DesignTokens.Typography.TextStyles.headline1.toComposeTextStyle()
                         )
                         Text(
                             text = stringResource(StringResources.restaurant_list_title),
-                            style = MaterialTheme.typography.titleMedium,
+                            style = DesignTokens.Typography.TextStyles.title1.toComposeTextStyle(),
                             modifier = Modifier.padding(top = DesignTokens.Spacing.sm.dp)
                         )
                     }
@@ -122,7 +137,10 @@ fun RestaurantListScreen(
                         },
                         modifier = Modifier.padding(start = DesignTokens.Spacing.md.dp)
                     ) {
-                        Text("Filters")
+                        Text(
+                            "Filters",
+                            color = DesignTokens.Colors.Text.picto.toComposeColor()
+                        )
                     }
                 }
             }
@@ -131,12 +149,12 @@ fun RestaurantListScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = DesignTokens.Spacing.lg.dp),
-                horizontalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.sm.dp)
+                horizontalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.lg.dp)
             ) {
                 items(filters) { filter ->
                     FilterChipCompose(
                         data = filter,
-                        onSelect = { selected ->
+                        onSelect = { _ ->
                             // Delegate selection changes to ViewModel
                             viewModel.toggleFilter(filter.id)
                         },
@@ -151,10 +169,10 @@ fun RestaurantListScreen(
                     .fillMaxWidth()
                     .weight(1f)
                     .padding(top = DesignTokens.Spacing.lg.dp),
-                verticalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.md.dp),
+                verticalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.lg.dp),
                 contentPadding = PaddingValues(
                     horizontal = DesignTokens.Spacing.lg.dp,
-                    vertical = DesignTokens.Spacing.sm.dp
+                    vertical = DesignTokens.Spacing.lg.dp
                 )
             ) {
                 items(filteredRestaurants) { restaurant ->
@@ -177,5 +195,23 @@ fun RestaurantListScreen(
 @Composable
 private fun RestaurantListScreenPreview() {
     MunchiesTheme {
+        // TODO: Replace with actual ViewModel preview once state management pattern is finalized
+        // Preview shown with Scaffold container only - full mock state integration pending
+        Scaffold(
+            modifier = Modifier.fillMaxSize()
+        ) { paddingValues ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    "RestaurantListScreen",
+                    style = DesignTokens.Typography.TextStyles.headline1.toComposeTextStyle()
+                )
+            }
+        }
     }
 }
