@@ -13,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.toggleableState
@@ -47,6 +48,11 @@ fun FilterChipCompose(
     Row(
         modifier = modifier
             .height(48.dp)
+            .shadow(
+                elevation = 4.dp,
+                shape = RoundedCornerShape(DesignTokens.BorderRadius.full.dp),
+                clip = false
+            )
             .background(
                 color = backgroundColor,
                 shape = RoundedCornerShape(DesignTokens.BorderRadius.full.dp)

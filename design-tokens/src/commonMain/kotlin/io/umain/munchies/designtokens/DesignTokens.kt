@@ -22,7 +22,7 @@ object DesignTokens {
         object Background {
             const val primary = "#F8F8F8"
             const val card = "#FFFFFF"
-            const val filterDefault = "#66FFFFFF"
+            const val filterDefault = "#FFFFFF"
         }
         
         object Accent {
