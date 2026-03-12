@@ -13,7 +13,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.toggleableState
@@ -22,10 +21,10 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.graphics.toColorInt
 import coil.compose.AsyncImage
 import io.umain.munchies.designtokens.DesignTokens
 import io.umain.munchies.feature.restaurant.presentation.model.FilterChipData
+import io.umain.munchies.android.ui.toComposeColor
 
 @Composable
 fun FilterChipCompose(
@@ -34,15 +33,15 @@ fun FilterChipCompose(
     modifier: Modifier = Modifier
 ) {
     val backgroundColor = if (data.isSelected) {
-        Color(DesignTokens.Colors.Accent.selected.toColorInt())
+        DesignTokens.Colors.Accent.selected.toComposeColor()
     } else {
-        Color.White
+        DesignTokens.Colors.Background.filterDefault.toComposeColor()
     }
     
     val textColor = if (data.isSelected) {
-        Color(DesignTokens.Colors.Text.light.toColorInt())
+        DesignTokens.Colors.Text.light.toComposeColor()
     } else {
-        Color(DesignTokens.Colors.Text.dark.toColorInt())
+        DesignTokens.Colors.Text.dark.toComposeColor()
     }
     
     Row(
