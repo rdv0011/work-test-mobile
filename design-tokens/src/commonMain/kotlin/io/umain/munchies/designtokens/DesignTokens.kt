@@ -110,7 +110,7 @@ object DesignTokens {
             
             val footer1 = TextStyle(
                 fontFamily = FontFamilies.inter,
-                fontWeight = FontWeights.medium,
+                fontWeight = FontWeights.bold,
                 fontSize = FontSizes.footer1,
                 lineHeight = LineHeights.footer1
             )
@@ -141,15 +141,13 @@ object DesignTokens {
     
     object Sizes {
         object Icon {
-            const val small = 10
-            const val medium = 12
-            const val large = 48
+            const val small = 12
         }
         
         object Card {
             object Restaurant {
                 const val width = 343
-                const val height = 196
+                const val height = 204
                 const val imageHeight = 132
             }
             
@@ -162,7 +160,7 @@ object DesignTokens {
         object Filter {
             const val width = 144
             const val height = 48
-            const val iconSize = 48
+            const val iconSize = 24
         }
     }
     
