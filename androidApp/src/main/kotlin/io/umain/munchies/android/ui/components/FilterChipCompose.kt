@@ -36,7 +36,7 @@ fun FilterChipCompose(
     val backgroundColor = if (data.isSelected) {
         Color(DesignTokens.Colors.Accent.selected.toColorInt())
     } else {
-        Color(DesignTokens.Colors.Background.filterDefault.toColorInt())
+        Color.White
     }
     
     val textColor = if (data.isSelected) {
@@ -53,7 +53,6 @@ fun FilterChipCompose(
                 shape = RoundedCornerShape(DesignTokens.BorderRadius.full.dp)
             )
             .clickable { onSelect(!data.isSelected) }
-            .padding(horizontal = DesignTokens.Spacing.lg.dp)
             .semantics {
                 contentDescription = data.contentDescription
                 toggleableState = if (data.isSelected) ToggleableState.On else ToggleableState.Off
@@ -76,7 +75,8 @@ fun FilterChipCompose(
                 fontSize = 14.sp,
                 lineHeight = 20.sp
             ),
-            color = textColor
+            color = textColor,
+            modifier = Modifier.padding(end = DesignTokens.Spacing.lg.dp)
         )
     }
 }
