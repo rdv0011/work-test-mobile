@@ -167,60 +167,10 @@ object DesignTokens {
     }
     
     object Icons {
-        object Paths {
-            const val clock = "figma/icons/ic_clock_icon.svg"
-            const val star = "figma/icons/ic_star_icon.svg"
-            const val logo = "figma/icons/ic_logo.svg"
-        }
-        
         object Resources {
             const val clock = "ic_clock_icon"
             const val star = "ic_star_icon"
             const val logo = "ic_logo"
-        }
-        
-        object Metadata {
-            data class IconSpec(
-                val name: String,
-                val resourceName: String,
-                val figmaPath: String,
-                val width: Int,
-                val height: Int,
-                val defaultColor: String,
-                val description: String
-            )
-            
-            val clock = IconSpec(
-                name = "Clock",
-                resourceName = "ic_clock_icon",
-                figmaPath = "figma/icons/ic_clock_icon.svg",
-                width = 10,
-                height = 10,
-                defaultColor = Colors.Accent.brightRed,
-                description = "Delivery time indicator - used in restaurant cards and detail views"
-            )
-            
-            val star = IconSpec(
-                name = "Star",
-                resourceName = "ic_star_icon",
-                figmaPath = "figma/icons/ic_star_icon.svg",
-                width = 11,
-                height = 11,
-                defaultColor = Colors.Accent.star,
-                description = "Restaurant rating indicator - used in restaurant cards to show star ratings"
-            )
-            
-            val logo = IconSpec(
-                name = "Logo",
-                resourceName = "ic_logo",
-                figmaPath = "figma/icons/ic_logo.svg",
-                width = 55,
-                height = 54,
-                defaultColor = Colors.Text.dark,
-                description = "Umain Munchies brand logo - used in app headers and branding"
-            )
-            
-            fun getAll(): List<IconSpec> = listOf(clock, star, logo)
         }
     }
 }

@@ -34,6 +34,7 @@ object StringResources {
     const val settings_dark_mode: StringKey = "settings_dark_mode"
     const val settings_notifications: StringKey = "settings_notifications"
     const val settings_about: StringKey = "settings_about"
+    const val rating_format: StringKey = "rating_format"
 }
 
 object Plurals {

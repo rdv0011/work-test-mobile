@@ -4,8 +4,8 @@ data class RestaurantCardData(
     val id: String,
     val restaurantName: String,
     val tags: List<String>,
-    val deliveryTime: String,
-    val distance: String,
+    val deliveryTime: Int,
+    val distance: Double,
     val rating: Double,
     val imageUrl: String,
     val contentDescription: String = "Restaurant: $restaurantName"

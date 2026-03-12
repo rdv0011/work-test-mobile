@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -20,8 +21,12 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import io.umain.munchies.designtokens.DesignTokens
 import io.umain.munchies.feature.restaurant.presentation.model.RestaurantCardData
+import io.umain.munchies.android.ui.IconCompose
 import io.umain.munchies.android.ui.toComposeColor
 import io.umain.munchies.android.ui.toComposeTextStyle
+import io.umain.munchies.core.localization.StringKey
+import io.umain.munchies.core.localization.StringResources
+import io.umain.munchies.core.localization.stringResource
 
 @Composable
 fun RestaurantCardCompose(
@@ -86,11 +91,24 @@ fun RestaurantCardCompose(
                         color = DesignTokens.Colors.Text.subtitle.toComposeColor()
                     )
                     
-                    Text(
-                        text = "${data.deliveryTime} - ${data.distance}",
-                        style = DesignTokens.Typography.TextStyles.footer1.toComposeTextStyle(),
-                        color = DesignTokens.Colors.Text.footer.toComposeColor()
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.xs.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconCompose(
+                            iconResourceName = DesignTokens.Icons.Resources.clock,
+                            contentDescription = "Delivery time",
+                            modifier = Modifier.size(DesignTokens.Sizes.Icon.small.dp),
+                            tint = DesignTokens.Colors.Accent.brightRed
+                        )
+                        
+                        Text(
+                            text = "${data.deliveryTime} min - ${data.distance} km",
+                            style = DesignTokens.Typography.TextStyles.footer1.toComposeTextStyle(),
+                            color = DesignTokens.Colors.Text.footer.toComposeColor()
+                        )
+                    }
                 }
                 
                 // Right Column: Rating
@@ -98,16 +116,17 @@ fun RestaurantCardCompose(
                     horizontalArrangement = Arrangement.spacedBy(3.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "★",
-                        style = DesignTokens.Typography.TextStyles.footer1.toComposeTextStyle(),
-                        color = DesignTokens.Colors.Accent.star.toComposeColor()
+                    IconCompose(
+                        iconResourceName = DesignTokens.Icons.Resources.star,
+                        contentDescription = "Star rating",
+                        modifier = Modifier.size(DesignTokens.Sizes.Icon.small.dp),
+                        tint = DesignTokens.Colors.Accent.star
                     )
                     
                     Text(
-                        text = String.format("%.1f", data.rating),
+                        text = stringResource(StringResources.rating_format, data.rating),
                         style = DesignTokens.Typography.TextStyles.footer1.toComposeTextStyle(),
-                        color = DesignTokens.Colors.Accent.star.toComposeColor()
+                        color = DesignTokens.Colors.Text.footer.toComposeColor()
                     )
                 }
             }

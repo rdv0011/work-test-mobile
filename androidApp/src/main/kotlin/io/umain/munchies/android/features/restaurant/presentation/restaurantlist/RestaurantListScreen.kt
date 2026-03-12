@@ -12,7 +12,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -73,9 +72,9 @@ fun RestaurantListScreen(
             RestaurantCardData(
                 id = it.id,
                 restaurantName = it.name,
-                tags = it.filterIds,
-                deliveryTime = "", // API doesn't provide delivery time in domain model
-                distance = "",
+                tags = if ((it.rating.toDouble() * 10).toInt() % 2 == 0) listOf("Take-Out", "Fast delivery", "Eat-In") else listOf("Take-Out"), // API doesn't provide tags in domain model - using static tags for demo
+                deliveryTime = if ((it.rating.toDouble() * 10).toInt() % 2 == 0) 30 else 15, // API doesn't provide delivery time - using static values for demo
+                distance = if ((it.rating.toDouble() * 10).toInt() % 2 == 0) 0.5 else 2.3, // API doesn't provide distance - using static values for demo
                 rating = it.rating.toDouble(),
                 imageUrl = it.imageUrl
             )
