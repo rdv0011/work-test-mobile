@@ -17,16 +17,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import io.umain.munchies.designtokens.DesignTokens
 import io.umain.munchies.feature.restaurant.presentation.model.RestaurantCardData
 import io.umain.munchies.android.ui.IconCompose
+import io.umain.munchies.android.ui.theme.MunchiesTheme
 import io.umain.munchies.android.ui.toComposeColor
 import io.umain.munchies.android.ui.toComposeTextStyle
-import io.umain.munchies.core.localization.StringKey
-import io.umain.munchies.core.localization.StringResources
-import io.umain.munchies.core.localization.stringResource
 
 @Composable
 fun RestaurantCardCompose(
@@ -124,12 +123,32 @@ fun RestaurantCardCompose(
                     )
                     
                     Text(
-                        text = stringResource(StringResources.rating_format, data.rating),
+                        text = data.rating,
                         style = DesignTokens.Typography.TextStyles.footer1.toComposeTextStyle(),
                         color = DesignTokens.Colors.Text.footer.toComposeColor()
                     )
                 }
             }
         }
+    }
+}
+
+
+@Preview(showBackground = true)
+@Composable
+private fun RestaurantCardComposePreview() {
+    MunchiesTheme {
+        RestaurantCardCompose(
+            data = RestaurantCardData(
+                id = "1",
+                restaurantName = "Burger King",
+                tags = listOf("sports", "burgers", "fast food"),
+                deliveryTime = 30,
+                distance = 2.5,
+                rating = "4.5",
+                imageUrl = "https://food-delivery.umain.io/images/restaurant/burgers.png"
+            ),
+            onTap = {}
+        )
     }
 }

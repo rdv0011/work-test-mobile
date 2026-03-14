@@ -35,6 +35,7 @@ object StringResources {
     const val settings_notifications: StringKey = "settings_notifications"
     const val settings_about: StringKey = "settings_about"
     const val rating_format: StringKey = "rating_format"
+    const val restaurantsResultCount: StringKey = "restaurants_result_count"
 }
 
 object Plurals {

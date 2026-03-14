@@ -1,5 +1,17 @@
 package io.umain.munchies.android.features.restaurant.presentation.restaurantlist
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.with
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -34,8 +46,13 @@ import io.umain.munchies.feature.restaurant.presentation.model.FilterChipData
 import io.umain.munchies.feature.restaurant.presentation.model.RestaurantCardData
 import io.umain.munchies.feature.restaurant.navigation.RestaurantNavigationViewModel
 import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.modifier.modifierLocalConsumer
+import com.google.common.base.Strings
 import io.umain.munchies.android.ui.toComposeTextStyle
 import io.umain.munchies.android.ui.toComposeColor
+import io.umain.munchies.core.localization.StringKey
+import io.umain.munchies.navigation.RestaurantListRoute
 
 /**
  * Restaurant List Screen
@@ -49,13 +66,14 @@ import io.umain.munchies.android.ui.toComposeColor
  * 
  * See: figma/figma_css_normalization_pipeline.md - "Android Implementation" section
  */
+@OptIn(ExperimentalFoundationApi::class, ExperimentalAnimationApi::class)
 @Composable
 fun RestaurantListScreen(
     navigationViewModel: RestaurantNavigationViewModel,
     modifier: Modifier = Modifier
 ) {
     val registry = LocalRouteRegistry.current
-    val route = remember { io.umain.munchies.navigation.RestaurantListRoute() }
+    val route = remember { RestaurantListRoute() }
     
     val viewModel = remember {
         val scope = registry.createScopeForRoute(route)
@@ -67,32 +85,25 @@ fun RestaurantListScreen(
     LaunchedEffect(Unit) { viewModel.load() }
 
     val filteredRestaurants = when (val state = uiState) {
-        is RestaurantListUiState.Success -> state.restaurants.map {
-            // convert domain Restaurant to RestaurantCardData for Compose component
-            RestaurantCardData(
-                id = it.id,
-                restaurantName = it.name,
-                tags = if ((it.rating.toDouble() * 10).toInt() % 2 == 0) listOf("Take-Out", "Fast delivery", "Eat-In") else listOf("Take-Out"), // API doesn't provide tags in domain model - using static tags for demo
-                deliveryTime = if ((it.rating.toDouble() * 10).toInt() % 2 == 0) 30 else 15, // API doesn't provide delivery time - using static values for demo
-                distance = if ((it.rating.toDouble() * 10).toInt() % 2 == 0) 0.5 else 2.3, // API doesn't provide distance - using static values for demo
-                rating = it.rating.toDouble(),
-                imageUrl = it.imageUrl
-            )
-        }
+        is RestaurantListUiState.Success -> state.restaurants
         else -> emptyList()
     }
     
     val filters = when (val state = uiState) {
-        is RestaurantListUiState.Success -> state.filters.map {
-            FilterChipData(
-                id = it.id,
-                label = it.name,
-                iconUrl = it.imageUrl,
-                isSelected = selectedFilterIds.contains(it.id)
-            )
-        }
+        is RestaurantListUiState.Success -> state.filters
         else -> emptyList()
     }
+
+    val isFiltering = uiState is RestaurantListUiState.Success
+            && (uiState as RestaurantListUiState.Success).isFiltering
+
+    val scale by animateFloatAsState(
+        targetValue = if (isFiltering) 0.97f else 1f
+    )
+
+    val alpha by animateFloatAsState(
+        targetValue = if (isFiltering) 0.6f else 1f
+    )
     
     Scaffold(
         containerColor = DesignTokens.Colors.Background.primary.toComposeColor(),
@@ -102,12 +113,12 @@ fun RestaurantListScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .padding(horizontal = DesignTokens.Spacing.lg.dp,)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(
-                        horizontal = DesignTokens.Spacing.lg.dp,
                         vertical = DesignTokens.Spacing.lg.dp
                     )
             ) {
@@ -146,8 +157,7 @@ fun RestaurantListScreen(
             
             LazyRow(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = DesignTokens.Spacing.lg.dp),
+                    .fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.lg.dp)
             ) {
                 items(filters) { filter ->
@@ -162,28 +172,54 @@ fun RestaurantListScreen(
                     )
                 }
             }
+
+            if (uiState is RestaurantListUiState.Success) {
+                AnimatedContent(
+                    modifier = Modifier
+                        .padding(top = DesignTokens.Spacing.lg.dp),
+                    targetState = filteredRestaurants.size,
+                    transitionSpec = {
+                        fadeIn().togetherWith(fadeOut())
+                    }
+                ) { count ->
+                        Text(
+                            text = stringResource(StringResources.restaurantsResultCount, count),
+                            style = DesignTokens.Typography.TextStyles.title2.toComposeTextStyle()
+                        )
+}
+            }
             
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
+                    .graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
+                        this.alpha = alpha
+                    }
                     .padding(top = DesignTokens.Spacing.lg.dp),
-                verticalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.lg.dp),
-                contentPadding = PaddingValues(
-                    horizontal = DesignTokens.Spacing.lg.dp,
-                    vertical = DesignTokens.Spacing.lg.dp
-                )
+                verticalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.lg.dp)
             ) {
-                items(filteredRestaurants) { restaurant ->
-                    RestaurantCardCompose(
-                        data = restaurant,
-                        onTap = {
-                            navigationViewModel.showRestaurantDetail(restaurant.id)
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(DesignTokens.Sizes.Card.Restaurant.height.dp)
-                    )
+                items(
+                    items = filteredRestaurants,
+                    key = { it.id }
+                ) { restaurant ->
+                    AnimatedVisibility(
+                        visible = true,
+                        enter = fadeIn() + expandVertically() + slideInVertically { it / 4 },
+                        exit = fadeOut() + shrinkVertically(),
+                        modifier = Modifier.animateItemPlacement()
+                    ) {
+                        RestaurantCardCompose(
+                            data = restaurant,
+                            onTap = {
+                                navigationViewModel.showRestaurantDetail(restaurant.id)
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                        )
+                    }
                 }
             }
         }

@@ -33,4 +33,6 @@
     <string name="settings_notifications">Notifications</string>
     <string name="settings_about">About</string>
     <string name="rating_format">%.1f</string>
+
+    <string name="restaurants_result_count">%s restaurants</string>
 </resources>
