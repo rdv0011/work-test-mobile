@@ -1,6 +1,8 @@
 package io.umain.munchies.feature.restaurant.presentation
 
 import io.umain.munchies.core.lifecycle.KmpViewModel
+import io.umain.munchies.core.localization.StringResources
+import io.umain.munchies.core.localization.stringResource
 import io.umain.munchies.core.state.ViewModelState
 import io.umain.munchies.core.viewmodel.ScopedViewModel
 import io.umain.munchies.feature.restaurant.navigation.RestaurantNavigationViewModel
@@ -8,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import io.umain.munchies.feature.restaurant.domain.repository.RestaurantRepository
+import io.umain.munchies.feature.restaurant.presentation.model.toDetailCardData
 import io.umain.munchies.feature.restaurant.presentation.state.RestaurantDetailUiState
 
 class RestaurantDetailViewModel(
@@ -34,8 +37,16 @@ class RestaurantDetailViewModel(
                 val restaurant = restaurants.find { it.id == restaurantId }
                 if (restaurant != null) {
                     val status = repository.getRestaurantsOpenById(restaurantId)
+                    val statusOpenText = stringResource(StringResources.restaurant_status_open)
+                    val statusClosedText = stringResource(StringResources.restaurant_status_closed)
                     _stateFlow.value =
-                        RestaurantDetailUiState.Success(restaurant, status)
+                        RestaurantDetailUiState.Success(
+                            restaurant.toDetailCardData(
+                                status = status,
+                                statusOpenText = statusOpenText,
+                                statusClosedText = statusClosedText,
+                            )
+                        )
                 } else {
                     _stateFlow.value =
                         RestaurantDetailUiState.Error("Not found")

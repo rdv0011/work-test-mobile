@@ -35,13 +35,15 @@ fun DetailCardCompose(
         color = background,
         shape = RoundedCornerShape(12.dp),
         modifier = modifier
-            .padding(horizontal = 16.dp)
             .fillMaxWidth()
-            .shadow(4.dp, RoundedCornerShape(12.dp), clip = false)
+            .shadow(6.dp, RoundedCornerShape(12.dp), clip = false)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier
+                .padding(horizontal = 16.dp)
+                .padding(vertical = 24.dp)
+            ,
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             Text(
                 text = data.title,

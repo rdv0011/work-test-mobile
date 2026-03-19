@@ -32,19 +32,124 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.remember
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import io.umain.munchies.android.navigation.LocalRouteRegistry
 import io.umain.munchies.android.ui.components.DetailCardCompose
+import io.umain.munchies.android.ui.theme.MunchiesTheme
 import io.umain.munchies.core.localization.stringResource
 import io.umain.munchies.core.localization.StringResources
 import io.umain.munchies.designtokens.DesignTokens
-import io.umain.munchies.feature.restaurant.domain.model.RestaurantStatus
 import io.umain.munchies.feature.restaurant.presentation.RestaurantDetailViewModel
 import io.umain.munchies.feature.restaurant.presentation.model.DetailCardData
 import io.umain.munchies.feature.restaurant.presentation.state.RestaurantDetailUiState
 import io.umain.munchies.navigation.RestaurantDetailRoute
 import io.umain.munchies.feature.restaurant.navigation.RestaurantNavigationViewModel
+
+@Composable
+fun RestaurantDetailContent(
+    uiState: RestaurantDetailUiState,
+    onBackClick: () -> Unit,
+    onLeaveReviewClick: (restaurantId: String) -> Unit,
+    modifier: Modifier = Modifier,
+    restaurantId: String = "",
+    backButtonContentDescription: String? = null,
+) {
+    Column(
+        modifier = modifier.fillMaxSize()
+    ) {
+        when (uiState) {
+            is RestaurantDetailUiState.Loading -> {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+
+            is RestaurantDetailUiState.Success -> {
+                val detailCardData = uiState.detailCardData
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(220.dp)
+                    ) {
+                        AsyncImage(
+                            model = detailCardData.imageUrl,
+                            contentDescription = detailCardData.title,
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            contentScale = ContentScale.Crop
+                        )
+
+                        IconButton(
+                            onClick = { onBackClick() },
+                            modifier = Modifier
+                                .align(Alignment.TopStart)
+                                .padding(start = 16.dp, top = 40.dp)
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(Color.Transparent)
+                                .shadow(4.dp, CircleShape, clip = false)
+                        ) {
+                             Icon(
+                                   imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                   contentDescription = backButtonContentDescription ?: stringResource(StringResources.accessibility_back_button)
+                               )
+                          }
+                      }
+
+                    Column(
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp)
+                    ) {
+                        DetailCardCompose(
+                            data = detailCardData,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .offset(y = (-40).dp)
+                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = DesignTokens.Spacing.lg.dp),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            Button(
+                                onClick = {
+                                    onLeaveReviewClick(restaurantId)
+                                }
+                            ) {
+                                Text("Leave a Review")
+                            }
+                        }
+                    }
+                }
+            }
+
+            is RestaurantDetailUiState.Error -> {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(text = uiState.message)
+                }
+            }
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,117 +166,33 @@ fun RestaurantDetailScreen(
     }
     val uiState by viewModel.stateFlow.collectAsStateWithLifecycle()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-    ) {
-        when (uiState) {
-            is RestaurantDetailUiState.Loading -> {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    CircularProgressIndicator()
-                }
-            }
+    RestaurantDetailContent(
+        uiState = uiState,
+        restaurantId = restaurantId,
+        onBackClick = { navigationViewModel.navigateBack() },
+        onLeaveReviewClick = { navigationViewModel.showSubmitReviewModal(it) },
+        backButtonContentDescription = stringResource(StringResources.accessibility_back_button)
+    )
+}
 
-            is RestaurantDetailUiState.Success -> {
-                val successState = uiState as RestaurantDetailUiState.Success
-                val restaurant = successState.restaurant
-                val status = successState.status
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(220.dp)
-                    ) {
-                        AsyncImage(
-                            model = restaurant.imageUrl,
-                            contentDescription = restaurant.name,
-                            modifier = Modifier
-                                .fillMaxWidth(),
-                            contentScale = ContentScale.Crop
-                        )
-
-                        IconButton(
-                            onClick = { navigationViewModel.navigateBack() },
-                            modifier = Modifier
-                                .align(Alignment.TopStart)
-                                .padding(start = 16.dp, top = 40.dp)
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(Color.Transparent)
-                                .shadow(4.dp, CircleShape, clip = false)
-                        ) {
-                             Icon(
-                                  imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                  contentDescription = stringResource(StringResources.accessibility_back_button)
-                              )
-                         }
-                     }
-
-                     val statusColor =
-                         if (status == RestaurantStatus.OPEN) {
-                             DesignTokens.Colors.Accent.positive
-                         } else {
-                             DesignTokens.Colors.Accent.negative
-                         }
-
-                      val statusText =
-                          if (status == RestaurantStatus.OPEN) {
-                              stringResource(StringResources.restaurant_status_open)
-                          } else {
-                              stringResource(StringResources.restaurant_status_closed)
-                          }
-
-                    DetailCardCompose(
-                        data = DetailCardData(
-                            title = restaurant.name,
-                            statusText = statusText,
-                            statusColor = statusColor
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .offset(y = (-45).dp)
-                            .padding(DesignTokens.Spacing.lg.dp)
-                            .height(DesignTokens.Sizes.Card.Detail.height.dp)
-                    )
-                    
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = DesignTokens.Spacing.lg.dp),
-                        horizontalArrangement = Arrangement.End
-                    ) {
-                        Button(
-                            onClick = {
-                                navigationViewModel.showSubmitReviewModal(restaurantId)
-                            }
-                        ) {
-                            Text("Leave a Review")
-                        }
-                    }
-                }
-            }
-
-            is RestaurantDetailUiState.Error -> {
-                val errorState = uiState as RestaurantDetailUiState.Error
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(text = errorState.message)
-                }
-            }
-        }
+@Preview(showBackground = true)
+@Composable
+private fun RestaurantDetailScreenPreview() {
+    MunchiesTheme {
+        RestaurantDetailContent(
+            uiState = RestaurantDetailUiState.Success(
+                detailCardData = DetailCardData(
+                    title = "Wayne's Burgers",
+                    imageUrl = "",
+                    tags = listOf("Take-Out", "Fast delivery", "Eat-In"),
+                    statusColor = "#2ECC71",
+                    statusText = "Open Now",
+                ),
+            ),
+            restaurantId = "1",
+            onBackClick = {},
+            onLeaveReviewClick = {},
+            backButtonContentDescription = "Back",
+        )
     }
 }

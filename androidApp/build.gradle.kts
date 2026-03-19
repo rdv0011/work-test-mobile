@@ -51,19 +51,25 @@ dependencies {
     implementation(project(":core"))
     implementation(project(":feature-restaurant"))
     implementation(project(":feature-settings"))
+
     implementation("androidx.compose.ui:ui:${Versions.compose}")
-    implementation("androidx.compose.ui:ui-tooling:${Versions.compose}")
     implementation("androidx.compose.ui:ui-tooling-preview:${Versions.compose}")
+    debugImplementation("androidx.compose.ui:ui-tooling:${Versions.compose}")
+
     implementation("androidx.compose.foundation:foundation:${Versions.compose}")
     implementation("androidx.compose.material3:material3:${Versions.composeMaterial3}")
+    implementation("androidx.compose.animation:animation:${Versions.compose}")
+
     implementation("androidx.activity:activity-compose:${Versions.activityCompose}")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:${Versions.lifecycleRuntimeCompose}")
+
     implementation("androidx.navigation:navigation-compose:${Versions.navigationCompose}")
+
     implementation("io.insert-koin:koin-android:${Versions.koin}")
     implementation("io.insert-koin:koin-androidx-compose:${Versions.koin}")
+
     implementation("io.coil-kt:coil-compose:${Versions.coil}")
-    
-    // Firebase (Analytics)
+
     implementation(platform("com.google.firebase:firebase-bom:${Versions.firebaseBom}"))
     implementation("com.google.firebase:firebase-analytics-ktx")
 }

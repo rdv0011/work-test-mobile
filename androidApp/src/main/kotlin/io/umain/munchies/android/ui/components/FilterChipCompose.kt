@@ -35,6 +35,11 @@ import io.umain.munchies.designtokens.DesignTokens
 import io.umain.munchies.feature.restaurant.presentation.model.FilterChipData
 import io.umain.munchies.android.ui.toComposeColor
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawOutline
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.graphicsLayer
 
 @Composable
 fun FilterChipCompose(
@@ -84,7 +89,9 @@ fun FilterChipCompose(
             .shadow(
                 elevation = 4.dp,
                 shape = RoundedCornerShape(DesignTokens.BorderRadius.full.dp),
-                clip = false
+                clip = false,
+                ambientColor = Color.Black.copy(alpha = 0.2f),
+                spotColor = Color.Black.copy(alpha = 0.2f),
             )
             .background(
                 color = backgroundColor,

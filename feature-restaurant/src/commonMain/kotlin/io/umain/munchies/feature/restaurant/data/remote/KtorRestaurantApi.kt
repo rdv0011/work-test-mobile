@@ -5,6 +5,7 @@ import io.ktor.client.request.*
 import io.ktor.client.HttpClient
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import kotlinx.coroutines.delay
 
 class KtorRestaurantApi(private val client: HttpClient, private val baseUrl: String) : RestaurantApi {
 

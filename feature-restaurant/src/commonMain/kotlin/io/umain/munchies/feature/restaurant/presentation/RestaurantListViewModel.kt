@@ -40,7 +40,14 @@ class RestaurantListViewModel(
                 val filterIds = allRestaurants.flatMap { it.filterIds }.distinct()
                 allFilters = filterIds.mapNotNull { repository.getFilterById(it) }
                 state = RestaurantListUiState.Success(
-                    restaurants = allRestaurants.map { it.toCardData(stringResource(StringResources.rating_format, it.rating.toDouble())) },
+                    restaurants = allRestaurants.map {
+                        it.toCardData(
+                            stringResource(
+                                StringResources.rating_format,
+                                it.rating.toDouble()
+                            )
+                        )
+                    },
                     filters = allFilters.map { it.toFilterChipData() }
                 )
             } catch (t: Throwable) {
@@ -59,7 +66,7 @@ class RestaurantListViewModel(
     private fun applyFilters() {
         state = state.copyIsFiltering(true)
         scope.launch {
-            delay(200)
+            delay(100)
             try {
                 val restaurants = if (selectedFiltersState.isEmpty()) {
                     allRestaurants

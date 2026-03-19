@@ -47,7 +47,7 @@ fun RestaurantCardCompose(
         colors = CardDefaults.cardColors(
             containerColor = DesignTokens.Colors.Background.card.toComposeColor()
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         onClick = onTap
     ) {
         Column(
@@ -91,7 +91,8 @@ fun RestaurantCardCompose(
                     )
                     
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .padding(top = 4.dp),
                         horizontalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.xs.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
