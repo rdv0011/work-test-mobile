@@ -153,7 +153,10 @@ object NavigationReducer {
         event: NavigationEvent.SelectTab
     ): NavigationState {
         return state.copy(
-            tabNavigation = state.tabNavigation.copy(activeTabId = event.tabId)
+            tabNavigation = state.tabNavigation.copy(
+                activeTabId = event.tabId,
+                navigationDirection = NavigationDirection.TabSwitch
+            )
         )
     }
 

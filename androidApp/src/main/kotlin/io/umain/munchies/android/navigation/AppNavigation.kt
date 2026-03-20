@@ -123,12 +123,18 @@ private fun renderTabContent(
     AnimatedContent(
         targetState = currentRoute,
         transitionSpec = {
-            if (navigationDirection == NavigationDirection.Forward) {
-                ScreenTransitionAnimations.enter(isRtl)
-                    .togetherWith(ScreenTransitionAnimations.exit(isRtl))
-            } else {
-                ScreenTransitionAnimations.popEnter(isRtl)
-                    .togetherWith(ScreenTransitionAnimations.popExit(isRtl))
+            when (navigationDirection) {
+                NavigationDirection.Forward -> {
+                    ScreenTransitionAnimations.enter(isRtl)
+                        .togetherWith(ScreenTransitionAnimations.exit(isRtl))
+                }
+                NavigationDirection.Back -> {
+                    ScreenTransitionAnimations.popEnter(isRtl)
+                        .togetherWith(ScreenTransitionAnimations.popExit(isRtl))
+                }
+                NavigationDirection.TabSwitch -> {
+                    ScreenTransitionAnimations.fadeOnlyTransition
+                }
             }
         },
         modifier = Modifier.fillMaxSize()

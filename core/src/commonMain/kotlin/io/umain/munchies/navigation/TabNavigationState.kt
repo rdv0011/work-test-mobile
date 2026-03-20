@@ -11,7 +11,8 @@ import io.umain.munchies.core.localization.StringKey
  */
 enum class NavigationDirection {
     Forward,
-    Back
+    Back,
+    TabSwitch
 }
 
 data class TabNavigationState(
