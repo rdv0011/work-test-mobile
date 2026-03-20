@@ -3,36 +3,23 @@ package io.umain.munchies.navigation
 /**
  * Complete navigation state of the application.
  *
- * Supports three navigation patterns:
- * 1. Linear stack navigation (primaryStack)
- * 2. Modal overlays (modalStack)
- * 3. Tabbed navigation with per-tab stacks (tabNavigation)
+ * Supports only tabbed navigation with per-tab stacks (tabNavigation).
  */
 data class NavigationState(
-    // Primary navigation stack (used in non-tabbed apps)
-    val primaryStack: List<Route> = emptyList(),
-
-    // Modal overlays (independent of primary stack)
+    // Modal overlays (independent of tab stacks)
     val modalStack: List<ModalRoute> = emptyList(),
 
-    // Tab navigation state (if app uses tabs)
-    val tabNavigation: TabNavigationState? = null,
-
-    // Flag indicating if this app uses tabs
-    val usesTabs: Boolean = false,
+    // Tab navigation state (required)
+    val tabNavigation: TabNavigationState,
 
     // Optional: Track the deep link that triggered this state
     val originDeepLink: String? = null
 ) {
     /**
-     * Get the current active stack (either primaryStack or active tab's stack)
+     * Get the current active stack (active tab's stack)
      */
     val currentStack: List<Route>
-        get() = if (usesTabs) {
-            tabNavigation?.getActiveTabStack() ?: emptyList()
-        } else {
-            primaryStack
-        }
+        get() = tabNavigation.getActiveTabStack()
 
     /**
      * Whether any modals are currently displayed
@@ -43,20 +30,6 @@ data class NavigationState(
      * Get the topmost modal, if any
      */
     val topModal: ModalRoute? get() = modalStack.lastOrNull()
-
-    /**
-     * Create a new state with updated primary stack
-     */
-    fun withPrimaryStack(newStack: List<Route>): NavigationState {
-        return copy(primaryStack = newStack)
-    }
-
-    /**
-     * Create a new state with updated tab navigation
-     */
-    fun withTabNavigation(newTabNav: TabNavigationState?): NavigationState {
-        return copy(tabNavigation = newTabNav)
-    }
 
     /**
      * Create a new state with updated modal stack

@@ -39,6 +39,7 @@ object NavigationReducer {
             is NavigationEvent.ApplyNavigationState -> event.newState
         }
     }
+
     //  SCREEN NAVIGATION HANDLERS
 
     private fun handlePush(
@@ -46,63 +47,43 @@ object NavigationReducer {
         event: NavigationEvent.Push,
         handlers: List<RouteHandler>
     ): NavigationState {
-        logInfo("NavigationReducer", "📥 handlePush: destination=${event.destination::class.simpleName}, handlers available=${handlers.size}")
+        logInfo("NavigationReducer", "[36mhandlePush: destination=${event.destination::class.simpleName}, handlers available=${handlers.size}")
         // Convert Destination to Route via handlers
         val route = handlers.firstNotNullOfOrNull { handler ->
             if (handler.canHandle(event.destination)) {
-                logInfo("NavigationReducer", "  ✓ Handler found: ${handler::class.simpleName}")
+                logInfo("NavigationReducer", "  [32mHandler found: ${handler::class.simpleName}")
                 handler.destinationToRoute(event.destination)
             } else null
         }
 
         if (route == null) {
-            logInfo("NavigationReducer", "  ✗ No route created - returning same state")
+            logInfo("NavigationReducer", "  [31mNo route created - returning same state")
             return state
         }
 
-        logInfo("NavigationReducer", "  ✓ Route created: ${route::class.simpleName}, proceeding to handlePushInTab")
-        return if (state.usesTabs) {
-            // Push in current tab
-            handlePushInTab(state, NavigationEvent.PushInTab(event.destination), handlers)
-        } else {
-            // Push in primary stack
-            state.copy(primaryStack = state.primaryStack + route)
-        }
+        logInfo("NavigationReducer", "  [32mRoute created: ${route::class.simpleName}, proceeding to handlePushInTab")
+        // Always push in current tab
+        return handlePushInTab(state, NavigationEvent.PushInTab(event.destination), handlers)
     }
 
     private fun handlePop(state: NavigationState): NavigationState {
-        return when {
-            // If modals are showing, dismiss top modal instead
-            state.modalStack.isNotEmpty() -> {
-                handleDismissModal(state)
-            }
-            // If using tabs, pop from active tab
-            state.usesTabs && state.tabNavigation != null -> {
-                handlePopInTab(state)
-            }
-            // Otherwise pop from primary stack
-            state.primaryStack.size > 1 -> {
-                state.copy(primaryStack = state.primaryStack.dropLast(1))
-            }
-            // Already at root, no navigation
-            else -> state
+        // If modals are showing, dismiss top modal instead
+        return if (state.modalStack.isNotEmpty()) {
+            handleDismissModal(state)
+        } else {
+            handlePopInTab(state)
         }
     }
 
     private fun handlePopToRoot(state: NavigationState): NavigationState {
-        return if (state.usesTabs) {
-            state.copy(
-                tabNavigation = state.tabNavigation?.copy(
-                    stacksByTab = state.tabNavigation.stacksByTab.mapValues { (_, stack) ->
-                        listOf(stack.first()) // Keep only root in each tab
-                    }
-                )
+        // Clear all tab stacks to their root
+        return state.copy(
+            tabNavigation = state.tabNavigation.copy(
+                stacksByTab = state.tabNavigation.stacksByTab.mapValues { (_, stack) ->
+                    listOf(stack.first()) // Keep only root in each tab
+                }
             )
-        } else {
-            state.copy(
-                primaryStack = state.primaryStack.take(1)
-            )
-        }
+        )
     }
 
     //  MODAL NAVIGATION HANDLERS
@@ -167,15 +148,10 @@ object NavigationReducer {
     }
 
     //  TAB NAVIGATION HANDLERS
-
     private fun handleSelectTab(
         state: NavigationState,
         event: NavigationEvent.SelectTab
     ): NavigationState {
-        if (!state.usesTabs || state.tabNavigation == null) {
-            return state
-        }
-
         return state.copy(
             tabNavigation = state.tabNavigation.copy(activeTabId = event.tabId)
         )
@@ -186,11 +162,6 @@ object NavigationReducer {
         event: NavigationEvent.PushInTab,
         handlers: List<RouteHandler>
     ): NavigationState {
-        if (!state.usesTabs || state.tabNavigation == null) {
-            // Fallback to primary stack push
-            return handlePush(state, NavigationEvent.Push(event.destination), handlers)
-        }
-
         val route = handlers.firstNotNullOfOrNull { handler ->
             if (handler.canHandle(event.destination)) {
                 handler.destinationToRoute(event.destination)
@@ -207,10 +178,6 @@ object NavigationReducer {
     }
 
     private fun handlePopInTab(state: NavigationState): NavigationState {
-        if (!state.usesTabs || state.tabNavigation == null) {
-            return handlePop(state)
-        }
-
         val tabNav = state.tabNavigation
         val currentStack = tabNav.getActiveTabStack()
 

@@ -58,38 +58,21 @@ fun AppNavigation(
     pendingDeepLinkUri: Uri? = null,
     routeProviders: List<RouteProvider> = AndroidAppRouteProviders.create().getAllProviders()
 ) {
-    val navController = rememberNavController()
     val allHandlers = remember {
         routeProviders.flatMap { it.getRoutes() }.filterIsInstance<ScopedRouteHandler>()
     }
-    
     val scopedRouteHandlerRegistry = remember { ScopedRouteHandlerRegistry(allHandlers) }
     val registry = remember { RouteRegistry(scopedRouteHandlerRegistry) }
-    
     val navigationMappers = remember {
         routeProviders.flatMap { it.getRoutes() }.filterIsInstance<RouteNavigationMapper>()
     }
-    
-    val trackedRouteKeys = remember { 
-        mutableStateOf(Route.rootRoutes.map { it.key }.toSet())
-    }
-    
-    val modalStack = remember { 
+    val modalStack = remember {
         mutableStateOf<List<ModalRoute>>(emptyList())
     }
-    
     val composableBuilders = remember {
         routeProviders.flatMap { it.getRoutes() }.filterIsInstance<RouteComposableBuilder>()
     }
-    
-    val startDestination = remember {
-        navigationMappers.firstNotNullOf { mapper ->
-            mapper.mapDestinationToNavRoute(Destination.RestaurantList)
-        }
-    }
-    
     val deepLinkProcessed = remember { mutableStateOf(pendingDeepLinkUri == null) }
-
     val navigationState = coordinator.navigationState.collectAsState().value
 
     LaunchedEffect(coordinator, pendingDeepLinkUri) {
@@ -98,14 +81,11 @@ fun AppNavigation(
                 coordinator.navigationEvents.collectLatest { event ->
                     coordinator.reduceState(event)
                     handleNavigationEvent(
-                        event, 
-                        navController, 
-                        trackedRouteKeys,
+                        event,
                         modalStack,
-                        registry, 
+                        registry,
                         navigationMappers,
                         allHandlers,
-                        startDestination,
                         navigationState
                     )
                 }
@@ -113,49 +93,26 @@ fun AppNavigation(
                 e.printStackTrace()
             }
         }
-        
-        // Process deep link (will be replayed to subscriber due to replay=1 on SharedFlow)
         if (pendingDeepLinkUri != null) {
             processPendingDeepLink(pendingDeepLinkUri, coordinator)
         } else {
             coordinator.markListenerReady()
         }
-        
         deepLinkProcessed.value = true
     }
 
     CompositionLocalProvider(
         LocalRouteRegistry provides registry
     ) {
-        val usesTabs = navigationState.usesTabs
         val tabNavState = navigationState.tabNavigation
-
-        // Only render navigation content after pending deep link has been processed
         if (deepLinkProcessed.value) {
-            if (usesTabs && tabNavState != null) {
-                    TabNavigationScaffold(
-                        tabNavigationState = tabNavState,
-                        coordinator = coordinator,
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        renderTabContent(tabNavState)
-                        renderModalsIfNeeded(modalStack, registry, coordinator)
-                    }
-            } else {
-                Box(
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    NavHost(
-                        navController = navController,
-                        startDestination = startDestination
-                    ) {
-                        composableBuilders.forEach { builder ->
-                            builder.buildComposable(this, coordinator)
-                        }
-                    }
-                    
-                    renderModalsIfNeeded(modalStack, registry, coordinator)
-                }
+            TabNavigationScaffold(
+                tabNavigationState = tabNavState,
+                coordinator = coordinator,
+                modifier = Modifier.fillMaxSize()
+            ) {
+                renderTabContent(tabNavState)
+                renderModalsIfNeeded(modalStack, registry, coordinator)
             }
         }
     }
@@ -239,43 +196,17 @@ private fun renderModalsIfNeeded(
 
 private fun handleNavigationEvent(
     event: NavigationEvent,
-    navController: NavHostController,
-    trackedRouteKeys: androidx.compose.runtime.MutableState<Set<String>>,
     modalStack: androidx.compose.runtime.MutableState<List<ModalRoute>>,
     registry: RouteRegistry,
     navigationMappers: List<RouteNavigationMapper>,
     allHandlers: List<ScopedRouteHandler>,
-    rootDestinationRoute: String,
     navigationState: io.umain.munchies.navigation.NavigationState
 ) {
-    // When using tabs, only handle modal and tab-specific events
-    val usesTabs = navigationState.usesTabs
-    
     when (event) {
-        is NavigationEvent.Push -> {
-            if (usesTabs) {
-                // In tab mode, push events are handled by tab navigation
-                // Just update modal stack if needed
-            } else {
-                handleNavigationPush(event, navController, trackedRouteKeys, navigationMappers, allHandlers)
-            }
-        }
-        is NavigationEvent.Pop -> {
-            if (usesTabs) {
-                // In tab mode, pop events are handled by tab navigation
-            } else {
-                handleNavigationPop(navController, trackedRouteKeys, registry, navigationMappers)
-            }
-        }
-        is NavigationEvent.PopToRoot -> {
-            if (usesTabs) {
-                // In tab mode, pop to root is handled by tab navigation
-            } else {
-                handleNavigationPopToRoot(navController, trackedRouteKeys, registry, rootDestinationRoute)
-            }
-        }
         is NavigationEvent.ShowModal -> {
-            modalStack.value += event.destination.toModalRoute()
+            destinationToModalRoute(event.destination)?.let { modalRoute ->
+                modalStack.value += modalRoute
+            }
         }
         is NavigationEvent.DismissModal -> {
             if (modalStack.value.isNotEmpty()) {
@@ -293,150 +224,15 @@ private fun handleNavigationEvent(
                 modalStack.value = emptyList()
             }
         }
-        is NavigationEvent.SelectTab -> {
-            // Tab selection handled in tab navigation composable
+        else -> {
+            // All navigation is handled by the tab navigation composable
         }
-        is NavigationEvent.PushInTab -> {
-            // Push within tab handled by tab navigation composable
-        }
-        is NavigationEvent.PopInTab -> {
-            // Pop within tab handled by tab navigation composable
-        }
-        is NavigationEvent.ApplyNavigationState -> {
-            if (usesTabs) {
-                // In tab mode, don't use NavController
-                modalStack.value = event.newState.modalStack
-            } else {
-                handleApplyNavigationState(event, navController, trackedRouteKeys, registry, navigationMappers, rootDestinationRoute)
-                modalStack.value = event.newState.modalStack
-            }
-        }
-    }
-}
-
-private fun handleNavigationPush(
-    event: NavigationEvent.Push,
-    navController: NavHostController,
-    trackedRouteKeys: androidx.compose.runtime.MutableState<Set<String>>,
-    navigationMappers: List<RouteNavigationMapper>,
-    allHandlers: List<ScopedRouteHandler>
-) {
-    for (handler in allHandlers) {
-        if (handler.canHandle(event.destination)) {
-            val route = handler.destinationToRoute(event.destination)
-            if (route != null) {
-                trackedRouteKeys.value += route.key
-                
-                val navRoute = navigationMappers.firstNotNullOfOrNull { mapper ->
-                    mapper.mapDestinationToNavRoute(event.destination)
-                } ?: throw IllegalArgumentException("No navigation route mapper found for destination: ${event.destination}")
-                
-                navController.navigate(navRoute)
-                return
-            }
-        }
-    }
-    throw IllegalArgumentException("No route handler found for destination: ${event.destination}")
-}
-
-private fun handleNavigationPop(
-    navController: NavHostController,
-    trackedRouteKeys: androidx.compose.runtime.MutableState<Set<String>>,
-    registry: RouteRegistry,
-    navigationMappers: List<RouteNavigationMapper>,
-) {
-    val currentDestination = navController.currentDestination?.route
-    navController.popBackStack()
-
-    val updatedRouteKeys = trackedRouteKeys.value.toMutableSet()
-    
-    if (currentDestination != null) {
-        // Find the mapper for the current destination by checking cleanup pattern match
-        for (mapper in navigationMappers) {
-            val cleanupPattern = mapper.getRouteCleanupPattern()
-            
-            // Match against nav cleanup pattern (e.g., "restaurant_detail/")
-            if (cleanupPattern != null && currentDestination.startsWith(cleanupPattern)) {
-                val keyPattern = mapper.getRouteKeyPattern()
-                
-                // If mapper provides key pattern, remove routes matching it
-                if (keyPattern != null) {
-                    updatedRouteKeys.removeAll { it.startsWith(keyPattern) }
-                }
-                break
-            }
-        }
-    }
-    
-    trackedRouteKeys.value = updatedRouteKeys
-    registry.cleanup(updatedRouteKeys)
-}
-
-private fun handleNavigationPopToRoot(
-    navController: NavHostController,
-    trackedRouteKeys: androidx.compose.runtime.MutableState<Set<String>>,
-    registry: RouteRegistry,
-    rootDestinationRoute: String
-) {
-    navController.popBackStack(
-        route = rootDestinationRoute,
-        inclusive = false
-    )
-    trackedRouteKeys.value = Route.rootRoutes.map { it.key }.toSet()
-    registry.cleanup(trackedRouteKeys.value)
-}
-
-private fun handleApplyNavigationState(
-    event: NavigationEvent.ApplyNavigationState,
-    navController: NavHostController,
-    trackedRouteKeys: androidx.compose.runtime.MutableState<Set<String>>,
-    registry: RouteRegistry,
-    navigationMappers: List<RouteNavigationMapper>,
-    rootDestinationRoute: String
-) {
-    val newState = event.newState
-    
-    if (event.clearCurrentStack) {
-        navController.popBackStack(
-            route = rootDestinationRoute,
-            inclusive = false
-        )
-        trackedRouteKeys.value = Route.rootRoutes.map { it.key }.toSet()
-    }
-    
-    for (route in newState.currentStack) {
-        trackedRouteKeys.value += route.key
-        val destination = when (route) {
-            is RestaurantListRoute -> Destination.RestaurantList
-            is RestaurantDetailRoute -> Destination.RestaurantDetail(route.restaurantId)
-            else -> continue
-        }
-        
-        val navRoute = navigationMappers.firstNotNullOfOrNull { mapper ->
-            mapper.mapDestinationToNavRoute(destination)
-        } ?: continue
-        
-        navController.navigate(navRoute)
-    }
-    
-    registry.cleanup(trackedRouteKeys.value)
-}
-
-private fun ModalDestination.toModalRoute(): ModalRoute {
-    return when (this) {
-        is ModalDestination.Filter -> FilterModalRoute(preSelectedFilters)
-        is ModalDestination.SubmitReviewModal -> SubmitReviewModalRoute(restaurantId)
-        is ModalDestination.ConfirmAction -> ConfirmActionModalRoute(message, confirmText, cancelText)
-        is ModalDestination.DatePicker -> DatePickerModalRoute(initialDate)
-        is ModalDestination.ReviewErrorAlert -> ReviewErrorAlertRoute(message)
-        ModalDestination.ReviewSuccessModal -> ReviewSuccessModalRoute
     }
 }
 
 private fun processPendingDeepLink(deepLinkUri: Uri, coordinator: AppCoordinator) {
     val host = deepLinkUri.host ?: return
     val pathSegments = deepLinkUri.pathSegments
-    
     val queryParams = mutableMapOf<String, String>()
     listOf(
         DeepLinkConstants.QUERY_PARAM_FILTERS,
@@ -450,11 +246,26 @@ private fun processPendingDeepLink(deepLinkUri: Uri, coordinator: AppCoordinator
             queryParams[param] = value
         }
     }
-    
+    // Refactored: Deep links should select tab and push into tab stack only
     DeepLinkProcessor.processDeepLink(
         host = host,
         pathSegments = pathSegments,
         queryParams = queryParams,
         coordinator = coordinator
     )
+}
+
+private fun destinationToModalRoute(destination: ModalDestination): ModalRoute? {
+    return when (destination) {
+        is ModalDestination.Filter -> FilterModalRoute(destination.preSelectedFilters)
+        is ModalDestination.SubmitReviewModal -> SubmitReviewModalRoute(destination.restaurantId)
+        is ModalDestination.ConfirmAction -> ConfirmActionModalRoute(
+            destination.message,
+            destination.confirmText,
+            destination.cancelText
+        )
+        is ModalDestination.DatePicker -> DatePickerModalRoute(destination.initialDate)
+        is ModalDestination.ReviewSuccessModal -> ReviewSuccessModalRoute
+        is ModalDestination.ReviewErrorAlert -> ReviewErrorAlertRoute(destination.message)
+    }
 }

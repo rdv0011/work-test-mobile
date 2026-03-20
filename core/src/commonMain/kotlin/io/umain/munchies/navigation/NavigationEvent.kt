@@ -12,17 +12,17 @@ sealed class NavigationEvent {
     // SCREEN NAVIGATION
 
     /**
-     * Navigate to a new screen (push to primary stack or active tab stack)
+     * Navigate to a new screen (push to active tab stack)
      */
     data class Push(val destination: Destination) : NavigationEvent()
 
     /**
-     * Go back (pop from current stack or dismiss top modal)
+     * Go back (pop from current tab stack or dismiss top modal)
      */
     data object Pop : NavigationEvent()
 
     /**
-     * Return to root screen (clear stack to initial state)
+     * Return to root screen (clear all tab stacks to initial state)
      */
     data object PopToRoot : NavigationEvent()
 

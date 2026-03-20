@@ -27,7 +27,7 @@ class NavigationReducerTest {
 
     @Test
     fun testPushWithoutHandlersDoesNothing() {
-        val initialState = NavigationState(primaryStack = listOf(rootRoute))
+        val initialState = NavigationState(tabNavigation = createSingleTabNav(rootRoute))
         val event = NavigationEvent.Push(Destination.RestaurantList)
         
         val newState = NavigationReducer.reduce(initialState, event, emptyList())
@@ -37,19 +37,19 @@ class NavigationReducerTest {
 
     @Test
     fun testPushWithValidHandlerAddsToStack() {
-        val initialState = NavigationState(primaryStack = listOf(rootRoute))
+        val initialState = NavigationState(tabNavigation = createSingleTabNav(rootRoute))
         val handler = TestRouteHandler(Destination.RestaurantList, testRoute1)
         val event = NavigationEvent.Push(Destination.RestaurantList)
         
         val newState = NavigationReducer.reduce(initialState, event, listOf(handler))
         
-        assertEquals(2, newState.primaryStack.size)
-        assertEquals(testRoute1, newState.primaryStack.last())
+        assertEquals(2, newState.tabNavigation.stacksByTab["tab1"]?.size)
+        assertEquals(testRoute1, newState.tabNavigation.stacksByTab["tab1"]?.last())
     }
 
     @Test
     fun testPushMultipleScreensBuildsStack() {
-        val initialState = NavigationState(primaryStack = listOf(rootRoute))
+        val initialState = NavigationState(tabNavigation = createSingleTabNav(rootRoute))
         val handler1 = TestRouteHandler(Destination.RestaurantList, testRoute1)
         val handler2 = TestRouteHandler(Destination.RestaurantDetail("1"), testRoute2)
         
@@ -64,24 +64,24 @@ class NavigationReducerTest {
             listOf(handler1, handler2)
         )
         
-        assertEquals(3, state.primaryStack.size)
-        assertEquals(testRoute2, state.primaryStack.last())
+        assertEquals(3, state.tabNavigation.stacksByTab["tab1"]?.size)
+        assertEquals(testRoute2, state.tabNavigation.stacksByTab["tab1"]?.last())
     }
 
     @Test
     fun testPopRemovesTopScreen() {
-        val initialState = NavigationState(primaryStack = listOf(rootRoute, testRoute1, testRoute2))
-        
+        val initialState = NavigationState(tabNavigation = createSingleTabNav(rootRoute, testRoute1, testRoute2))
+
         val newState = NavigationReducer.reduce(initialState, NavigationEvent.Pop)
         
-        assertEquals(2, newState.primaryStack.size)
-        assertEquals(testRoute1, newState.primaryStack.last())
+        assertEquals(2, newState.tabNavigation.stacksByTab["tab1"]?.size)
+        assertEquals(testRoute1, newState.tabNavigation.stacksByTab["tab1"]?.last())
     }
 
     @Test
     fun testPopAtRootDoesNothing() {
-        val initialState = NavigationState(primaryStack = listOf(rootRoute))
-        
+        val initialState = NavigationState(tabNavigation = createSingleTabNav(rootRoute))
+
         val newState = NavigationReducer.reduce(initialState, NavigationEvent.Pop)
         
         assertEquals(initialState, newState)
@@ -89,18 +89,18 @@ class NavigationReducerTest {
 
     @Test
     fun testPopToRootClearsStack() {
-        val initialState = NavigationState(primaryStack = listOf(rootRoute, testRoute1, testRoute2, testRoute3))
-        
+        val initialState = NavigationState(tabNavigation = createSingleTabNav(rootRoute, testRoute1, testRoute2, testRoute3))
+
         val newState = NavigationReducer.reduce(initialState, NavigationEvent.PopToRoot)
         
-        assertEquals(1, newState.primaryStack.size)
-        assertEquals(rootRoute, newState.primaryStack.first())
+        assertEquals(1, newState.tabNavigation.stacksByTab["tab1"]?.size)
+        assertEquals(rootRoute, newState.tabNavigation.stacksByTab["tab1"]?.first())
     }
 
     @Test
     fun testPopToRootWithSingleScreenDoesNothing() {
-        val initialState = NavigationState(primaryStack = listOf(rootRoute))
-        
+        val initialState = NavigationState(tabNavigation = createSingleTabNav(rootRoute))
+
         val newState = NavigationReducer.reduce(initialState, NavigationEvent.PopToRoot)
         
         assertEquals(initialState, newState)
@@ -113,7 +113,7 @@ class NavigationReducerTest {
         val modal1 = TestModalRoute("modal1")
         val modal2 = TestModalRoute("modal2")
         val initialState = NavigationState(
-            primaryStack = listOf(rootRoute, testRoute1),
+            tabNavigation = createSingleTabNav(rootRoute, testRoute1),
             modalStack = listOf(modal1, modal2)
         )
         
@@ -125,8 +125,8 @@ class NavigationReducerTest {
 
     @Test
     fun testDismissModalWithEmptyStackDoesNothing() {
-        val initialState = NavigationState(primaryStack = listOf(rootRoute))
-        
+        val initialState = NavigationState(tabNavigation = createSingleTabNav(rootRoute))
+
         val newState = NavigationReducer.reduce(initialState, NavigationEvent.DismissModal)
         
         assertEquals(initialState, newState)
@@ -138,20 +138,20 @@ class NavigationReducerTest {
         val modal2 = TestModalRoute("modal2")
         val modal3 = TestModalRoute("modal3")
         val initialState = NavigationState(
-            primaryStack = listOf(rootRoute, testRoute1),
+            tabNavigation = createSingleTabNav(rootRoute, testRoute1),
             modalStack = listOf(modal1, modal2, modal3)
         )
         
         val newState = NavigationReducer.reduce(initialState, NavigationEvent.DismissAllModals)
         
         assertTrue(newState.modalStack.isEmpty())
-        assertEquals(initialState.primaryStack, newState.primaryStack)
+        assertEquals(initialState.tabNavigation, newState.tabNavigation)
     }
 
     @Test
     fun testDismissAllModalsWithEmptyStackDoesNothing() {
-        val initialState = NavigationState(primaryStack = listOf(rootRoute))
-        
+        val initialState = NavigationState(tabNavigation = createSingleTabNav(rootRoute))
+
         val newState = NavigationReducer.reduce(initialState, NavigationEvent.DismissAllModals)
         
         assertEquals(initialState, newState)
@@ -163,7 +163,7 @@ class NavigationReducerTest {
         val modal2 = TestModalRoute("modal2")
         val modal3 = TestModalRoute("modal3")
         val initialState = NavigationState(
-            primaryStack = listOf(rootRoute),
+            tabNavigation = createSingleTabNav(rootRoute),
             modalStack = listOf(modal1, modal2, modal3)
         )
         
@@ -181,7 +181,7 @@ class NavigationReducerTest {
         val modal1 = TestModalRoute("modal1")
         val modal2 = TestModalRoute("modal2")
         val initialState = NavigationState(
-            primaryStack = listOf(rootRoute),
+            tabNavigation = createSingleTabNav(rootRoute),
             modalStack = listOf(modal1, modal2)
         )
         
@@ -197,14 +197,14 @@ class NavigationReducerTest {
     fun testPopDismissesModalBeforeScreen() {
         val modal = TestModalRoute("modal")
         val initialState = NavigationState(
-            primaryStack = listOf(rootRoute, testRoute1),
+            tabNavigation = createSingleTabNav(rootRoute, testRoute1),
             modalStack = listOf(modal)
         )
         
         val newState = NavigationReducer.reduce(initialState, NavigationEvent.Pop)
         
         assertTrue(newState.modalStack.isEmpty())
-        assertEquals(initialState.primaryStack, newState.primaryStack)
+        assertEquals(initialState.tabNavigation, newState.tabNavigation)
     }
 
     //  TAB NAVIGATION TESTS
@@ -222,7 +222,6 @@ class NavigationReducerTest {
             activeTabId = "tab1"
         )
         val initialState = NavigationState(
-            usesTabs = true,
             tabNavigation = tabNav
         )
         
@@ -231,15 +230,15 @@ class NavigationReducerTest {
             NavigationEvent.SelectTab("tab2")
         )
         
-        assertEquals("tab2", newState.tabNavigation?.activeTabId)
+        assertEquals("tab2", newState.tabNavigation.activeTabId)
         // Primary stack should remain unchanged
-        assertEquals(initialState.tabNavigation?.stacksByTab, newState.tabNavigation?.stacksByTab)
+        assertEquals(initialState.tabNavigation.stacksByTab, newState.tabNavigation.stacksByTab)
     }
 
     @Test
     fun testSelectTabWithoutTabNavigationDoesNothing() {
-        val initialState = NavigationState(primaryStack = listOf(rootRoute))
-        
+        val initialState = NavigationState(tabNavigation = createSingleTabNav(rootRoute))
+
         val newState = NavigationReducer.reduce(
             initialState,
             NavigationEvent.SelectTab("tab1")
@@ -261,7 +260,6 @@ class NavigationReducerTest {
             activeTabId = "tab1"
         )
         val initialState = NavigationState(
-            usesTabs = true,
             tabNavigation = tabNav
         )
         val handler = TestRouteHandler(Destination.RestaurantList, testRoute2)
@@ -272,11 +270,11 @@ class NavigationReducerTest {
             listOf(handler)
         )
         
-        val tab1Stack = newState.tabNavigation?.stacksByTab?.get("tab1")
+        val tab1Stack = newState.tabNavigation.stacksByTab["tab1"]
         assertEquals(3, tab1Stack?.size)
         assertEquals(testRoute2, tab1Stack?.last())
         // Other tab unaffected
-        assertEquals(1, newState.tabNavigation?.stacksByTab?.get("tab2")?.size)
+        assertEquals(1, newState.tabNavigation.stacksByTab["tab2"]?.size)
     }
 
     @Test
@@ -292,13 +290,12 @@ class NavigationReducerTest {
             activeTabId = "tab1"
         )
         val initialState = NavigationState(
-            usesTabs = true,
             tabNavigation = tabNav
         )
         
         val newState = NavigationReducer.reduce(initialState, NavigationEvent.PopInTab)
         
-        val tab1Stack = newState.tabNavigation?.stacksByTab?.get("tab1")
+        val tab1Stack = newState.tabNavigation.stacksByTab["tab1"]
         assertEquals(2, tab1Stack?.size)
         assertEquals(testRoute1, tab1Stack?.last())
     }
@@ -316,7 +313,6 @@ class NavigationReducerTest {
             activeTabId = "tab1"
         )
         val initialState = NavigationState(
-            usesTabs = true,
             tabNavigation = tabNav
         )
         
@@ -338,15 +334,14 @@ class NavigationReducerTest {
             activeTabId = "tab1"
         )
         val initialState = NavigationState(
-            usesTabs = true,
             tabNavigation = tabNav
         )
         
         val newState = NavigationReducer.reduce(initialState, NavigationEvent.PopToRoot)
         
-        assertEquals(1, newState.tabNavigation?.stacksByTab?.get("tab1")?.size)
-        assertEquals(1, newState.tabNavigation?.stacksByTab?.get("tab2")?.size)
-        assertEquals(rootRoute, newState.tabNavigation?.stacksByTab?.get("tab1")?.first())
+        assertEquals(1, newState.tabNavigation.stacksByTab["tab1"]?.size)
+        assertEquals(1, newState.tabNavigation.stacksByTab["tab2"]?.size)
+        assertEquals(rootRoute, newState.tabNavigation.stacksByTab["tab1"]?.first())
     }
 
     @Test
@@ -362,7 +357,6 @@ class NavigationReducerTest {
             activeTabId = "tab1"
         )
         val initialState = NavigationState(
-            usesTabs = true,
             tabNavigation = tabNav
         )
         val handler = TestRouteHandler(Destination.RestaurantDetail("2"), testRoute2)
@@ -373,7 +367,7 @@ class NavigationReducerTest {
             listOf(handler)
         )
         
-        val tab1Stack = newState.tabNavigation?.stacksByTab?.get("tab1")
+        val tab1Stack = newState.tabNavigation.stacksByTab["tab1"]
         assertEquals(3, tab1Stack?.size)
         assertEquals(testRoute2, tab1Stack?.last())
     }
@@ -382,50 +376,49 @@ class NavigationReducerTest {
 
     @Test
     fun testApplyNavigationStateReplacesEntireState() {
-        val initialState = NavigationState(
-            primaryStack = listOf(rootRoute, testRoute1),
-            modalStack = listOf(TestModalRoute("modal1")),
-            usesTabs = false
+        val tabDef = createTabDefinition("tab1", rootRoute)
+        val initialTabNav = TabNavigationState(
+            tabDefinitions = listOf(tabDef),
+            activeTabId = tabDef.id,
+            stacksByTab = mapOf(tabDef.id to listOf(rootRoute, testRoute1))
         )
-        val newState = NavigationState(
-            primaryStack = listOf(rootRoute, testRoute2, testRoute3),
-            usesTabs = false
+        val newTabNav = TabNavigationState(
+            tabDefinitions = listOf(tabDef),
+            activeTabId = tabDef.id,
+            stacksByTab = mapOf(tabDef.id to listOf(rootRoute, testRoute2, testRoute3))
         )
-        
+        val initialState = NavigationState(tabNavigation = initialTabNav)
+        val newState = NavigationState(tabNavigation = newTabNav)
         val result = NavigationReducer.reduce(
             initialState,
             NavigationEvent.ApplyNavigationState(newState)
         )
-        
         assertEquals(newState, result)
     }
 
     @Test
     fun testApplyNavigationStateToTabState() {
-        val initialState = NavigationState(
-            primaryStack = listOf(rootRoute),
-            usesTabs = false
-        )
         val tabDef1 = createTabDefinition("tab1", rootRoute)
         val tabDef2 = createTabDefinition("tab2", rootRoute)
+        val initialTabNav = TabNavigationState(
+            tabDefinitions = listOf(tabDef1, tabDef2),
+            activeTabId = tabDef1.id,
+            stacksByTab = mapOf(tabDef1.id to listOf(rootRoute))
+        )
         val newTabNav = TabNavigationState(
             tabDefinitions = listOf(tabDef1, tabDef2),
+            activeTabId = tabDef1.id,
             stacksByTab = mapOf(
-                "tab1" to listOf(rootRoute, testRoute1),
-                "tab2" to listOf(rootRoute, testRoute2)
-            ),
-            activeTabId = "tab1"
+                tabDef1.id to listOf(rootRoute, testRoute1),
+                tabDef2.id to listOf(rootRoute, testRoute2)
+            )
         )
-        val newState = NavigationState(
-            usesTabs = true,
-            tabNavigation = newTabNav
-        )
-        
+        val initialState = NavigationState(tabNavigation = initialTabNav)
+        val newState = NavigationState(tabNavigation = newTabNav)
         val result = NavigationReducer.reduce(
             initialState,
             NavigationEvent.ApplyNavigationState(newState)
         )
-        
         assertEquals(newState, result)
     }
 
@@ -433,8 +426,8 @@ class NavigationReducerTest {
 
     @Test
     fun testReducerDoesNotMutateOriginalState() {
-        val initialState = NavigationState(primaryStack = listOf(rootRoute, testRoute1))
-        val originalPrimaryStack = initialState.primaryStack
+        val initialState = NavigationState(tabNavigation = createSingleTabNav(rootRoute, testRoute1))
+        val originalTabStacks = initialState.tabNavigation.stacksByTab
         val handler = TestRouteHandler(Destination.RestaurantDetail("1"), testRoute2)
         
         NavigationReducer.reduce(
@@ -443,14 +436,14 @@ class NavigationReducerTest {
             listOf(handler)
         )
         
-        assertEquals(originalPrimaryStack, initialState.primaryStack)
+        assertEquals(originalTabStacks, initialState.tabNavigation.stacksByTab)
     }
 
     @Test
     fun testReducerDoesNotMutateModalStack() {
         val modal1 = TestModalRoute("modal1")
         val initialState = NavigationState(
-            primaryStack = listOf(rootRoute),
+            tabNavigation = createSingleTabNav(rootRoute),
             modalStack = listOf(modal1)
         )
         val originalModalStack = initialState.modalStack
@@ -473,7 +466,6 @@ class NavigationReducerTest {
             activeTabId = "tab1"
         )
         val initialState = NavigationState(
-            usesTabs = true,
             tabNavigation = tabNav
         )
         val originalTabStacks = tabNav.stacksByTab
@@ -487,9 +479,9 @@ class NavigationReducerTest {
 
     @Test
     fun testCurrentStackReturnsPrimaryWhenNoTabs() {
-        val initialState = NavigationState(primaryStack = listOf(rootRoute, testRoute1))
-        
-        assertEquals(initialState.primaryStack, initialState.currentStack)
+        val initialState = NavigationState(tabNavigation = createSingleTabNav(rootRoute, testRoute1))
+
+        assertEquals(initialState.tabNavigation.stacksByTab["tab1"], initialState.currentStack)
     }
 
     @Test
@@ -505,7 +497,6 @@ class NavigationReducerTest {
             activeTabId = "tab1"
         )
         val initialState = NavigationState(
-            usesTabs = true,
             tabNavigation = tabNav
         )
         
@@ -515,7 +506,7 @@ class NavigationReducerTest {
     @Test
     fun testHasModalsReturnsTrueWhenModalsPresent() {
         val initialState = NavigationState(
-            primaryStack = listOf(rootRoute),
+            tabNavigation = createSingleTabNav(rootRoute),
             modalStack = listOf(TestModalRoute("modal1"))
         )
         
@@ -524,8 +515,8 @@ class NavigationReducerTest {
 
     @Test
     fun testHasModalsReturnsFalseWhenEmpty() {
-        val initialState = NavigationState(primaryStack = listOf(rootRoute))
-        
+        val initialState = NavigationState(tabNavigation = createSingleTabNav(rootRoute))
+
         assertFalse(initialState.hasModals)
     }
 
@@ -534,7 +525,7 @@ class NavigationReducerTest {
         val modal1 = TestModalRoute("modal1")
         val modal2 = TestModalRoute("modal2")
         val initialState = NavigationState(
-            primaryStack = listOf(rootRoute),
+            tabNavigation = createSingleTabNav(rootRoute),
             modalStack = listOf(modal1, modal2)
         )
         
@@ -543,8 +534,8 @@ class NavigationReducerTest {
 
     @Test
     fun testTopModalReturnsNullWhenEmpty() {
-        val initialState = NavigationState(primaryStack = listOf(rootRoute))
-        
+        val initialState = NavigationState(tabNavigation = createSingleTabNav(rootRoute))
+
         assertNull(initialState.topModal)
     }
 
@@ -579,6 +570,15 @@ class NavigationReducerTest {
             label = io.umain.munchies.core.localization.StringResources.app_title,
             icon = io.umain.munchies.core.ui.IconId.Logo,
             rootRoute = rootRoute
+        )
+    }
+
+    private fun createSingleTabNav(vararg routes: Route): TabNavigationState {
+        val tabDef = createTabDefinition("tab1", rootRoute)
+        return TabNavigationState(
+            tabDefinitions = listOf(tabDef),
+            activeTabId = tabDef.id,
+            stacksByTab = mapOf(tabDef.id to routes.toList())
         )
     }
 }

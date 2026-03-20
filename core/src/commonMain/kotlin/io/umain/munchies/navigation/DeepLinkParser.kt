@@ -31,101 +31,49 @@ private data class ConfirmActionModal(
  * - Settings host: /settings
  */
 object DeepLinkParser {
-    
     /**
      * Parse a deep link URL and return the corresponding navigation state.
      *
      * Supported deep link formats:
-     * 
-     * Restaurant navigation:
      * - "munchies://restaurants" → RestaurantListRoute
      * - "munchies://restaurants/123" → RestaurantDetailRoute("123")
-     * 
-     * Modal dialogs:
-     * - "munchies://modal/filter?filters=tag1,tag2" → FilterModal with selected tags
-     * - "munchies://modal/submit_review/123" → SubmitReviewModal for restaurant 123
-     * - "munchies://modal/confirm?message=...&confirmText=...&cancelText=..." → ConfirmActionModal
-     * - "munchies://modal/date_picker?initialDate=2026-02-25" → DatePickerModal with initial date
-     * 
-     * Settings tab:
-     * - "munchies://settings" → Shows settings screen
+     * - "munchies://settings" → SettingsRoute
+     * - "munchies://modal/..." → Modal overlays
      */
     fun parseDeepLink(deepLink: String): NavigationState {
-        return when {
-            deepLink.isEmpty() -> NavigationState(
-                primaryStack = listOf(RestaurantListRoute())
-            )
-            deepLink.startsWith("munchies://") -> {
-                parseAppScheme(deepLink.substring(11))
-            }
-            else -> NavigationState(
-                primaryStack = listOf(RestaurantListRoute())
-            )
-        }
-    }
-    
-    private fun parseAppScheme(path: String): NavigationState {
-        val (routePath, queryParams) = path.split("?", limit = 2).let { parts ->
-            parts[0] to (if (parts.size > 1) parts[1] else "")
-        }
-        
-        val segments = routePath.trim('/').split('/').filter { it.isNotEmpty() }
-        
-        if (segments.isEmpty()) {
-            return NavigationState(primaryStack = listOf(RestaurantListRoute()))
-        }
-        
-        return when (segments[0]) {
-            "restaurants" -> {
-                val restaurantId = segments.getOrNull(1)
-                if (restaurantId != null) {
-                    // munchies://restaurants/{restaurantId}
-                    NavigationState(
-                        primaryStack = listOf(
-                            RestaurantListRoute(),
-                            RestaurantDetailRoute(restaurantId)
-                        ),
-                        modalStack = parseModalsFromQuery(queryParams)
-                    )
-                } else {
-                    // munchies://restaurants
-                    NavigationState(
-                        primaryStack = listOf(RestaurantListRoute()),
-                        modalStack = parseModalsFromQuery(queryParams)
-                    )
-                }
-            }
-            "settings" -> {
-                NavigationState(
-                    primaryStack = listOf(RestaurantListRoute()),
-                    modalStack = parseModalsFromQuery(queryParams)
-                )
-            }
-            "modal" -> {
-                NavigationState(
-                    primaryStack = listOf(RestaurantListRoute()),
-                    modalStack = parseModalType(segments.getOrNull(1) ?: "", queryParams)
-                )
-            }
-            else -> NavigationState(primaryStack = listOf(RestaurantListRoute()))
-        }
-    }
-    
-    private fun parseModalsFromQuery(queryParams: String): List<ModalRoute> {
+        val tabDef = TabDefinition(
+            id = "main",
+            label = io.umain.munchies.core.localization.StringResources.app_title,
+            icon = io.umain.munchies.core.ui.IconId.Logo,
+            rootRoute = RestaurantListRoute()
+        )
+        val tabId = tabDef.id
+        val stacksByTab = mutableMapOf(tabId to mutableListOf<Route>(tabDef.rootRoute))
         val modals = mutableListOf<ModalRoute>()
-        val params = parseQueryString(queryParams)
-        
-        if (params["submit_review"] == "true") {
-            val restaurantId = params["restaurantId"] ?: return modals
-            modals.add(SubmitReviewModal(restaurantId))
+        if (deepLink.isEmpty() || deepLink == "munchies://restaurants") {
+            // Default: restaurant list
+            // Already set
+        } else if (deepLink.startsWith("munchies://restaurants/")) {
+            val restaurantId = deepLink.removePrefix("munchies://restaurants/")
+            stacksByTab[tabId]?.add(RestaurantDetailRoute(restaurantId))
+        } else if (deepLink == "munchies://settings") {
+            stacksByTab[tabId]?.add(SettingsRoute())
+        } else if (deepLink.startsWith("munchies://modal/")) {
+            // Parse modal type and params
+            val modalPath = deepLink.removePrefix("munchies://modal/")
+            val (type, queryParams) = modalPath.split("?", limit = 2).let { parts ->
+                parts[0] to (if (parts.size > 1) parts[1] else "")
+            }
+            modals.addAll(parseModalType(type, queryParams))
         }
-        
-        if (params["filters"] == "true") {
-            val selected = params["selectedFilters"]?.split(",") ?: emptyList()
-            modals.add(FilterModal(selected))
-        }
-        
-        return modals
+        return NavigationState(
+            tabNavigation = TabNavigationState(
+                tabDefinitions = listOf(tabDef),
+                stacksByTab = stacksByTab.mapValues { it.value.toList() },
+                activeTabId = tabId
+            ),
+            modalStack = modals
+        )
     }
     
     private fun parseModalType(type: String, queryParams: String): List<ModalRoute> {

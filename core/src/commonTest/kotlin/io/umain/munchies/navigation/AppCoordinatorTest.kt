@@ -24,11 +24,9 @@ class AppCoordinatorTest {
 
     @Test
     fun testInitialStateMatchesConstructorParameter() {
-        val initialState = NavigationState(primaryStack = listOf(rootRoute, testRoute1))
+        val initialState = NavigationState(tabNavigation = createSingleTabNav(rootRoute, testRoute1))
         val coordinator = AppCoordinator(initialState)
-        
         val currentState = coordinator.getCurrentState()
-        
         assertEquals(initialState, currentState)
     }
 
@@ -36,12 +34,9 @@ class AppCoordinatorTest {
     fun testDefaultInitialState() {
         val coordinator = AppCoordinator()
         val state = coordinator.navigationState.value
-        
         // Default state uses tab navigation
-        assertTrue(state.usesTabs)
-        assertTrue(state.tabNavigation != null)
-        assertEquals("restaurants", state.tabNavigation?.activeTabId)
-        assertEquals(2, state.tabNavigation?.tabDefinitions?.size) // restaurants + settings
+        assertEquals("restaurants", state.tabNavigation.activeTabId)
+        assertEquals(2, state.tabNavigation.tabDefinitions.size) // restaurants + settings
     }
 
     //  REDUCER STATE INTEGRATION TESTS
@@ -65,26 +60,26 @@ class AppCoordinatorTest {
     @Test
     fun testReduceStatePopRemovesScreen() {
         val coordinator = AppCoordinator(
-            NavigationState(primaryStack = listOf(rootRoute, testRoute1, testRoute2))
+            NavigationState(tabNavigation = createSingleTabNav(rootRoute, testRoute1, testRoute2))
         )
         
         coordinator.reduceState(NavigationEvent.Pop)
         val newState = coordinator.getCurrentState()
         
-        assertEquals(2, newState.primaryStack.size)
-        assertEquals(testRoute1, newState.primaryStack.last())
+        assertEquals(2, newState.tabNavigation.getActiveTabStack().size)
+        assertEquals(testRoute1, newState.tabNavigation.getActiveTabStack().last())
     }
 
     @Test
     fun testReduceStatePopToRootClearsStack() {
         val coordinator = AppCoordinator(
-            NavigationState(primaryStack = listOf(rootRoute, testRoute1, testRoute2))
+            NavigationState(tabNavigation = createSingleTabNav(rootRoute, testRoute1, testRoute2))
         )
         
         coordinator.reduceState(NavigationEvent.PopToRoot)
         val newState = coordinator.getCurrentState()
         
-        assertEquals(1, newState.primaryStack.size)
+        assertEquals(1, newState.tabNavigation.stacksByTab.size)
     }
 
      @Test
@@ -143,34 +138,25 @@ class AppCoordinatorTest {
     @Test
     fun testShowFilterModalCreatesFilterEvent() {
         val coordinator = AppCoordinator()
-        
         coordinator.showFilterModal(listOf("tag1", "tag2"))
-        
         val currentState = coordinator.getCurrentState()
-        assertTrue(currentState.usesTabs)
-        assertEquals("restaurants", currentState.tabNavigation?.activeTabId)
+        assertEquals("restaurants", currentState.tabNavigation.activeTabId)
     }
 
     @Test
     fun testShowConfirmationCreatesConfirmEvent() {
         val coordinator = AppCoordinator()
-        
         coordinator.showConfirmation("Delete?", "Yes", "No")
-        
         val currentState = coordinator.getCurrentState()
-        assertTrue(currentState.usesTabs)
-        assertEquals("restaurants", currentState.tabNavigation?.activeTabId)
+        assertEquals("restaurants", currentState.tabNavigation.activeTabId)
     }
 
     @Test
     fun testSubmitReviewEvent() {
         val coordinator = AppCoordinator()
-        
         coordinator.submitReview("restaurant123")
-        
         val currentState = coordinator.getCurrentState()
-        assertTrue(currentState.usesTabs)
-        assertEquals("restaurants", currentState.tabNavigation?.activeTabId)
+        assertEquals("restaurants", currentState.tabNavigation.activeTabId)
     }
 
     //  TAB NAVIGATION STATE TESTS
@@ -188,13 +174,13 @@ class AppCoordinatorTest {
             activeTabId = "tab1"
         )
         val coordinator = AppCoordinator(
-            NavigationState(usesTabs = true, tabNavigation = tabNav)
+            NavigationState(tabNavigation = tabNav)
         )
         
         coordinator.reduceState(NavigationEvent.SelectTab("tab2"))
         val newState = coordinator.getCurrentState()
         
-        assertEquals("tab2", newState.tabNavigation?.activeTabId)
+        assertEquals("tab2", newState.tabNavigation.activeTabId)
     }
 
      @Test
@@ -209,14 +195,14 @@ class AppCoordinatorTest {
              TestRouteHandler(Destination.RestaurantList, testRoute1)
          )
          val coordinator = AppCoordinator(
-             NavigationState(usesTabs = true, tabNavigation = tabNav),
+             NavigationState(tabNavigation = tabNav),
              routeHandlers = handlers
          )
          
          coordinator.reduceState(NavigationEvent.PushInTab(Destination.RestaurantList))
          val newState = coordinator.getCurrentState()
          
-         assertEquals(2, newState.tabNavigation?.getActiveTabStack()?.size)
+         assertEquals(2, newState.tabNavigation.getActiveTabStack().size)
      }
 
     //  ROUTE HANDLER TESTS
@@ -225,14 +211,11 @@ class AppCoordinatorTest {
      fun testRouteHandlerIntegration() {
          val handler = TestRouteHandler(Destination.RestaurantList, testRoute1)
          val coordinatorWithoutHandlers = AppCoordinator()
-         
-         assertTrue(coordinatorWithoutHandlers.navigationState.value.currentStack.isEmpty() || 
-                   coordinatorWithoutHandlers.navigationState.value.usesTabs)
-         
+         // The default stack is not empty, it contains the root route of the active tab
+         assertEquals(listOf(RestaurantListRoute()), coordinatorWithoutHandlers.navigationState.value.currentStack)
          val coordinatorWithHandlers = AppCoordinator(routeHandlers = listOf(handler))
          val initialStackSize = coordinatorWithHandlers.getCurrentState().currentStack.size
          coordinatorWithHandlers.reduceState(NavigationEvent.PushInTab(Destination.RestaurantList))
-         
          val newState = coordinatorWithHandlers.getCurrentState()
          assertEquals(initialStackSize + 1, newState.currentStack.size)
      }
@@ -255,7 +238,7 @@ class AppCoordinatorTest {
         val modal = TestModalRoute("modal1")
         val coordinator = AppCoordinator(
             NavigationState(
-                primaryStack = listOf(rootRoute),
+                tabNavigation = createSingleTabNav(rootRoute),
                 modalStack = listOf(modal)
             )
         )
@@ -272,7 +255,7 @@ class AppCoordinatorTest {
         val modal2 = TestModalRoute("modal2")
         val coordinator = AppCoordinator(
             NavigationState(
-                primaryStack = listOf(rootRoute),
+                tabNavigation = createSingleTabNav(rootRoute),
                 modalStack = listOf(modal1, modal2)
             )
         )
@@ -289,7 +272,7 @@ class AppCoordinatorTest {
         val modal2 = TestModalRoute("modal2")
         val coordinator = AppCoordinator(
             NavigationState(
-                primaryStack = listOf(rootRoute),
+                tabNavigation = createSingleTabNav(rootRoute),
                 modalStack = listOf(modal1, modal2)
             )
         )
@@ -305,7 +288,7 @@ class AppCoordinatorTest {
     fun testApplyNavigationStateReplacesState() {
         val coordinator = AppCoordinator()
         val newState = NavigationState(
-            primaryStack = listOf(rootRoute, testRoute1, testRoute2)
+            tabNavigation = createSingleTabNav(rootRoute, testRoute1, testRoute2)
         )
         
         coordinator.reduceState(NavigationEvent.ApplyNavigationState(newState))
@@ -416,17 +399,17 @@ class AppCoordinatorTest {
              processedDestinations.add("ready")
          }
          
-         val state1 = NavigationState(primaryStack = listOf(rootRoute, testRoute1))
+         val state1 = NavigationState(tabNavigation = createSingleTabNav(rootRoute, testRoute1))
          coordinator.reduceState(NavigationEvent.ApplyNavigationState(state1))
          
-         val state2 = NavigationState(primaryStack = listOf(rootRoute, testRoute2))
+         val state2 = NavigationState(tabNavigation = createSingleTabNav(rootRoute, testRoute2))
          coordinator.reduceState(NavigationEvent.ApplyNavigationState(state2))
          
          assertEquals(0, processedDestinations.size, "Callback should not execute until markListenerReady is called")
          
          coordinator.markListenerReady()
          assertEquals(listOf("ready"), processedDestinations, "Readiness callback should execute once")
-         assertEquals(testRoute2, coordinator.getCurrentState().primaryStack.last(), "Final state should reflect last navigation")
+         assertEquals(testRoute2, coordinator.getCurrentState().tabNavigation.getActiveTabStack().last(), "Final state should reflect last navigation")
      }
 
     //  EDGE CASE: NAVIGATION DURING READINESS PHASE
@@ -529,6 +512,15 @@ class AppCoordinatorTest {
             label = io.umain.munchies.core.localization.StringResources.app_title,
             icon = io.umain.munchies.core.ui.IconId.Logo,
             rootRoute = rootRoute
+        )
+    }
+
+    private fun createSingleTabNav(vararg routes: Route): TabNavigationState {
+        val tabDef = createTabDefinition("tab1", rootRoute)
+        return TabNavigationState(
+            tabDefinitions = listOf(tabDef),
+            activeTabId = tabDef.id,
+            stacksByTab = mapOf(tabDef.id to routes.toList())
         )
     }
 }

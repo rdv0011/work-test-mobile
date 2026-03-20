@@ -273,7 +273,6 @@ open class AppCoordinator(
 
             return NavigationState(
                 tabNavigation = tabNav,
-                usesTabs = true
             )
         }
     }
