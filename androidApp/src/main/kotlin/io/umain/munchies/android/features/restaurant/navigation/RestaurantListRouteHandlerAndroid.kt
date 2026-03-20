@@ -13,7 +13,6 @@ import io.umain.munchies.android.features.restaurant.presentation.restaurantlist
 import io.umain.munchies.android.navigation.LocalRouteRegistry
 import io.umain.munchies.feature.restaurant.di.RestaurantListScope
 import io.umain.munchies.feature.restaurant.di.getRestaurantNavigationViewModel
-import io.umain.munchies.feature.restaurant.navigation.RestaurantNavigationViewModel
 import org.koin.core.context.GlobalContext
 import org.koin.core.qualifier.named
 import org.koin.core.scope.Scope

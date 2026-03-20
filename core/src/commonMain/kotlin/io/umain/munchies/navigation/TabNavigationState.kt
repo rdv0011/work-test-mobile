@@ -9,10 +9,16 @@ import io.umain.munchies.core.localization.StringKey
  * Each tab maintains its own back stack, allowing users to navigate
  * within a tab and preserve their position when switching away and back.
  */
+enum class NavigationDirection {
+    Forward,
+    Back
+}
+
 data class TabNavigationState(
     val tabDefinitions: List<TabDefinition>,
     val activeTabId: String,
-    val stacksByTab: Map<String, List<Route>>
+    val stacksByTab: Map<String, List<Route>>,
+    val navigationDirection: NavigationDirection = NavigationDirection.Forward
 ) {
 
     /**

@@ -15,6 +15,9 @@ data class NavigationState(
     // Optional: Track the deep link that triggered this state
     val originDeepLink: String? = null
 ) {
+    val navigationDirection: NavigationDirection
+        get() = tabNavigation.navigationDirection
+
     /**
      * Get the current active stack (active tab's stack)
      */

@@ -1,50 +1,49 @@
 package io.umain.munchies.android.navigation
 
 import android.net.Uri
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.compositionLocalOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import io.umain.munchies.feature.restaurant.di.getRestaurantNavigationViewModel
-import io.umain.munchies.feature.restaurant.di.getRestaurantDetailViewModel
-import io.umain.munchies.feature.settings.di.getSettingsNavigationViewModel
-import androidx.compose.runtime.collectAsState
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.with
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.rememberNavController
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
+import io.umain.munchies.android.features.restaurant.presentation.restaurantdetail.RestaurantDetailScreen
+import io.umain.munchies.android.features.restaurant.presentation.restaurantlist.RestaurantListScreen
+import io.umain.munchies.android.features.settings.presentation.SettingsScreen
+import io.umain.munchies.feature.restaurant.di.getRestaurantNavigationViewModel
+import io.umain.munchies.feature.settings.di.getSettingsNavigationViewModel
+import io.umain.munchies.navigation.AppCoordinator
+import io.umain.munchies.navigation.ConfirmActionModalRoute
+import io.umain.munchies.navigation.DatePickerModalRoute
 import io.umain.munchies.navigation.DeepLinkConstants
 import io.umain.munchies.navigation.DeepLinkProcessor
-import io.umain.munchies.navigation.AppCoordinator
-import io.umain.munchies.navigation.Destination
+import io.umain.munchies.navigation.FilterModalRoute
+import io.umain.munchies.navigation.ModalDestination
+import io.umain.munchies.navigation.ModalRoute
 import io.umain.munchies.navigation.NavigationEvent
 import io.umain.munchies.navigation.RestaurantDetailRoute
 import io.umain.munchies.navigation.RestaurantListRoute
-import io.umain.munchies.navigation.SettingsRoute
+import io.umain.munchies.navigation.ReviewErrorAlertRoute
+import io.umain.munchies.navigation.ReviewSuccessModalRoute
 import io.umain.munchies.navigation.Route
 import io.umain.munchies.navigation.RouteComposableBuilder
 import io.umain.munchies.navigation.RouteNavigationMapper
 import io.umain.munchies.navigation.RouteProvider
 import io.umain.munchies.navigation.ScopedRouteHandler
-import io.umain.munchies.navigation.ModalDestination
-import io.umain.munchies.navigation.ModalRoute
-import io.umain.munchies.navigation.FilterModalRoute
+import io.umain.munchies.navigation.SettingsRoute
 import io.umain.munchies.navigation.SubmitReviewModalRoute
-import io.umain.munchies.navigation.ConfirmActionModalRoute
-import io.umain.munchies.navigation.DatePickerModalRoute
-import io.umain.munchies.navigation.ReviewSuccessModalRoute
-import io.umain.munchies.navigation.ReviewErrorAlertRoute
-import io.umain.munchies.android.features.settings.presentation.SettingsScreen
-import io.umain.munchies.android.features.restaurant.presentation.restaurantlist.RestaurantListScreen
-import io.umain.munchies.android.features.restaurant.presentation.restaurantdetail.RestaurantDetailScreen
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -52,6 +51,7 @@ val LocalRouteRegistry = compositionLocalOf<RouteRegistry> {
     error("RouteRegistry not provided")
 }
 
+@file:OptIn(androidx.compose.animation.ExperimentalAnimationApi::class)
 @Composable
 fun AppNavigation(
     coordinator: AppCoordinator,
@@ -118,21 +118,42 @@ fun AppNavigation(
     }
 }
 
+
 @Composable
 private fun renderTabContent(
     tabNavState: io.umain.munchies.navigation.TabNavigationState,
 ) {
-    val activeStack = tabNavState.getActiveTabStack()
-    if (activeStack.isNotEmpty()) {
-        val topRoute = activeStack.last()
-        renderCurrentScreen(topRoute)
+    val stack = tabNavState.getActiveTabStack()
+    val currentRoute = stack.lastOrNull()
+    val navigationDirection = tabNavState.navigationDirection
+    val layoutDirection = LocalLayoutDirection.current
+    val isRtl = layoutDirection == LayoutDirection.Rtl
+
+    AnimatedContent(
+        targetState = currentRoute,
+        transitionSpec = {
+            if (navigationDirection == io.umain.munchies.navigation.NavigationDirection.Forward) {
+                if (isRtl) {
+                    ScreenTransitionAnimations.enter(true) with ScreenTransitionAnimations.exit(true)
+                } else {
+                    ScreenTransitionAnimations.enter(false) with ScreenTransitionAnimations.exit(false)
+                }
+            } else {
+                if (isRtl) {
+                    ScreenTransitionAnimations.popEnter(true) with ScreenTransitionAnimations.popExit(true)
+                } else {
+                    ScreenTransitionAnimations.popEnter(false) with ScreenTransitionAnimations.popExit(false)
+                }
+            }
+        },
+        modifier = Modifier.fillMaxSize()
+    ) { route ->
+        RouteRenderer(route)
     }
 }
 
 @Composable
-private fun renderCurrentScreen(
-    route: Route,
-) {
+private fun RouteRenderer(route: Route?) {
     val registry = LocalRouteRegistry.current
     when (route) {
         is RestaurantListRoute -> {
@@ -150,6 +171,7 @@ private fun renderCurrentScreen(
             val navigationViewModel = scope.getSettingsNavigationViewModel()
             SettingsScreen(navigationViewModel)
         }
+        null -> Unit
     }
 }
 

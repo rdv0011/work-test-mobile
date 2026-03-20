@@ -27,6 +27,12 @@ import io.umain.munchies.android.ui.toComposeColor
 import io.umain.munchies.android.ui.toComposeTextStyle
 import io.umain.munchies.navigation.AppCoordinator
 import io.umain.munchies.navigation.TabNavigationState
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.with
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
+import io.umain.munchies.android.navigation.ScreenTransitionAnimations
 
 /**
  * Tab navigation scaffold that shows a bottom navigation bar
@@ -56,22 +62,29 @@ fun TabNavigationScaffold(
     Column(modifier = modifier.fillMaxSize()) {
         // Main content — takes all remaining vertical space
         Box(modifier = Modifier.weight(1f).fillMaxSize()) {
-            content()
+    val activeTab = tabNavigationState.activeTabId
+    AnimatedContent(
+        targetState = activeTab,
+        transitionSpec = { ScreenTransitionAnimations.fadeOnlyTransition },
+        modifier = Modifier.fillMaxSize()
+    ) { targetTabId ->
+        content()
+    }
 
-            // Gradient overlay at the bottom of the content area,
-            // fading from transparent to the bar colour
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .height(4.dp)
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(Color.Transparent, cardColor)
-                        )
-                    )
+    // Gradient overlay at the bottom of the content area,
+    // fading from transparent to the bar colour
+    Box(
+        modifier = Modifier
+            .align(Alignment.BottomCenter)
+            .fillMaxWidth()
+            .height(4.dp)
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(Color.Transparent, cardColor)
+                )
             )
-        }
+    )
+}
 
         // Bottom navigation bar
         NavigationBar(
