@@ -2,7 +2,8 @@ package io.umain.munchies.android.navigation
 
 import android.net.Uri
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.with
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -32,14 +33,13 @@ import io.umain.munchies.navigation.DeepLinkProcessor
 import io.umain.munchies.navigation.FilterModalRoute
 import io.umain.munchies.navigation.ModalDestination
 import io.umain.munchies.navigation.ModalRoute
+import io.umain.munchies.navigation.NavigationDirection
 import io.umain.munchies.navigation.NavigationEvent
 import io.umain.munchies.navigation.RestaurantDetailRoute
 import io.umain.munchies.navigation.RestaurantListRoute
 import io.umain.munchies.navigation.ReviewErrorAlertRoute
 import io.umain.munchies.navigation.ReviewSuccessModalRoute
 import io.umain.munchies.navigation.Route
-import io.umain.munchies.navigation.RouteComposableBuilder
-import io.umain.munchies.navigation.RouteNavigationMapper
 import io.umain.munchies.navigation.RouteProvider
 import io.umain.munchies.navigation.ScopedRouteHandler
 import io.umain.munchies.navigation.SettingsRoute
@@ -51,7 +51,7 @@ val LocalRouteRegistry = compositionLocalOf<RouteRegistry> {
     error("RouteRegistry not provided")
 }
 
-@file:OptIn(androidx.compose.animation.ExperimentalAnimationApi::class)
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun AppNavigation(
     coordinator: AppCoordinator,
@@ -63,14 +63,8 @@ fun AppNavigation(
     }
     val scopedRouteHandlerRegistry = remember { ScopedRouteHandlerRegistry(allHandlers) }
     val registry = remember { RouteRegistry(scopedRouteHandlerRegistry) }
-    val navigationMappers = remember {
-        routeProviders.flatMap { it.getRoutes() }.filterIsInstance<RouteNavigationMapper>()
-    }
     val modalStack = remember {
         mutableStateOf<List<ModalRoute>>(emptyList())
-    }
-    val composableBuilders = remember {
-        routeProviders.flatMap { it.getRoutes() }.filterIsInstance<RouteComposableBuilder>()
     }
     val deepLinkProcessed = remember { mutableStateOf(pendingDeepLinkUri == null) }
     val navigationState = coordinator.navigationState.collectAsState().value
@@ -83,10 +77,6 @@ fun AppNavigation(
                     handleNavigationEvent(
                         event,
                         modalStack,
-                        registry,
-                        navigationMappers,
-                        allHandlers,
-                        navigationState
                     )
                 }
             } catch (e: Exception) {
@@ -119,6 +109,7 @@ fun AppNavigation(
 }
 
 
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 private fun renderTabContent(
     tabNavState: io.umain.munchies.navigation.TabNavigationState,
@@ -132,18 +123,12 @@ private fun renderTabContent(
     AnimatedContent(
         targetState = currentRoute,
         transitionSpec = {
-            if (navigationDirection == io.umain.munchies.navigation.NavigationDirection.Forward) {
-                if (isRtl) {
-                    ScreenTransitionAnimations.enter(true) with ScreenTransitionAnimations.exit(true)
-                } else {
-                    ScreenTransitionAnimations.enter(false) with ScreenTransitionAnimations.exit(false)
-                }
+            if (navigationDirection == NavigationDirection.Forward) {
+                ScreenTransitionAnimations.enter(isRtl)
+                    .togetherWith(ScreenTransitionAnimations.exit(isRtl))
             } else {
-                if (isRtl) {
-                    ScreenTransitionAnimations.popEnter(true) with ScreenTransitionAnimations.popExit(true)
-                } else {
-                    ScreenTransitionAnimations.popEnter(false) with ScreenTransitionAnimations.popExit(false)
-                }
+                ScreenTransitionAnimations.popEnter(isRtl)
+                    .togetherWith(ScreenTransitionAnimations.popExit(isRtl))
             }
         },
         modifier = Modifier.fillMaxSize()
@@ -219,10 +204,6 @@ private fun renderModalsIfNeeded(
 private fun handleNavigationEvent(
     event: NavigationEvent,
     modalStack: androidx.compose.runtime.MutableState<List<ModalRoute>>,
-    registry: RouteRegistry,
-    navigationMappers: List<RouteNavigationMapper>,
-    allHandlers: List<ScopedRouteHandler>,
-    navigationState: io.umain.munchies.navigation.NavigationState
 ) {
     when (event) {
         is NavigationEvent.ShowModal -> {

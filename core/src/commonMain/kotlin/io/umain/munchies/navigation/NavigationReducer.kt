@@ -174,6 +174,7 @@ object NavigationReducer {
 
         return state.copy(
             tabNavigation = tabNav.updateActiveTabStack(newStack)
+                .copy(navigationDirection = NavigationDirection.Forward)
         )
     }
 
@@ -189,6 +190,7 @@ object NavigationReducer {
         val newStack = currentStack.dropLast(1)
         return state.copy(
             tabNavigation = tabNav.updateActiveTabStack(newStack)
+                .copy(navigationDirection = NavigationDirection.Back)
         )
     }
 }
