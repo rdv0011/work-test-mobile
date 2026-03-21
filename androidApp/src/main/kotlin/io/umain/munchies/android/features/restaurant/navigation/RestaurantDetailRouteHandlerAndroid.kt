@@ -1,32 +1,23 @@
 package io.umain.munchies.android.features.restaurant.navigation
 
-import androidx.navigation.NavGraphBuilder
-import androidx.navigation.NavType
-import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
+import io.umain.munchies.feature.restaurant.di.RestaurantDetailScope
 import io.umain.munchies.feature.restaurant.navigation.RestaurantDetailRouteHandler
-import io.umain.munchies.navigation.AppCoordinator
+import io.umain.munchies.feature.restaurant.presentation.RestaurantDetailViewModel
 import io.umain.munchies.navigation.Destination
 import io.umain.munchies.navigation.RestaurantDetailRoute
 import io.umain.munchies.navigation.Route
-import io.umain.munchies.navigation.RouteComposableBuilder
 import io.umain.munchies.navigation.RouteConstants
 import io.umain.munchies.navigation.RouteNavigationMapper
 import io.umain.munchies.navigation.ScopedRouteHandler
-import io.umain.munchies.android.features.restaurant.presentation.restaurantdetail.RestaurantDetailScreen
-import io.umain.munchies.android.navigation.LocalRouteRegistry
-import io.umain.munchies.feature.restaurant.di.RestaurantDetailScope
-import io.umain.munchies.feature.restaurant.di.getRestaurantNavigationViewModel
-import io.umain.munchies.feature.restaurant.presentation.RestaurantDetailViewModel
 import org.koin.core.context.GlobalContext
-import org.koin.core.qualifier.named
 import org.koin.core.parameter.parametersOf
+import org.koin.core.qualifier.named
 import org.koin.core.scope.Scope
 
 class RestaurantDetailRouteHandlerAndroid(
     private val commonHandler: RestaurantDetailRouteHandler = RestaurantDetailRouteHandler
-) : ScopedRouteHandler, RouteComposableBuilder, RouteNavigationMapper {
-    
+) : ScopedRouteHandler, RouteNavigationMapper {
+
     override val route: Route = commonHandler.route
     
     override fun toRouteString(): String = commonHandler.toRouteString()
@@ -50,28 +41,6 @@ class RestaurantDetailRouteHandlerAndroid(
                     parameters = { parametersOf(route.restaurantId) }
                 )
             }
-    }
-    
-    override fun buildComposable(
-        navGraphBuilder: NavGraphBuilder,
-        coordinator: AppCoordinator
-    ) {
-        navGraphBuilder.composable(
-            route = toRouteString(),
-            arguments = listOf(
-                navArgument(RouteConstants.PARAM_RESTAURANT_ID) { type = NavType.StringType }
-            )
-        ) { backStackEntry ->
-            val restaurantId = backStackEntry.arguments?.getString(RouteConstants.PARAM_RESTAURANT_ID) ?: ""
-            val registry = LocalRouteRegistry.current
-            val route = RestaurantDetailRoute(restaurantId)
-            val scope = registry.createScopeForRoute(route)
-            val navigationViewModel = scope.getRestaurantNavigationViewModel()
-            RestaurantDetailScreen(
-                restaurantId,
-                navigationViewModel
-            )
-        }
     }
 
     override fun mapDestinationToNavRoute(destination: Destination): String? {

@@ -1,15 +1,11 @@
 package io.umain.munchies.android.features.restaurant.navigation
 
-import androidx.navigation.NavGraphBuilder
-import androidx.navigation.compose.composable
 import io.umain.munchies.feature.restaurant.navigation.RestaurantListRouteHandler
 import io.umain.munchies.navigation.AppCoordinator
 import io.umain.munchies.navigation.Destination
 import io.umain.munchies.navigation.Route
-import io.umain.munchies.navigation.RouteComposableBuilder
 import io.umain.munchies.navigation.RouteNavigationMapper
 import io.umain.munchies.navigation.ScopedRouteHandler
-import io.umain.munchies.android.features.restaurant.presentation.restaurantlist.RestaurantListScreen
 import io.umain.munchies.android.navigation.LocalRouteRegistry
 import io.umain.munchies.feature.restaurant.di.RestaurantListScope
 import io.umain.munchies.feature.restaurant.di.getRestaurantNavigationViewModel
@@ -19,8 +15,8 @@ import org.koin.core.scope.Scope
 
 class RestaurantListRouteHandlerAndroid(
     private val commonHandler: RestaurantListRouteHandler = RestaurantListRouteHandler
-) : ScopedRouteHandler, RouteComposableBuilder, RouteNavigationMapper {
-    
+) : ScopedRouteHandler, RouteNavigationMapper {
+
     override val route: Route = commonHandler.route
     
     override fun toRouteString(): String = commonHandler.toRouteString()
@@ -40,18 +36,6 @@ class RestaurantListRouteHandlerAndroid(
                 scopeId = scopeId,
                 qualifier = named(RestaurantListScope.qualifierName)
             )
-    }
-    
-    override fun buildComposable(
-        navGraphBuilder: NavGraphBuilder,
-        coordinator: AppCoordinator
-    ) {
-        navGraphBuilder.composable(toRouteString()) {
-            val registry = LocalRouteRegistry.current
-            val scope = registry.createScopeForRoute(route)
-            val navigationViewModel = scope.getRestaurantNavigationViewModel()
-            RestaurantListScreen(navigationViewModel)
-        }
     }
 
     override fun mapDestinationToNavRoute(destination: Destination): String? =
