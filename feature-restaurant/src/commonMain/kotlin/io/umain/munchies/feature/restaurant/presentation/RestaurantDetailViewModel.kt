@@ -2,7 +2,7 @@ package io.umain.munchies.feature.restaurant.presentation
 
 import io.umain.munchies.core.lifecycle.KmpViewModel
 import io.umain.munchies.core.localization.StringResources
-import io.umain.munchies.core.localization.stringResource
+import io.umain.munchies.core.localization.StringResourceProvider
 import io.umain.munchies.core.state.ViewModelState
 import io.umain.munchies.core.viewmodel.ScopedViewModel
 import io.umain.munchies.feature.restaurant.navigation.RestaurantNavigationViewModel
@@ -17,6 +17,7 @@ class RestaurantDetailViewModel(
     private val restaurantId: String,
     private val repository: RestaurantRepository,
     private val navigationViewModel: RestaurantNavigationViewModel,
+    private val stringProvider: StringResourceProvider
 ) : KmpViewModel(), ScopedViewModel, ViewModelState<RestaurantDetailUiState> {
 
     private val _stateFlow =
@@ -26,19 +27,15 @@ class RestaurantDetailViewModel(
 
     override val stateFlow: StateFlow<RestaurantDetailUiState> = _stateFlow
 
-    init {
-        load()
-    }
-
-    private fun load() {
+    fun load() {
         scope.launch {
             try {
                 val restaurants = repository.getRestaurants()
                 val restaurant = restaurants.find { it.id == restaurantId }
                 if (restaurant != null) {
                     val status = repository.getRestaurantsOpenById(restaurantId)
-                    val statusOpenText = stringResource(StringResources.restaurant_status_open)
-                    val statusClosedText = stringResource(StringResources.restaurant_status_closed)
+                    val statusOpenText = stringProvider.stringResource(StringResources.restaurant_status_open)
+                    val statusClosedText = stringProvider.stringResource(StringResources.restaurant_status_closed)
                     _stateFlow.value =
                         RestaurantDetailUiState.Success(
                             restaurant.toDetailCardData(

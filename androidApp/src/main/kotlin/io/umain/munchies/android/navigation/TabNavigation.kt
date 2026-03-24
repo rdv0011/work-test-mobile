@@ -21,18 +21,13 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import io.umain.munchies.core.ui.IconId
-import io.umain.munchies.core.localization.stringResource
 import io.umain.munchies.designtokens.DesignTokens
 import io.umain.munchies.android.ui.toComposeColor
 import io.umain.munchies.android.ui.toComposeTextStyle
 import io.umain.munchies.navigation.AppCoordinator
 import io.umain.munchies.navigation.TabNavigationState
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.with
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.LayoutDirection
-import io.umain.munchies.android.navigation.ScreenTransitionAnimations
+import io.umain.munchies.core.localization.StringResourceProvider
 
 /**
  * Tab navigation scaffold that shows a bottom navigation bar
@@ -52,6 +47,7 @@ fun TabNavigationScaffold(
     tabNavigationState: TabNavigationState,
     coordinator: AppCoordinator,
     modifier: Modifier = Modifier,
+    stringProvider: StringResourceProvider,
     content: @Composable () -> Unit
 ) {
     val cardColor = DesignTokens.Colors.Background.card.toComposeColor()
@@ -61,30 +57,32 @@ fun TabNavigationScaffold(
 
     Column(modifier = modifier.fillMaxSize()) {
         // Main content — takes all remaining vertical space
-        Box(modifier = Modifier.weight(1f).fillMaxSize()) {
-    val activeTab = tabNavigationState.activeTabId
-    AnimatedContent(
-        targetState = activeTab,
-        transitionSpec = { ScreenTransitionAnimations.fadeOnlyTransition },
-        modifier = Modifier.fillMaxSize()
-    ) { targetTabId ->
-        content()
-    }
+        Box(modifier = Modifier
+            .weight(1f)
+            .fillMaxSize()) {
+            val activeTab = tabNavigationState.activeTabId
+            AnimatedContent(
+                targetState = activeTab,
+                transitionSpec = { ScreenTransitionAnimations.fadeOnlyTransition },
+                modifier = Modifier.fillMaxSize()
+            ) { _ ->
+                content()
+            }
 
-    // Gradient overlay at the bottom of the content area,
-    // fading from transparent to the bar colour
-    Box(
-        modifier = Modifier
-            .align(Alignment.BottomCenter)
-            .fillMaxWidth()
-            .height(4.dp)
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(Color.Transparent, cardColor)
-                )
+            // Gradient overlay at the bottom of the content area,
+            // fading from transparent to the bar colour
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .height(4.dp)
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(Color.Transparent, cardColor)
+                        )
+                    )
             )
-    )
-}
+        }
 
         // Bottom navigation bar
         NavigationBar(
@@ -105,12 +103,12 @@ fun TabNavigationScaffold(
                                 IconId.Settings -> Icons.Filled.Settings
                                 else -> Icons.Filled.Home
                             },
-                            contentDescription = stringResource(tabDef.label)
+                            contentDescription = stringProvider.stringResource(tabDef.label)
                         )
                     },
                     label = {
                         Text(
-                            text = stringResource(tabDef.label),
+                            text = stringProvider.stringResource(tabDef.label),
                             style = DesignTokens.Typography.TextStyles.footer1.toComposeTextStyle()
                         )
                     },

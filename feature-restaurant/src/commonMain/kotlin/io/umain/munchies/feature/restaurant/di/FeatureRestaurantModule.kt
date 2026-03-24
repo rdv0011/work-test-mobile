@@ -34,7 +34,7 @@ val featureRestaurantModule = module {
 
     // Restaurant List scope (singleton per app session, managed by RouteRegistry)
     scope(named(RestaurantListScope.qualifierName)) {
-        scoped { RestaurantListViewModel(get()) }
+        scoped { RestaurantListViewModel(get(), get()) }
     }
 
     // Restaurant Detail scope (parameterized per restaurant, managed by RouteRegistry)
@@ -43,7 +43,8 @@ val featureRestaurantModule = module {
             RestaurantDetailViewModel(
                 restaurantId = restaurantId,
                 repository = get(),
-                navigationViewModel = get()
+                navigationViewModel = get(),
+                stringProvider = get(),
             )
         }
     }

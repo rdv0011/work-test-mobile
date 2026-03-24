@@ -2,7 +2,7 @@ package io.umain.munchies.feature.restaurant.presentation
 
 import io.umain.munchies.core.lifecycle.KmpViewModel
 import io.umain.munchies.core.localization.StringResources
-import io.umain.munchies.core.localization.stringResource
+import io.umain.munchies.core.localization.StringResourceProvider
 import io.umain.munchies.core.state.ViewModelState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,6 +17,7 @@ import kotlinx.coroutines.delay
 
 class RestaurantListViewModel(
     private val repository: RestaurantRepository,
+    private val stringProvider: StringResourceProvider
 ): KmpViewModel(), ViewModelState<RestaurantListUiState> {
     private val _stateFlow = MutableStateFlow<RestaurantListUiState>(RestaurantListUiState.Loading)
     override val stateFlow: StateFlow<RestaurantListUiState> = _stateFlow
@@ -42,7 +43,7 @@ class RestaurantListViewModel(
                 state = RestaurantListUiState.Success(
                     restaurants = allRestaurants.map {
                         it.toCardData(
-                            stringResource(
+                            stringProvider.stringResource(
                                 StringResources.rating_format,
                                 it.rating.toDouble()
                             )
@@ -78,7 +79,7 @@ class RestaurantListViewModel(
                 state = RestaurantListUiState.Success(
                     restaurants = restaurants.map {
                         it.toCardData(
-                            stringResource(
+                            stringProvider.stringResource(
                                 StringResources.rating_format,
                                 it.rating.toDouble()
                             )
@@ -93,8 +94,7 @@ class RestaurantListViewModel(
                     }
                 )
             } catch (t: Throwable) {
-                state =
-                    RestaurantListUiState.Error(message = t.message ?: "Unknown error")
+                state = RestaurantListUiState.Error(message = t.message ?: "Unknown error")
             }
             state = state.copyIsFiltering(false)
         }

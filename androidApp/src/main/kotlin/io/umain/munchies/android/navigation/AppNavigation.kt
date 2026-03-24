@@ -12,6 +12,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.mutableStateOf
@@ -23,6 +24,8 @@ import androidx.compose.ui.unit.LayoutDirection
 import io.umain.munchies.android.features.restaurant.presentation.restaurantdetail.RestaurantDetailScreen
 import io.umain.munchies.android.features.restaurant.presentation.restaurantlist.RestaurantListScreen
 import io.umain.munchies.android.features.settings.presentation.SettingsScreen
+import io.umain.munchies.core.localization.StringResourceProvider
+import io.umain.munchies.core.localization.getStringResourceProvider
 import io.umain.munchies.feature.restaurant.di.getRestaurantNavigationViewModel
 import io.umain.munchies.feature.settings.di.getSettingsNavigationViewModel
 import io.umain.munchies.navigation.AppCoordinator
@@ -44,6 +47,7 @@ import io.umain.munchies.navigation.RouteProvider
 import io.umain.munchies.navigation.ScopedRouteHandler
 import io.umain.munchies.navigation.SettingsRoute
 import io.umain.munchies.navigation.SubmitReviewModalRoute
+import io.umain.munchies.navigation.TabNavigationState
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -56,18 +60,26 @@ val LocalRouteRegistry = compositionLocalOf<RouteRegistry> {
 fun AppNavigation(
     coordinator: AppCoordinator,
     pendingDeepLinkUri: Uri? = null,
-    routeProviders: List<RouteProvider> = AndroidAppRouteProviders.create().getAllProviders()
+    routeProviders: List<RouteProvider> = AndroidAppRouteProviders.create().getAllProviders(),
+    stringProvider: StringResourceProvider = getStringResourceProvider()
 ) {
     val allHandlers = remember {
         routeProviders.flatMap { it.getRoutes() }.filterIsInstance<ScopedRouteHandler>()
     }
     val scopedRouteHandlerRegistry = remember { ScopedRouteHandlerRegistry(allHandlers) }
+    val navigationState = coordinator.navigationState.collectAsState().value
     val registry = remember { RouteRegistry(scopedRouteHandlerRegistry) }
+
+    // Ensure cleanup of inactive route scopes on navigation changes
+    LaunchedEffect(navigationState) {
+        val activeRoutes = navigationState.tabNavigation.getActiveTabStack().map { it.key }.toSet()
+        registry.cleanup(activeRoutes)
+    }
+
     val modalStack = remember {
         mutableStateOf<List<ModalRoute>>(emptyList())
     }
     val deepLinkProcessed = remember { mutableStateOf(pendingDeepLinkUri == null) }
-    val navigationState = coordinator.navigationState.collectAsState().value
 
     LaunchedEffect(coordinator, pendingDeepLinkUri) {
         launch {
@@ -99,9 +111,10 @@ fun AppNavigation(
             TabNavigationScaffold(
                 tabNavigationState = tabNavState,
                 coordinator = coordinator,
+                stringProvider = stringProvider,
                 modifier = Modifier.fillMaxSize()
             ) {
-                renderTabContent(tabNavState)
+                renderTabContent(tabNavState, registry, stringProvider)
                 renderModalsIfNeeded(modalStack, registry, coordinator)
             }
         }
@@ -112,7 +125,9 @@ fun AppNavigation(
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 private fun renderTabContent(
-    tabNavState: io.umain.munchies.navigation.TabNavigationState,
+    tabNavState: TabNavigationState,
+    registry: RouteRegistry,
+    stringProvider: StringResourceProvider
 ) {
     val stack = tabNavState.getActiveTabStack()
     val currentRoute = stack.lastOrNull()
@@ -139,28 +154,27 @@ private fun renderTabContent(
         },
         modifier = Modifier.fillMaxSize()
     ) { route ->
-        RouteRenderer(route)
+        RouteRenderer(route, registry, stringProvider)
     }
 }
 
 @Composable
-private fun RouteRenderer(route: Route?) {
-    val registry = LocalRouteRegistry.current
+private fun RouteRenderer(route: Route?, registry: RouteRegistry, stringProvider: StringResourceProvider) {
     when (route) {
         is RestaurantListRoute -> {
             val scope = registry.createScopeForRoute(route)
             val navigationViewModel = scope.getRestaurantNavigationViewModel()
-            RestaurantListScreen(navigationViewModel)
+            RestaurantListScreen(navigationViewModel, stringProvider = stringProvider)
         }
         is RestaurantDetailRoute -> {
             val scope = registry.createScopeForRoute(route)
             val navigationViewModel = scope.getRestaurantNavigationViewModel()
-            RestaurantDetailScreen(route.restaurantId, navigationViewModel)
+            RestaurantDetailScreen(route.restaurantId, navigationViewModel, stringProvider = stringProvider)
         }
         is SettingsRoute -> {
             val scope = registry.createScopeForRoute(route)
             val navigationViewModel = scope.getSettingsNavigationViewModel()
-            SettingsScreen(navigationViewModel)
+            SettingsScreen(stringProvider = stringProvider)
         }
         null -> Unit
     }
@@ -209,7 +223,7 @@ private fun renderModalsIfNeeded(
 
 private fun handleNavigationEvent(
     event: NavigationEvent,
-    modalStack: androidx.compose.runtime.MutableState<List<ModalRoute>>,
+    modalStack: MutableState<List<ModalRoute>>,
 ) {
     when (event) {
         is NavigationEvent.ShowModal -> {

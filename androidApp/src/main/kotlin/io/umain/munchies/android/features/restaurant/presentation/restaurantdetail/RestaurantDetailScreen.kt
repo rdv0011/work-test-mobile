@@ -17,35 +17,35 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.unit.dp
-import androidx.compose.runtime.remember
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import io.umain.munchies.android.navigation.LocalRouteRegistry
 import io.umain.munchies.android.ui.components.DetailCardCompose
+import io.umain.munchies.android.ui.components.RestaurantDetailSkeleton
 import io.umain.munchies.android.ui.theme.MunchiesTheme
-import io.umain.munchies.core.localization.stringResource
+import io.umain.munchies.core.localization.StringResourceProvider
 import io.umain.munchies.core.localization.StringResources
 import io.umain.munchies.designtokens.DesignTokens
+import io.umain.munchies.feature.restaurant.navigation.RestaurantNavigationViewModel
 import io.umain.munchies.feature.restaurant.presentation.RestaurantDetailViewModel
 import io.umain.munchies.feature.restaurant.presentation.model.DetailCardData
 import io.umain.munchies.feature.restaurant.presentation.state.RestaurantDetailUiState
 import io.umain.munchies.navigation.RestaurantDetailRoute
-import io.umain.munchies.feature.restaurant.navigation.RestaurantNavigationViewModel
+import org.koin.core.parameter.parametersOf
 
 @Composable
 fun RestaurantDetailContent(
@@ -54,7 +54,7 @@ fun RestaurantDetailContent(
     onLeaveReviewClick: (restaurantId: String) -> Unit,
     modifier: Modifier = Modifier,
     restaurantId: String = "",
-    backButtonContentDescription: String? = null,
+    stringProvider: StringResourceProvider,
 ) {
     Column(
         modifier = modifier.fillMaxSize()
@@ -67,7 +67,7 @@ fun RestaurantDetailContent(
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    CircularProgressIndicator()
+                    RestaurantDetailSkeleton()
                 }
             }
 
@@ -98,13 +98,11 @@ fun RestaurantDetailContent(
                                 .align(Alignment.TopStart)
                                 .padding(start = 16.dp, top = 40.dp)
                                 .size(40.dp)
-                                .clip(CircleShape)
-                                .background(Color.Transparent)
-                                .shadow(4.dp, CircleShape, clip = false)
+                                .background(Color.White.copy(alpha = 0.6f), shape = CircleShape)
                         ) {
                              Icon(
                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                   contentDescription = backButtonContentDescription ?: stringResource(StringResources.accessibility_back_button)
+                                   contentDescription = stringProvider.stringResource(StringResources.accessibility_back_button)
                                )
                           }
                       }
@@ -156,28 +154,35 @@ fun RestaurantDetailContent(
 fun RestaurantDetailScreen(
     restaurantId: String,
     navigationViewModel: RestaurantNavigationViewModel,
+    stringProvider: StringResourceProvider,
 ) {
     val registry = LocalRouteRegistry.current
     val route = remember { RestaurantDetailRoute(restaurantId) }
 
     val viewModel = remember {
         val scope = registry.createScopeForRoute(route)
-        scope.get<RestaurantDetailViewModel>()
+        scope.get<RestaurantDetailAndroidViewModel>(parameters = { parametersOf(restaurantId) })
     }
-    val uiState by viewModel.stateFlow.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(Unit) { viewModel.load() }
 
     RestaurantDetailContent(
         uiState = uiState,
         restaurantId = restaurantId,
         onBackClick = { navigationViewModel.navigateBack() },
         onLeaveReviewClick = { navigationViewModel.showSubmitReviewModal(it) },
-        backButtonContentDescription = stringResource(StringResources.accessibility_back_button)
+        stringProvider = stringProvider
     )
 }
 
 @Preview(showBackground = true)
 @Composable
 private fun RestaurantDetailScreenPreview() {
+    val fakeStringProvider = object : StringResourceProvider {
+        override fun stringResource(key: String, vararg args: Any) = "Preview"
+        override fun pluralResource(key: String, quantity: Int, vararg args: Any) = "Preview"
+    }
     MunchiesTheme {
         RestaurantDetailContent(
             uiState = RestaurantDetailUiState.Success(
@@ -192,7 +197,7 @@ private fun RestaurantDetailScreenPreview() {
             restaurantId = "1",
             onBackClick = {},
             onLeaveReviewClick = {},
-            backButtonContentDescription = "Back",
+            stringProvider = fakeStringProvider,
         )
     }
 }

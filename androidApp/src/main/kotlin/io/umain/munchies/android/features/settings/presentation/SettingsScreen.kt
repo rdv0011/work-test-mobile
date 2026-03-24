@@ -19,17 +19,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.umain.munchies.feature.settings.presentation.SettingsViewModel
-import io.umain.munchies.core.localization.stringResource
 import io.umain.munchies.core.localization.StringResources
 import io.umain.munchies.designtokens.DesignTokens
 import io.umain.munchies.android.navigation.LocalRouteRegistry
+import io.umain.munchies.core.localization.StringResourceProvider
 import io.umain.munchies.navigation.SettingsRoute
-import io.umain.munchies.feature.settings.navigation.SettingsNavigationViewModel
 
 @Composable
 fun SettingsScreen(
-    navigationViewModel: SettingsNavigationViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    stringProvider: StringResourceProvider,
 ) {
     val registry = LocalRouteRegistry.current
     val route = remember { SettingsRoute() }
@@ -50,7 +49,7 @@ fun SettingsScreen(
                 .padding(DesignTokens.Spacing.lg.dp)
         ) {
             Text(
-                text = stringResource(StringResources.settings_title),
+                text = stringProvider.stringResource(StringResources.settings_title),
                 style = MaterialTheme.typography.headlineLarge
             )
 
@@ -63,7 +62,7 @@ fun SettingsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = stringResource(StringResources.settings_dark_mode),
+                    text = stringProvider.stringResource(StringResources.settings_dark_mode),
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.bodyLarge
                 )
@@ -80,7 +79,7 @@ fun SettingsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = stringResource(StringResources.settings_notifications),
+                    text = stringProvider.stringResource(StringResources.settings_notifications),
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.bodyLarge
                 )
@@ -97,7 +96,7 @@ fun SettingsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = stringResource(StringResources.settings_about),
+                    text = stringProvider.stringResource(StringResources.settings_about),
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.bodyLarge
                 )

@@ -8,14 +8,18 @@ fun setApplicationContext(context: Context) {
     androidContext = context
 }
 
-actual fun stringResource(key: StringKey, vararg args: Any): String {
-    val context = androidContext ?: throw IllegalStateException("Application context not set. Call setApplicationContext() in MainActivity.onCreate()")
-    return getStringResource(context, key, *args)
+class AndroidStringResourceProvider(private val context: Context) : StringResourceProvider {
+    override fun stringResource(key: StringKey, vararg args: Any): String {
+        return getStringResource(context, key, *args)
+    }
+    override fun pluralResource(key: StringKey, quantity: Int, vararg args: Any): String {
+        return getPluralResource(context, key, quantity, *args)
+    }
 }
 
-actual fun pluralResource(key: StringKey, quantity: Int, vararg args: Any): String {
+actual fun getStringResourceProvider(): StringResourceProvider {
     val context = androidContext ?: throw IllegalStateException("Application context not set. Call setApplicationContext() in MainActivity.onCreate()")
-    return getPluralResource(context, key, quantity, *args)
+    return AndroidStringResourceProvider(context)
 }
 
 private fun getStringResource(context: Context, key: String, vararg args: Any): String {

@@ -12,7 +12,6 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,12 +21,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -46,17 +42,19 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.umain.munchies.android.R
 import io.umain.munchies.android.navigation.LocalRouteRegistry
 import io.umain.munchies.android.ui.components.FilterChipCompose
+import io.umain.munchies.android.ui.components.FilterChipSkeleton
 import io.umain.munchies.android.ui.components.RestaurantCardCompose
 import io.umain.munchies.android.ui.components.RestaurantCardSkeleton
-import io.umain.munchies.android.ui.components.FilterChipSkeleton
 import io.umain.munchies.android.ui.theme.MunchiesTheme
 import io.umain.munchies.android.ui.toComposeColor
 import io.umain.munchies.android.ui.toComposeTextStyle
+import io.umain.munchies.core.localization.StringResourceProvider
 import io.umain.munchies.core.localization.StringResources
-import io.umain.munchies.core.localization.stringResource
+import io.umain.munchies.core.navigation.NavigationDispatcher
 import io.umain.munchies.designtokens.DesignTokens
 import io.umain.munchies.feature.restaurant.navigation.RestaurantNavigationViewModel
 import io.umain.munchies.feature.restaurant.presentation.state.RestaurantListUiState
+import io.umain.munchies.navigation.AppCoordinator
 import io.umain.munchies.navigation.RestaurantListRoute
 
 /**
@@ -75,6 +73,7 @@ import io.umain.munchies.navigation.RestaurantListRoute
 @Composable
 fun RestaurantListScreen(
     navigationViewModel: RestaurantNavigationViewModel,
+    stringProvider: StringResourceProvider,
     modifier: Modifier = Modifier
 ) {
     val registry = LocalRouteRegistry.current
@@ -183,7 +182,7 @@ fun RestaurantListScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues)
-                        .padding(horizontal = DesignTokens.Spacing.lg.dp,)
+                        .padding(horizontal = DesignTokens.Spacing.lg.dp)
                 ) {
                     Column(
                         modifier = Modifier
@@ -244,7 +243,7 @@ fun RestaurantListScreen(
                         }
                     ) { count ->
                         Text(
-                            text = stringResource(StringResources.restaurantsResultCount, count),
+                            text = stringProvider.stringResource(StringResources.restaurantsResultCount, count),
                             style = DesignTokens.Typography.TextStyles.title2.toComposeTextStyle()
                         )
                     }
@@ -309,40 +308,18 @@ fun RestaurantListScreen(
 @Preview(showBackground = true)
 @Composable
 private fun RestaurantListScreenPreview() {
+    val fakeStringProvider = object : StringResourceProvider {
+        override fun stringResource(key: String, vararg args: Any) = "Preview"
+        override fun pluralResource(key: String, quantity: Int, vararg args: Any) = "Preview"
+    }
+    // Fake AppCoordinator for preview
+    val fakeCoordinator = object : AppCoordinator() {}
+    val fakeDispatcher = NavigationDispatcher(fakeCoordinator)
+    val fakeNavigationViewModel = RestaurantNavigationViewModel(fakeDispatcher)
     MunchiesTheme {
-        // TODO: Replace with actual ViewModel preview once state management pattern is finalized
-        // Preview shown with Scaffold container only - full mock state integration pending
-        Scaffold(
-            modifier = Modifier.fillMaxSize()
-        ) { paddingValues ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(horizontal = DesignTokens.Spacing.lg.dp)
-                    .padding(vertical = DesignTokens.Spacing.lg.dp),
-                horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.Top
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_logo),
-                        contentDescription = "Logo",
-                        modifier = Modifier.size(55.dp, 54.dp)
-                    )
-                    IconButton(onClick = {}) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_tune),
-                            contentDescription = "Filters",
-                            tint = DesignTokens.Colors.Text.picto.toComposeColor()
-                        )
-                    }
-                }
-            }
-        }
+        RestaurantListScreen(
+            navigationViewModel = fakeNavigationViewModel,
+            stringProvider = fakeStringProvider
+        )
     }
 }
