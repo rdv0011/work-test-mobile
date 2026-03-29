@@ -1,11 +1,11 @@
 package io.umain.munchies.feature.settings.presentation
 
-import io.umain.munchies.core.lifecycle.KmpViewModel
+import io.umain.munchies.core.lifecycle.LifecycleOwner
 import io.umain.munchies.core.state.ViewModelState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
-class SettingsViewModel : KmpViewModel(), ViewModelState<SettingsUiState> {
+class SettingsViewModel : LifecycleOwner(), ViewModelState<SettingsUiState> {
     private val _stateFlow = MutableStateFlow(SettingsUiState())
     override val stateFlow: StateFlow<SettingsUiState> = _stateFlow
 

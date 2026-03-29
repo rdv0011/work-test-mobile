@@ -208,8 +208,19 @@ open class AppCoordinator(
      * Apply navigation state from a deep link URL
      */
     fun applyDeepLink(deepLink: String) {
-        val navigationState = DeepLinkParser.parseDeepLink(deepLink)
-        applyNavigationState(navigationState)
+        val parser = DeepLinkParser(routeHandlers.filterIsInstance<DeepLinkHandler>())
+        when (val result = parser.parse(deepLink)) {
+            is DeepLinkResult.Success -> applyNavigationState(result.navigationState, result.clearCurrentStack)
+            is DeepLinkResult.Partial -> applyNavigationState(result.navigationState, result.clearCurrentStack)
+            is DeepLinkResult.NotFound -> {
+                // Optionally log or handle not found
+                logInfo("AppCoordinator", "Deep link not found: $deepLink")
+            }
+            is DeepLinkResult.Error -> {
+                // Optionally log or handle error
+                logInfo("AppCoordinator", "Deep link error: ${result.link}, exception: ${result.exception}")
+            }
+        }
     }
 
     /**
@@ -226,8 +237,10 @@ open class AppCoordinator(
      */
     open fun reduceState(event: NavigationEvent) {
         val currentState = _navigationState.value
-        logInfo("AppCoordinator", "🔄 reduceState: Event=${event::class.simpleName}, handlers=${routeHandlers.size}")
+        logInfo("AppCoordinator", "🔄 reduceState: Event={event::class.simpleName}, handlers=${routeHandlers.size}")
         val newState = NavigationReducer.reduce(currentState, event, routeHandlers)
+        // Close Koin scopes for removed routes
+        NavigationEffects.handleNavigationSideEffects(currentState, newState)
         logInfo("AppCoordinator", "🔄 reduceState: Event=${event::class.simpleName}, Old route=${getRouteKey(currentState)}, New route=${getRouteKey(newState)}")
         _navigationState.value = newState
         logInfo("AppCoordinator", "✅ State updated and emitted via StateFlow")

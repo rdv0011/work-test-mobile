@@ -1,20 +1,22 @@
 package io.umain.munchies.feature.restaurant.di
 
 import io.ktor.client.HttpClient
+import io.umain.munchies.core.localization.StringResourceProvider
 import io.umain.munchies.core.navigation.NavigationDispatcher
 import io.umain.munchies.feature.restaurant.data.remote.KtorRestaurantApi
 import io.umain.munchies.feature.restaurant.data.repository.RestaurantRepositoryImpl
 import io.umain.munchies.feature.restaurant.domain.repository.RestaurantRepository
-import io.umain.munchies.feature.restaurant.navigation.RestaurantNavigationViewModel
+import io.umain.munchies.feature.restaurant.navigation.RestaurantDeepLinkHandler
 import io.umain.munchies.feature.restaurant.navigation.RestaurantDetailRouteHandler
 import io.umain.munchies.feature.restaurant.navigation.RestaurantListRouteHandler
+import io.umain.munchies.feature.restaurant.navigation.RestaurantNavigationViewModel
+import io.umain.munchies.feature.restaurant.navigation.ReviewsDeepLinkHandler
 import io.umain.munchies.feature.restaurant.presentation.RestaurantDetailViewModel
 import io.umain.munchies.feature.restaurant.presentation.RestaurantListViewModel
 import io.umain.munchies.navigation.RouteHandler
+import org.koin.core.qualifier.named
 import org.koin.dsl.bind
 import org.koin.dsl.module
-import org.koin.core.qualifier.TypeQualifier
-import org.koin.core.qualifier.named
 
 val featureRestaurantModule = module {
 
@@ -30,22 +32,27 @@ val featureRestaurantModule = module {
 
     // Register route handlers
     single { RestaurantListRouteHandler } bind RouteHandler::class
-    single { RestaurantDetailRouteHandler } bind RouteHandler::class
+    single { RestaurantDetailRouteHandler }
+
+    // Register deep link handlers
+    single { RestaurantDeepLinkHandler() }
+    single { ReviewsDeepLinkHandler() }
 
     // Restaurant List scope (singleton per app session, managed by RouteRegistry)
     scope(named(RestaurantListScope.qualifierName)) {
-        scoped { RestaurantListViewModel(get(), get()) }
+        scoped<RestaurantListViewModel> { RestaurantListViewModel(get(), get()) }
     }
 
-    // Restaurant Detail scope (parameterized per restaurant, managed by RouteRegistry)
-    scope(named(RestaurantDetailScope("").qualifierName)) {
-        scoped { (restaurantId: String) ->
-            RestaurantDetailViewModel(
-                restaurantId = restaurantId,
-                repository = get(),
-                navigationViewModel = get(),
-                stringProvider = get(),
-            )
-        }
+    // Register RestaurantDetailViewModel as a factory with parameters
+    factory { (restaurantId: String) ->
+        val repository = get<RestaurantRepository>()
+        val stringProvider = get<StringResourceProvider>()
+        val navigationViewModel = get<RestaurantNavigationViewModel>()
+        RestaurantDetailViewModel(
+            restaurantId = restaurantId,
+            repository = repository,
+            navigationViewModel = navigationViewModel,
+            stringProvider = stringProvider
+        )
     }
 }

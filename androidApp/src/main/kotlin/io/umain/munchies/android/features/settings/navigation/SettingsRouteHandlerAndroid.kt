@@ -6,6 +6,7 @@ import io.umain.munchies.navigation.Destination
 import io.umain.munchies.navigation.Route
 import io.umain.munchies.navigation.RouteNavigationMapper
 import io.umain.munchies.navigation.ScopedRouteHandler
+import io.umain.munchies.navigation.SettingsRoute
 import org.koin.core.context.GlobalContext
 import org.koin.core.qualifier.named
 import org.koin.core.scope.Scope
@@ -25,7 +26,7 @@ class SettingsRouteHandlerAndroid(
         commonHandler.destinationToRoute(destination)
     
     override fun createScope(route: Route): Scope {
-        require(route is io.umain.munchies.navigation.SettingsRoute) { "Expected SettingsRoute, got $route" }
+        require(route is SettingsRoute) { "Expected SettingsRoute, got $route" }
         val koin = GlobalContext.get()
         val scopeId = route.key
         return koin.getScopeOrNull(scopeId)

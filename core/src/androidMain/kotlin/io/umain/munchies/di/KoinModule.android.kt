@@ -18,6 +18,14 @@ actual fun createAppCoordinator(): AppCoordinator {
     } catch (e: Exception) {
         emptyList()
     }
+    // Debug logging for registered RouteHandlers
+    android.util.Log.d("KoinModule.android", "Registered RouteHandlers: ${handlers.size}")
+    handlers.forEachIndexed { i, h ->
+        android.util.Log.d("KoinModule.android", "  [$i] ${h::class.qualifiedName}")
+    }
+    if (handlers.size <= 1) {
+        android.util.Log.e("KoinModule.android", "Only one RouteHandler registered! This will break navigation. Make sure all feature modules are loaded before createAppCoordinator().")
+    }
     val coordinator = AppCoordinator(routeHandlers = handlers)
     koin.declare(coordinator)
     koin.declare(NavigationDispatcher(coordinator))

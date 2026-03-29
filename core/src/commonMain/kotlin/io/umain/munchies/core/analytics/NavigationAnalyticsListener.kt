@@ -4,7 +4,7 @@ import io.umain.munchies.navigation.NavigationState
 import io.umain.munchies.navigation.Route
 import io.umain.munchies.navigation.RestaurantDetailRoute
 import io.umain.munchies.navigation.TabNavigationState
-import io.umain.munchies.core.lifecycle.KmpViewModel
+import io.umain.munchies.core.lifecycle.LifecycleOwner
 import io.umain.munchies.core.util.currentTimeMillis
 import io.umain.munchies.logging.logInfo
 import kotlinx.coroutines.flow.StateFlow
@@ -16,7 +16,7 @@ class NavigationAnalyticsListener(
     private val analyticsService: AnalyticsService,
     private val navigationStateFlow: StateFlow<NavigationState>,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default
-) : KmpViewModel() {
+) : LifecycleOwner() {
 
     private var previousState: NavigationState? = null
     private val modalOpenTimes = mutableMapOf<String, Long>()

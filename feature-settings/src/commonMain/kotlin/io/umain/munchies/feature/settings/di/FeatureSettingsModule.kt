@@ -1,21 +1,20 @@
 package io.umain.munchies.feature.settings.di
 
-import io.umain.munchies.core.navigation.NavigationDispatcher
-import io.umain.munchies.feature.settings.navigation.SettingsNavigationViewModel
+import io.umain.munchies.feature.settings.navigation.SettingsDeepLinkHandler
 import io.umain.munchies.feature.settings.navigation.SettingsRouteHandler
 import io.umain.munchies.feature.settings.presentation.SettingsViewModel
+import io.umain.munchies.navigation.DeepLinkHandler
 import io.umain.munchies.navigation.RouteHandler
-import org.koin.core.parameter.parametersOf
 import org.koin.dsl.bind
 import org.koin.dsl.module
 import org.koin.core.qualifier.named
-import org.koin.core.scope.Scope
 
 val featureSettingsModule = module {
 
-    single { SettingsNavigationViewModel(get<NavigationDispatcher>()) }
-
     single { SettingsRouteHandler } bind RouteHandler::class
+
+    // Register deep link handler
+    single { SettingsDeepLinkHandler() } bind DeepLinkHandler::class
 
     scope(named(SettingsScope.qualifierName)) {
         scoped { SettingsViewModel() }

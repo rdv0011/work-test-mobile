@@ -1,6 +1,6 @@
 package io.umain.munchies.core.navigation
 
-import io.umain.munchies.core.lifecycle.KmpViewModel
+import io.umain.munchies.core.lifecycle.LifecycleOwner
 import io.umain.munchies.navigation.AppCoordinator
 import io.umain.munchies.navigation.Destination
 import io.umain.munchies.navigation.ModalDestination
@@ -14,7 +14,7 @@ import io.umain.munchies.navigation.ModalDestination
  */
 class NavigationDispatcher(
     private val coordinator: AppCoordinator
-) : KmpViewModel() {
+) : LifecycleOwner() {
     
     /**
      * Navigate to a typed destination (screen/route).

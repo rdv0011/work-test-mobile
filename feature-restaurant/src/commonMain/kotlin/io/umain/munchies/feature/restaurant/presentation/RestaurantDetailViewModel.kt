@@ -1,10 +1,9 @@
 package io.umain.munchies.feature.restaurant.presentation
 
-import io.umain.munchies.core.lifecycle.KmpViewModel
+import io.umain.munchies.core.lifecycle.LifecycleOwner
 import io.umain.munchies.core.localization.StringResources
 import io.umain.munchies.core.localization.StringResourceProvider
 import io.umain.munchies.core.state.ViewModelState
-import io.umain.munchies.core.viewmodel.ScopedViewModel
 import io.umain.munchies.feature.restaurant.navigation.RestaurantNavigationViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -12,13 +11,14 @@ import kotlinx.coroutines.launch
 import io.umain.munchies.feature.restaurant.domain.repository.RestaurantRepository
 import io.umain.munchies.feature.restaurant.presentation.model.toDetailCardData
 import io.umain.munchies.feature.restaurant.presentation.state.RestaurantDetailUiState
+import io.umain.munchies.logging.logInfo
 
 class RestaurantDetailViewModel(
     private val restaurantId: String,
     private val repository: RestaurantRepository,
     private val navigationViewModel: RestaurantNavigationViewModel,
     private val stringProvider: StringResourceProvider
-) : KmpViewModel(), ScopedViewModel, ViewModelState<RestaurantDetailUiState> {
+) : LifecycleOwner(), ViewModelState<RestaurantDetailUiState> {
 
     private val _stateFlow =
         MutableStateFlow<RestaurantDetailUiState>(
@@ -26,6 +26,10 @@ class RestaurantDetailViewModel(
         )
 
     override val stateFlow: StateFlow<RestaurantDetailUiState> = _stateFlow
+
+    init {
+        logInfo("RestaurantDetailViewModel", "Created for restaurantId=$restaurantId")
+    }
 
     fun load() {
         scope.launch {
@@ -70,5 +74,10 @@ class RestaurantDetailViewModel(
                 navigationViewModel.showReviewErrorAlert(t.message ?: "Unknown error")
             }
         }
+    }
+
+    override fun onCleared() {
+        logInfo("RestaurantDetailViewModel", "onCleared called for restaurantId=$restaurantId")
+        super.onCleared()
     }
 }

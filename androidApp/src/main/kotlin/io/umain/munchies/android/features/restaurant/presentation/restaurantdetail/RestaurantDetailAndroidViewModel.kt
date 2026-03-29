@@ -3,24 +3,23 @@ package io.umain.munchies.android.features.restaurant.presentation.restaurantdet
 import androidx.lifecycle.ViewModel
 import io.umain.munchies.feature.restaurant.presentation.RestaurantDetailViewModel
 import io.umain.munchies.feature.restaurant.presentation.state.RestaurantDetailUiState
+import io.umain.munchies.logging.logInfo
+import io.umain.munchies.core.lifecycle.Closeable
 import kotlinx.coroutines.flow.StateFlow
 
 class RestaurantDetailAndroidViewModel(
     private val shared: RestaurantDetailViewModel
-) : ViewModel() {
+) : ViewModel(), Closeable {
+    init {
+        logInfo("RestaurantDetailAndroidViewModel", "Created")
+    }
+
     val uiState: StateFlow<RestaurantDetailUiState> = shared.stateFlow
 
     fun load() = shared.load()
+    fun submitReview(rating: Int, comment: String) = shared.submitReview(rating, comment)
 
-    /**
-     * Call this manually when the Koin scope is closed to ensure cleanup.
-     */
-    fun close() {
+    override fun close() {
         shared.close()
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        // No-op: cleanup is now handled by close()
     }
 }

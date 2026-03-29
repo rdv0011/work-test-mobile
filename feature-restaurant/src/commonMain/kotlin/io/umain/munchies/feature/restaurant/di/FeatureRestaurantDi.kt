@@ -10,10 +10,8 @@ import org.koin.core.context.loadKoinModules
  * On Android, this loads the common module.
  */
 fun registerFeatureRestaurantModule() {
-    logInfo("FeatureRestaurantDi", "🔧 Registering feature-restaurant module")
     try {
         loadRestaurantKoinModules()
-        logInfo("FeatureRestaurantDi", "✅ Feature-restaurant module registered successfully")
     } catch (e: Exception) {
         logInfo("FeatureRestaurantDi", "❌ Failed to register: ${e.message}")
         throw e

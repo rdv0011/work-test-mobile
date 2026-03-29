@@ -40,7 +40,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.umain.munchies.android.R
-import io.umain.munchies.android.navigation.LocalRouteRegistry
 import io.umain.munchies.android.ui.components.FilterChipCompose
 import io.umain.munchies.android.ui.components.FilterChipSkeleton
 import io.umain.munchies.android.ui.components.RestaurantCardCompose
@@ -55,7 +54,9 @@ import io.umain.munchies.designtokens.DesignTokens
 import io.umain.munchies.feature.restaurant.navigation.RestaurantNavigationViewModel
 import io.umain.munchies.feature.restaurant.presentation.state.RestaurantListUiState
 import io.umain.munchies.navigation.AppCoordinator
-import io.umain.munchies.navigation.RestaurantListRoute
+import io.umain.munchies.core.viewmodel.ViewModelStore
+import io.umain.munchies.feature.restaurant.presentation.RestaurantListViewModel
+import io.umain.munchies.feature.restaurant.domain.repository.RestaurantRepository
 
 /**
  * Restaurant List Screen
@@ -74,14 +75,17 @@ import io.umain.munchies.navigation.RestaurantListRoute
 fun RestaurantListScreen(
     navigationViewModel: RestaurantNavigationViewModel,
     stringProvider: StringResourceProvider,
+    repository: RestaurantRepository,
     modifier: Modifier = Modifier
 ) {
-    val registry = LocalRouteRegistry.current
-    val route = remember { RestaurantListRoute() }
-    
     val viewModel = remember {
-        val scope = registry.createScopeForRoute(route)
-        scope.get<RestaurantListAndroidViewModel>()
+        val sharedViewModel = ViewModelStore.getOrCreate("restaurant_list") {
+            RestaurantListViewModel(
+                repository = repository,
+                stringProvider = stringProvider
+            )
+        }
+        RestaurantListAndroidViewModel(sharedViewModel)
     }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val selectedFilterIds by viewModel.selectedFilters.collectAsStateWithLifecycle()
@@ -312,14 +316,20 @@ private fun RestaurantListScreenPreview() {
         override fun stringResource(key: String, vararg args: Any) = "Preview"
         override fun pluralResource(key: String, quantity: Int, vararg args: Any) = "Preview"
     }
-    // Fake AppCoordinator for preview
     val fakeCoordinator = object : AppCoordinator() {}
     val fakeDispatcher = NavigationDispatcher(fakeCoordinator)
     val fakeNavigationViewModel = RestaurantNavigationViewModel(fakeDispatcher)
+    val fakeRepository = object : RestaurantRepository {
+        override suspend fun getFilterById(id: String) = null
+        override suspend fun getRestaurants() = emptyList<io.umain.munchies.feature.restaurant.domain.model.Restaurant>()
+        override suspend fun getRestaurantsOpenById(id: String) = io.umain.munchies.feature.restaurant.domain.model.RestaurantStatus.CLOSED
+        override suspend fun submitReview(restaurantId: String, rating: Int, comment: String) = true
+    }
     MunchiesTheme {
         RestaurantListScreen(
             navigationViewModel = fakeNavigationViewModel,
-            stringProvider = fakeStringProvider
+            stringProvider = fakeStringProvider,
+            repository = fakeRepository
         )
     }
 }

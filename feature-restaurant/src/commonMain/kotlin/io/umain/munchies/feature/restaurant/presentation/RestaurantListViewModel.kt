@@ -1,6 +1,6 @@
 package io.umain.munchies.feature.restaurant.presentation
 
-import io.umain.munchies.core.lifecycle.KmpViewModel
+import io.umain.munchies.core.lifecycle.LifecycleOwner
 import io.umain.munchies.core.localization.StringResources
 import io.umain.munchies.core.localization.StringResourceProvider
 import io.umain.munchies.core.state.ViewModelState
@@ -18,7 +18,7 @@ import kotlinx.coroutines.delay
 class RestaurantListViewModel(
     private val repository: RestaurantRepository,
     private val stringProvider: StringResourceProvider
-): KmpViewModel(), ViewModelState<RestaurantListUiState> {
+): LifecycleOwner(), ViewModelState<RestaurantListUiState> {
     private val _stateFlow = MutableStateFlow<RestaurantListUiState>(RestaurantListUiState.Loading)
     override val stateFlow: StateFlow<RestaurantListUiState> = _stateFlow
     private var state: RestaurantListUiState

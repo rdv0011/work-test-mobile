@@ -12,7 +12,7 @@ interface Closeable {
 }
 
 @OptIn(ExperimentalStdlibApi::class)
-abstract class KmpViewModel : Closeable {
+abstract class LifecycleOwner : Closeable {
 
     private val job = SupervisorJob()
 

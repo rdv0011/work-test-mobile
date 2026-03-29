@@ -10,10 +10,8 @@ import org.koin.core.context.loadKoinModules
  * On Android, this loads the common module.
  */
 fun registerFeatureSettingsModule() {
-    logInfo("FeatureSettingsDi", "🔧 Registering feature-settings module")
     try {
         loadSettingsKoinModules()
-        logInfo("FeatureSettingsDi", "✅ Feature-settings module registered successfully")
     } catch (e: Exception) {
         logInfo("FeatureSettingsDi", "❌ Failed to register: ${e.message}")
         throw e

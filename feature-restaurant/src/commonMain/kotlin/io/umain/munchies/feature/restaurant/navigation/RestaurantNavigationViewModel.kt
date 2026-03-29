@@ -1,6 +1,6 @@
 package io.umain.munchies.feature.restaurant.navigation
 
-import io.umain.munchies.core.lifecycle.KmpViewModel
+import io.umain.munchies.core.lifecycle.LifecycleOwner
 import io.umain.munchies.core.navigation.NavigationDispatcher
 import io.umain.munchies.navigation.Destination
 import io.umain.munchies.navigation.ModalDestination
@@ -11,7 +11,7 @@ import io.umain.munchies.navigation.ModalDestination
  */
 class RestaurantNavigationViewModel(
     private val dispatcher: NavigationDispatcher
-) : KmpViewModel() {
+) : LifecycleOwner() {
     
     fun showRestaurantDetail(restaurantId: String) {
         dispatcher.navigate(Destination.RestaurantDetail(restaurantId))

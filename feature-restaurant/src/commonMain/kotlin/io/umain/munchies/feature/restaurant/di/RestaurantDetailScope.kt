@@ -6,5 +6,10 @@ data class RestaurantDetailScope(
     val restaurantId: String
 ) : KmpScopeId {
     override val value = "RestaurantDetail_$restaurantId"
-    override val qualifierName: String = "RestaurantDetailScope"
+    override val qualifierName: String = Companion.qualifierName
+
+    companion object {
+        const val qualifierName: String = "RestaurantDetailScope"
+        fun fromScopeId(scopeId: String): String = scopeId.removePrefix("RestaurantDetail_")
+    }
 }

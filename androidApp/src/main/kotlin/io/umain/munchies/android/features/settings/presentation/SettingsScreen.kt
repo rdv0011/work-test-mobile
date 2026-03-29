@@ -18,26 +18,28 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.umain.munchies.core.viewmodel.ViewModelStore
 import io.umain.munchies.feature.settings.presentation.SettingsViewModel
 import io.umain.munchies.core.localization.StringResources
 import io.umain.munchies.designtokens.DesignTokens
-import io.umain.munchies.android.navigation.LocalRouteRegistry
 import io.umain.munchies.core.localization.StringResourceProvider
-import io.umain.munchies.navigation.SettingsRoute
 
 @Composable
 fun SettingsScreen(
     modifier: Modifier = Modifier,
     stringProvider: StringResourceProvider,
 ) {
-    val registry = LocalRouteRegistry.current
-    val route = remember { SettingsRoute() }
-
     val viewModel = remember {
-        val scope = registry.createScopeForRoute(route)
-        scope.get<SettingsViewModel>()
+        ViewModelStore.getOrCreate("settings") {
+            SettingsViewModel()
+        }
     }
     val uiState by viewModel.stateFlow.collectAsStateWithLifecycle()
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        onDispose {
+            ViewModelStore.remove("settings")
+        }
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize()

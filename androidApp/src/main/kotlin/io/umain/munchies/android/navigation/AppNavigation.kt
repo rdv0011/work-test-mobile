@@ -10,24 +10,25 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
+import io.umain.munchies.android.features.restaurant.presentation.restaurantdetail.RestaurantDetailAndroidViewModel
 import io.umain.munchies.android.features.restaurant.presentation.restaurantdetail.RestaurantDetailScreen
 import io.umain.munchies.android.features.restaurant.presentation.restaurantlist.RestaurantListScreen
 import io.umain.munchies.android.features.settings.presentation.SettingsScreen
 import io.umain.munchies.core.localization.StringResourceProvider
 import io.umain.munchies.core.localization.getStringResourceProvider
-import io.umain.munchies.feature.restaurant.di.getRestaurantNavigationViewModel
-import io.umain.munchies.feature.settings.di.getSettingsNavigationViewModel
+import io.umain.munchies.feature.restaurant.di.RestaurantDetailScope
+import io.umain.munchies.feature.restaurant.domain.repository.RestaurantRepository
+import io.umain.munchies.feature.restaurant.navigation.RestaurantNavigationViewModel
+import io.umain.munchies.feature.restaurant.presentation.RestaurantDetailViewModel
 import io.umain.munchies.navigation.AppCoordinator
 import io.umain.munchies.navigation.ConfirmActionModalRoute
 import io.umain.munchies.navigation.DatePickerModalRoute
@@ -43,45 +44,28 @@ import io.umain.munchies.navigation.RestaurantListRoute
 import io.umain.munchies.navigation.ReviewErrorAlertRoute
 import io.umain.munchies.navigation.ReviewSuccessModalRoute
 import io.umain.munchies.navigation.Route
-import io.umain.munchies.navigation.RouteProvider
-import io.umain.munchies.navigation.ScopedRouteHandler
 import io.umain.munchies.navigation.SettingsRoute
 import io.umain.munchies.navigation.SubmitReviewModalRoute
 import io.umain.munchies.navigation.TabNavigationState
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-
-val LocalRouteRegistry = compositionLocalOf<RouteRegistry> {
-    error("RouteRegistry not provided")
-}
+import org.koin.compose.koinInject
+import org.koin.core.parameter.parametersOf
+import org.koin.java.KoinJavaComponent.getKoin
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun AppNavigation(
-    coordinator: AppCoordinator,
+    coordinator: AppCoordinator = koinInject(), // Use Koin for coordinator
     pendingDeepLinkUri: Uri? = null,
-    routeProviders: List<RouteProvider> = AndroidAppRouteProviders.create().getAllProviders(),
     stringProvider: StringResourceProvider = getStringResourceProvider()
 ) {
-    val allHandlers = remember {
-        routeProviders.flatMap { it.getRoutes() }.filterIsInstance<ScopedRouteHandler>()
-    }
-    val scopedRouteHandlerRegistry = remember { ScopedRouteHandlerRegistry(allHandlers) }
     val navigationState = coordinator.navigationState.collectAsState().value
-    val registry = remember { RouteRegistry(scopedRouteHandlerRegistry) }
-
-    // Ensure cleanup of inactive route scopes on navigation changes
-    LaunchedEffect(navigationState) {
-        val activeRoutes = navigationState.tabNavigation.getActiveTabStack().map { it.key }.toSet()
-        registry.cleanup(activeRoutes)
-    }
-
-    val modalStack = remember {
-        mutableStateOf<List<ModalRoute>>(emptyList())
-    }
+    val modalStack = remember { mutableStateOf<List<ModalRoute>>(emptyList()) }
     val deepLinkProcessed = remember { mutableStateOf(pendingDeepLinkUri == null) }
 
-    LaunchedEffect(coordinator, pendingDeepLinkUri) {
+    // Use only coordinator as the key for LaunchedEffect to avoid re-collecting on rotation
+    LaunchedEffect(coordinator) {
         launch {
             try {
                 coordinator.navigationEvents.collectLatest { event ->
@@ -103,31 +87,26 @@ fun AppNavigation(
         deepLinkProcessed.value = true
     }
 
-    CompositionLocalProvider(
-        LocalRouteRegistry provides registry
-    ) {
-        val tabNavState = navigationState.tabNavigation
-        if (deepLinkProcessed.value) {
-            TabNavigationScaffold(
-                tabNavigationState = tabNavState,
-                coordinator = coordinator,
-                stringProvider = stringProvider,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                renderTabContent(tabNavState, registry, stringProvider)
-                renderModalsIfNeeded(modalStack, registry, coordinator)
-            }
+    val tabNavState = navigationState.tabNavigation
+    if (deepLinkProcessed.value) {
+        TabNavigationScaffold(
+            tabNavigationState = tabNavState,
+            coordinator = coordinator,
+            stringProvider = stringProvider,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            RenderTabContent(tabNavState, stringProvider, coordinator)
+            RenderModalsIfNeeded(modalStack, coordinator)
         }
     }
 }
 
-
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-private fun renderTabContent(
+private fun RenderTabContent(
     tabNavState: TabNavigationState,
-    registry: RouteRegistry,
-    stringProvider: StringResourceProvider
+    stringProvider: StringResourceProvider,
+    coordinator: AppCoordinator
 ) {
     val stack = tabNavState.getActiveTabStack()
     val currentRoute = stack.lastOrNull()
@@ -154,26 +133,39 @@ private fun renderTabContent(
         },
         modifier = Modifier.fillMaxSize()
     ) { route ->
-        RouteRenderer(route, registry, stringProvider)
+        RouteRenderer(route, stringProvider, coordinator)
     }
 }
 
 @Composable
-private fun RouteRenderer(route: Route?, registry: RouteRegistry, stringProvider: StringResourceProvider) {
+private fun RouteRenderer(route: Route?, stringProvider: StringResourceProvider, coordinator: AppCoordinator) {
     when (route) {
         is RestaurantListRoute -> {
-            val scope = registry.createScopeForRoute(route)
-            val navigationViewModel = scope.getRestaurantNavigationViewModel()
-            RestaurantListScreen(navigationViewModel, stringProvider = stringProvider)
+            val navigationViewModel = koinInject<RestaurantNavigationViewModel>()
+            val repository = koinInject<RestaurantRepository>()
+            RestaurantListScreen(navigationViewModel, stringProvider = stringProvider, repository = repository)
         }
         is RestaurantDetailRoute -> {
-            val scope = registry.createScopeForRoute(route)
-            val navigationViewModel = scope.getRestaurantNavigationViewModel()
-            RestaurantDetailScreen(route.restaurantId, navigationViewModel, stringProvider = stringProvider)
+            val koin = getKoin()
+            val scopeId = route.key
+            val scope = remember(scopeId) {
+                koin.getScopeOrNull(scopeId)
+                    ?: koin.createScope(scopeId = scopeId, qualifier = org.koin.core.qualifier.named(RestaurantDetailScope.qualifierName))
+            }
+            // Prevent crash if scope is closed
+            if (scope.closed) return
+
+            val sharedViewModel = scope.get<RestaurantDetailViewModel> { parametersOf(route.restaurantId) }
+            val androidViewModel = scope.get<RestaurantDetailAndroidViewModel> { parametersOf(sharedViewModel) }
+
+            RestaurantDetailScreen(
+                restaurantId = route.restaurantId,
+                viewModel = androidViewModel,
+                stringProvider = stringProvider,
+                onBackClick = { coordinator.navigateBack() },
+            )
         }
         is SettingsRoute -> {
-            val scope = registry.createScopeForRoute(route)
-            val navigationViewModel = scope.getSettingsNavigationViewModel()
             SettingsScreen(stringProvider = stringProvider)
         }
         null -> Unit
@@ -181,9 +173,8 @@ private fun RouteRenderer(route: Route?, registry: RouteRegistry, stringProvider
 }
 
 @Composable
-private fun renderModalsIfNeeded(
-    modalStack: androidx.compose.runtime.MutableState<List<ModalRoute>>,
-    registry: RouteRegistry,
+private fun RenderModalsIfNeeded(
+    modalStack: MutableState<List<ModalRoute>>,
     coordinator: AppCoordinator
 ) {
     if (modalStack.value.isNotEmpty()) {
@@ -204,16 +195,8 @@ private fun renderModalsIfNeeded(
                     modalStack.value = modalStack.value.dropLast(1)
                 },
                 viewModelProvider = {
-                    if (currentModal is SubmitReviewModalRoute) {
-                        try {
-                            val route = RestaurantDetailRoute(currentModal.restaurantId)
-                            val scope = registry.createScopeForRoute(route)
-                            scope.get<io.umain.munchies.feature.restaurant.presentation.RestaurantDetailViewModel>()
-                        } catch (e: Exception) {
-                            null
-                        }
-                    } else {
-                        null
+                    (currentModal as? SubmitReviewModalRoute)?.let {
+                        koinInject<RestaurantDetailViewModel> { parametersOf(it.restaurantId) }
                     }
                 }
             )
@@ -264,8 +247,7 @@ private fun processPendingDeepLink(deepLinkUri: Uri, coordinator: AppCoordinator
         DeepLinkConstants.QUERY_PARAM_CANCEL_TEXT,
         DeepLinkConstants.QUERY_PARAM_INITIAL_DATE
     ).forEach { param ->
-        val value = deepLinkUri.getQueryParameter(param)
-        if (value != null) {
+        deepLinkUri.getQueryParameter(param)?.let { value ->
             queryParams[param] = value
         }
     }

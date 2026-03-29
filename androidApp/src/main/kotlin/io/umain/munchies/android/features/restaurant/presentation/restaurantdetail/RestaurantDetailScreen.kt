@@ -24,7 +24,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -33,19 +32,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
-import io.umain.munchies.android.navigation.LocalRouteRegistry
 import io.umain.munchies.android.ui.components.DetailCardCompose
 import io.umain.munchies.android.ui.components.RestaurantDetailSkeleton
 import io.umain.munchies.android.ui.theme.MunchiesTheme
 import io.umain.munchies.core.localization.StringResourceProvider
 import io.umain.munchies.core.localization.StringResources
 import io.umain.munchies.designtokens.DesignTokens
-import io.umain.munchies.feature.restaurant.navigation.RestaurantNavigationViewModel
-import io.umain.munchies.feature.restaurant.presentation.RestaurantDetailViewModel
 import io.umain.munchies.feature.restaurant.presentation.model.DetailCardData
 import io.umain.munchies.feature.restaurant.presentation.state.RestaurantDetailUiState
-import io.umain.munchies.navigation.RestaurantDetailRoute
-import org.koin.core.parameter.parametersOf
 
 @Composable
 fun RestaurantDetailContent(
@@ -102,7 +96,8 @@ fun RestaurantDetailContent(
                         ) {
                              Icon(
                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                   contentDescription = stringProvider.stringResource(StringResources.accessibility_back_button)
+                                   contentDescription = stringProvider.stringResource(
+                                       StringResources.accessibility_back_button)
                                )
                           }
                       }
@@ -153,25 +148,22 @@ fun RestaurantDetailContent(
 @Composable
 fun RestaurantDetailScreen(
     restaurantId: String,
-    navigationViewModel: RestaurantNavigationViewModel,
+    viewModel: RestaurantDetailAndroidViewModel,
     stringProvider: StringResourceProvider,
+    onBackClick: () -> Unit = {},
 ) {
-    val registry = LocalRouteRegistry.current
-    val route = remember { RestaurantDetailRoute(restaurantId) }
-
-    val viewModel = remember {
-        val scope = registry.createScopeForRoute(route)
-        scope.get<RestaurantDetailAndroidViewModel>(parameters = { parametersOf(restaurantId) })
-    }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(Unit) { viewModel.load() }
+    // Load data when entering the screen
+    LaunchedEffect(restaurantId) {
+        viewModel.load()
+    }
 
     RestaurantDetailContent(
         uiState = uiState,
         restaurantId = restaurantId,
-        onBackClick = { navigationViewModel.navigateBack() },
-        onLeaveReviewClick = { navigationViewModel.showSubmitReviewModal(it) },
+        onBackClick = onBackClick,
+        onLeaveReviewClick = { viewModel.submitReview(5, "") },
         stringProvider = stringProvider
     )
 }
