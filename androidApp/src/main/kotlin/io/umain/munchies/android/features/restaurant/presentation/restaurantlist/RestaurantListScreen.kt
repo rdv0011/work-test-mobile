@@ -31,7 +31,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
@@ -54,9 +53,6 @@ import io.umain.munchies.designtokens.DesignTokens
 import io.umain.munchies.feature.restaurant.navigation.RestaurantNavigationViewModel
 import io.umain.munchies.feature.restaurant.presentation.state.RestaurantListUiState
 import io.umain.munchies.navigation.AppCoordinator
-import io.umain.munchies.core.viewmodel.ViewModelStore
-import io.umain.munchies.feature.restaurant.presentation.RestaurantListViewModel
-import io.umain.munchies.feature.restaurant.domain.repository.RestaurantRepository
 
 /**
  * Restaurant List Screen
@@ -73,20 +69,11 @@ import io.umain.munchies.feature.restaurant.domain.repository.RestaurantReposito
 @OptIn(ExperimentalFoundationApi::class, ExperimentalAnimationApi::class)
 @Composable
 fun RestaurantListScreen(
+    viewModel: RestaurantListAndroidViewModel,
     navigationViewModel: RestaurantNavigationViewModel,
     stringProvider: StringResourceProvider,
-    repository: RestaurantRepository,
     modifier: Modifier = Modifier
 ) {
-    val viewModel = remember {
-        val sharedViewModel = ViewModelStore.getOrCreate("restaurant_list") {
-            RestaurantListViewModel(
-                repository = repository,
-                stringProvider = stringProvider
-            )
-        }
-        RestaurantListAndroidViewModel(sharedViewModel)
-    }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val selectedFilterIds by viewModel.selectedFilters.collectAsStateWithLifecycle()
     // Trigger load once
@@ -319,17 +306,7 @@ private fun RestaurantListScreenPreview() {
     val fakeCoordinator = object : AppCoordinator() {}
     val fakeDispatcher = NavigationDispatcher(fakeCoordinator)
     val fakeNavigationViewModel = RestaurantNavigationViewModel(fakeDispatcher)
-    val fakeRepository = object : RestaurantRepository {
-        override suspend fun getFilterById(id: String) = null
-        override suspend fun getRestaurants() = emptyList<io.umain.munchies.feature.restaurant.domain.model.Restaurant>()
-        override suspend fun getRestaurantsOpenById(id: String) = io.umain.munchies.feature.restaurant.domain.model.RestaurantStatus.CLOSED
-        override suspend fun submitReview(restaurantId: String, rating: Int, comment: String) = true
-    }
     MunchiesTheme {
-        RestaurantListScreen(
-            navigationViewModel = fakeNavigationViewModel,
-            stringProvider = fakeStringProvider,
-            repository = fakeRepository
-        )
+        Text("Preview not available: RestaurantListAndroidViewModel requires real dependencies.")
     }
 }

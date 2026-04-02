@@ -9,7 +9,6 @@ import io.umain.munchies.feature.restaurant.di.RestaurantListScope
 import io.umain.munchies.feature.restaurant.presentation.RestaurantDetailViewModel
 import io.umain.munchies.feature.restaurant.presentation.RestaurantListViewModel
 import io.umain.munchies.navigation.RouteHandler
-import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.core.context.loadKoinModules
 import org.koin.core.qualifier.named
 import org.koin.dsl.bind
@@ -17,12 +16,15 @@ import org.koin.dsl.module
 
 fun registerAndroidUIWrappersModule() {
     val androidUIWrappersModule = module {
+        // The Koin scope (opened by NavigationReducer on push, closed on pop) is the lifecycle
+        // owner. No ViewModelStore involved — instances survive within the scope lifetime and are
+        // released when the scope is closed. remember(entry.scopeId) in RouteRenderer caches the
+        // lookup across recompositions and AnimatedContent transitions.
         scope(named(RestaurantListScope.qualifierName)) {
             scoped {
                 RestaurantListAndroidViewModel(get<RestaurantListViewModel>())
-            }
+            } bind Closeable::class
         }
-        // Add RestaurantDetail scope for per-route ViewModel
         scope(named(RestaurantDetailScope.qualifierName)) {
             scoped { (sharedViewModel: RestaurantDetailViewModel) ->
                 RestaurantDetailAndroidViewModel(sharedViewModel)

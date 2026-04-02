@@ -46,7 +46,6 @@ class IOSStringResourceProvider : StringResourceProvider {
     }
 }
 
-actual fun getStringResourceProvider(): StringResourceProvider = IOSStringResourceProvider()
 
 private fun String.replaceFirstOccurrence(pattern: String, replacement: String): String {
     val index = this.indexOf(pattern)

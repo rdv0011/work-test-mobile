@@ -1,14 +1,13 @@
 package io.umain.munchies.navigation
 
 import android.util.Log
+import io.umain.munchies.core.lifecycle.Closeable
 import org.koin.core.context.GlobalContext
+import org.koin.core.qualifier.named
 import org.koin.core.scope.Scope
 
-// Use the commonMain Closeable interface, not java.io.Closeable
-import io.umain.munchies.core.lifecycle.Closeable
-
 actual fun getKoinScopeOrNull(scopeId: String): Closeable? {
-    val koin = GlobalContext.get()
+    val koin = GlobalContext.getOrNull() ?: return null
     val scope = koin.getScopeOrNull(scopeId)
     Log.i("NavigationEffects.android", "getKoinScopeOrNull called for scopeId=$scopeId, found=${scope != null}")
     return scope?.let { AndroidKoinScopeCloseable(it, scopeId) }
@@ -17,7 +16,6 @@ actual fun getKoinScopeOrNull(scopeId: String): Closeable? {
 private class AndroidKoinScopeCloseable(private val scope: Scope, private val scopeId: String) : Closeable {
     override fun close() {
         Log.i("NavigationEffects.android", "Closing Koin scope for scopeId=$scopeId")
-        // Manually close all Closeable objects in the scope
         scope.getAll<Closeable>().forEach {
             try {
                 it.close()
@@ -28,4 +26,9 @@ private class AndroidKoinScopeCloseable(private val scope: Scope, private val sc
         }
         scope.close()
     }
+}
+
+actual fun createKoinScope(scopeId: String, qualifier: String) {
+    val koin = GlobalContext.getOrNull() ?: return
+    koin.createScope(scopeId, named(qualifier))
 }

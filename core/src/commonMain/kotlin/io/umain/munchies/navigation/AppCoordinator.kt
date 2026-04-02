@@ -32,6 +32,10 @@ open class AppCoordinator(
 
     // EVENTS (for platform layer)
 
+    // replay = 1: Crucial for native platforms (like iOS) processing deep links on a cold start.
+    // It captures initial pre-UI navigation events and ensures they aren't lost if the
+    // listener binds a few milliseconds after the event was dispatched.
+    // extraBufferCapacity: Enables rapid consecutive state reductions without blocking or dropping events.
     private val _navigationEvents = MutableSharedFlow<NavigationEvent>(
         replay = 1,
         extraBufferCapacity = 10
@@ -87,11 +91,16 @@ open class AppCoordinator(
 
      // PUBLIC API: SCREEN NAVIGATION
 
+    open fun dispatch(event: NavigationEvent) {
+        reduceState(event)
+        _navigationEvents.tryEmit(event)
+    }
+
      /**
       * Navigate to a screen
       */
       open fun navigateToScreen(destination: Destination) {
-          _navigationEvents.tryEmit(NavigationEvent.Push(destination))
+          dispatch(NavigationEvent.Push(destination))
       }
 
     /**
@@ -105,14 +114,14 @@ open class AppCoordinator(
        * Go back (pops modal if showing, else pops screen)
        */
        fun navigateBack() {
-           _navigationEvents.tryEmit(NavigationEvent.Pop)
+           dispatch(NavigationEvent.Pop)
        }
 
     /**
      * Return to root screen(s)
      */
     fun navigateToRoot() {
-        _navigationEvents.tryEmit(NavigationEvent.PopToRoot)
+        dispatch(NavigationEvent.PopToRoot)
     }
 
     // PUBLIC API: MODAL NAVIGATION
@@ -121,7 +130,7 @@ open class AppCoordinator(
      * Show a modal dialog
      */
     open fun showModal(destination: ModalDestination) {
-        _navigationEvents.tryEmit(NavigationEvent.ShowModal(destination))
+        dispatch(NavigationEvent.ShowModal(destination))
     }
 
     /**
@@ -153,21 +162,21 @@ open class AppCoordinator(
      * Dismiss top modal
      */
     fun dismissModal() {
-        _navigationEvents.tryEmit(NavigationEvent.DismissModal)
+        dispatch(NavigationEvent.DismissModal)
     }
 
     /**
      * Dismiss all modals
      */
     fun dismissAllModals() {
-        _navigationEvents.tryEmit(NavigationEvent.DismissAllModals)
+        dispatch(NavigationEvent.DismissAllModals)
     }
 
     /**
      * Dismiss modals until condition is met
      */
     fun dismissModalUntil(predicate: (ModalRoute) -> Boolean) {
-        _navigationEvents.tryEmit(NavigationEvent.DismissModalUntil(predicate))
+        dispatch(NavigationEvent.DismissModalUntil(predicate))
     }
 
     // PUBLIC API: TAB NAVIGATION
@@ -176,21 +185,21 @@ open class AppCoordinator(
      * Switch to a tab
      */
     open fun selectTab(tabId: String) {
-        _navigationEvents.tryEmit(NavigationEvent.SelectTab(tabId))
+        dispatch(NavigationEvent.SelectTab(tabId))
     }
 
     /**
      * Navigate within current tab
      */
     fun navigateInTab(destination: Destination) {
-        _navigationEvents.tryEmit(NavigationEvent.PushInTab(destination))
+        dispatch(NavigationEvent.PushInTab(destination))
     }
 
     /**
      * Go back in current tab
      */
     fun backInTab() {
-        _navigationEvents.tryEmit(NavigationEvent.PopInTab)
+        dispatch(NavigationEvent.PopInTab)
     }
 
     // PUBLIC API: STATE MANAGEMENT
@@ -199,9 +208,7 @@ open class AppCoordinator(
      * Apply a complete navigation state (for deep links)
      */
     fun applyNavigationState(newState: NavigationState, clearCurrentStack: Boolean = true) {
-        _navigationEvents.tryEmit(
-            NavigationEvent.ApplyNavigationState(newState, clearCurrentStack)
-        )
+        dispatch(NavigationEvent.ApplyNavigationState(newState, clearCurrentStack))
     }
     
     /**
@@ -250,9 +257,9 @@ open class AppCoordinator(
         return if (state.modalStack.isNotEmpty()) {
             "modal:${state.modalStack.last().key}"
         } else {
-            state.tabNavigation?.stacksByTab
-                ?.get(state.tabNavigation.activeTabId)
-                ?.lastOrNull()?.key ?: "unknown"
+            state.tabNavigation.stacksByTab
+                .get(state.tabNavigation.activeTabId)
+                ?.lastOrNull()?.route?.key ?: "unknown"
         }
     }
 
@@ -279,8 +286,8 @@ open class AppCoordinator(
                 tabDefinitions = listOf(restaurantsTab, settingsTab),
                 activeTabId = "restaurants",
                 stacksByTab = mapOf(
-                    "restaurants" to listOf(RestaurantListRoute()),
-                    "settings" to listOf(SettingsRoute())
+                    "restaurants" to listOf(ScreenEntry(RestaurantListRoute(), RestaurantListRoute().key)),
+                    "settings" to listOf(ScreenEntry(SettingsRoute(), SettingsRoute().key))
                 )
             )
 

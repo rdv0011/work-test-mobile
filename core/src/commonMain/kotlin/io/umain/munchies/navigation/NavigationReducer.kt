@@ -1,6 +1,7 @@
 package io.umain.munchies.navigation
 
 import io.umain.munchies.logging.logInfo
+import kotlin.random.Random
 
 /**
  * Pure functions for reducing NavigationState based on NavigationEvents.
@@ -48,13 +49,7 @@ object NavigationReducer {
         handlers: List<RouteHandler>
     ): NavigationState {
         logInfo("NavigationReducer", "[36mhandlePush: destination=${event.destination::class.simpleName}, handlers available=${handlers.size}")
-        // Convert Destination to Route via handlers
-        val route = handlers.firstNotNullOfOrNull { handler ->
-            if (handler.canHandle(event.destination)) {
-                logInfo("NavigationReducer", "  [32mHandler found: ${handler::class.simpleName}")
-                handler.destinationToRoute(event.destination)
-            } else null
-        }
+        val route = resolveRoute(event.destination, handlers)
 
         if (route == null) {
             logInfo("NavigationReducer", "  [31mNo route created - returning same state")
@@ -76,11 +71,11 @@ object NavigationReducer {
     }
 
     private fun handlePopToRoot(state: NavigationState): NavigationState {
-        // Clear all tab stacks to their root
         return state.copy(
             tabNavigation = state.tabNavigation.copy(
-                stacksByTab = state.tabNavigation.stacksByTab.mapValues { (_, stack) ->
-                    listOf(stack.first()) // Keep only root in each tab
+                stacksByTab = state.tabNavigation.stacksByTab.mapValues { entry ->
+                    val stack: List<ScreenEntry> = entry.value
+                    if (stack.isNotEmpty()) listOf(stack.first()) else emptyList()
                 }
             )
         )
@@ -165,15 +160,14 @@ object NavigationReducer {
         event: NavigationEvent.PushInTab,
         handlers: List<RouteHandler>
     ): NavigationState {
-        val route = handlers.firstNotNullOfOrNull { handler ->
-            if (handler.canHandle(event.destination)) {
-                handler.destinationToRoute(event.destination)
-            } else null
-        } ?: return state
+        val route = resolveRoute(event.destination, handlers) ?: return state
 
         val tabNav = state.tabNavigation
         val currentStack = tabNav.getActiveTabStack()
-        val newStack = currentStack + route
+        val scopeId = "${route.key}-${Random.nextLong()}"
+        createKoinScope(scopeId, route.scopeQualifier)
+        val entry = ScreenEntry(route, scopeId)
+        val newStack = currentStack + entry
 
         return state.copy(
             tabNavigation = tabNav.updateActiveTabStack(newStack)
@@ -185,15 +179,29 @@ object NavigationReducer {
         val tabNav = state.tabNavigation
         val currentStack = tabNav.getActiveTabStack()
 
-        // Don't pop below tab's root
-        if (currentStack.size <= 1) {
-            return state
-        }
+        if (currentStack.size <= 1) return state
 
+        val popped = currentStack.last()
+        getKoinScopeOrNull(popped.scopeId)?.close()
         val newStack = currentStack.dropLast(1)
         return state.copy(
             tabNavigation = tabNav.updateActiveTabStack(newStack)
                 .copy(navigationDirection = NavigationDirection.Back)
         )
+    }
+
+    private fun resolveRoute(
+        destination: Destination,
+        handlers: List<RouteHandler>
+    ): Route? {
+        return handlers.firstNotNullOfOrNull { handler ->
+            if (handler.canHandle(destination)) handler.destinationToRoute(destination) else null
+        } ?: destination.toBuiltinRoute()
+    }
+
+    private fun Destination.toBuiltinRoute(): Route? = when (this) {
+        Destination.RestaurantList -> RestaurantListRoute()
+        is Destination.RestaurantDetail -> RestaurantDetailRoute(restaurantId)
+        Destination.Settings -> SettingsRoute()
     }
 }

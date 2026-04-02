@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget.Companion.fromTarget
+
 plugins {
     kotlin("multiplatform")
     id("com.android.library")
@@ -5,20 +7,18 @@ plugins {
 
 kotlin {
     applyDefaultHierarchyTemplate()
-    
+
     androidTarget {
-        compilations.all {
-            kotlinOptions {
-                jvmTarget = Versions.jvmTarget
-            }
+        compilerOptions {
+            jvmTarget.set(fromTarget(Versions.jvmTarget))
         }
     }
-    
+
     val iosTargets = listOf(
         iosArm64(),
         iosSimulatorArm64()
     )
-    
+
     iosTargets.forEach { target ->
         target.binaries.framework {
             baseName = "design_tokens"
@@ -38,11 +38,11 @@ kotlin {
 android {
     namespace = "io.umain.munchies.designtokens"
     compileSdk = Versions.compileSdk
-    
+
     defaultConfig {
         minSdk = Versions.minSdk
     }
-    
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

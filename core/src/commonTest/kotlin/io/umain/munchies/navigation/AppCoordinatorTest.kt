@@ -1,5 +1,8 @@
 package io.umain.munchies.navigation
 
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -54,7 +57,7 @@ class AppCoordinatorTest {
          val newState = coordinator.getCurrentState()
          
          assertEquals(initialStackSize + 1, newState.currentStack.size)
-         assertEquals(testRoute1, newState.currentStack.last())
+         assertEquals(testRoute1, newState.currentStack.last().route)
      }
 
     @Test
@@ -67,7 +70,7 @@ class AppCoordinatorTest {
         val newState = coordinator.getCurrentState()
         
         assertEquals(2, newState.tabNavigation.getActiveTabStack().size)
-        assertEquals(testRoute1, newState.tabNavigation.getActiveTabStack().last())
+        assertEquals(testRoute1, newState.tabNavigation.getActiveTabStack().last().route)
     }
 
     @Test
@@ -97,8 +100,39 @@ class AppCoordinatorTest {
          
          val finalState = coordinator.getCurrentState()
          assertEquals(initialStackSize + 2, finalState.currentStack.size)
-         assertEquals(testRoute2, finalState.currentStack.last())
+         assertEquals(testRoute2, finalState.currentStack.last().route)
      }
+
+    //  EVENT REPLAY TESTS
+
+    @Test
+    fun testNavigationEventsHaveNoReplay() = runTest {
+        val coordinator = AppCoordinator()
+
+        // Dispatch a bunch of events while no one is listening
+        coordinator.navigateToScreen(Destination.Settings)
+        coordinator.showModal(ModalDestination.ReviewSuccessModal)
+        coordinator.selectTab("settings")
+
+        // Now someone starts listening (e.g. Android UI rotated and restarted collection)
+        val collectedEvents = mutableListOf<NavigationEvent>()
+        val job = launch {
+            coordinator.navigationEvents.toList(collectedEvents)
+        }
+
+        // They should receive ZERO old events
+        assertTrue(
+            collectedEvents.isEmpty(),
+            "SharedFlow should NOT replay past events to new subscribers (which broke config changes on Android)"
+        )
+
+        // But they DO receive new events
+        coordinator.navigateBack()
+        assertEquals(1, collectedEvents.size)
+        assertTrue(collectedEvents[0] is NavigationEvent.Pop)
+
+        job.cancel()
+    }
 
     //  CONVENIENCE METHOD TESTS
 
@@ -168,8 +202,8 @@ class AppCoordinatorTest {
         val tabNav = TabNavigationState(
             tabDefinitions = listOf(tabDef1, tabDef2),
             stacksByTab = mapOf(
-                "tab1" to listOf(rootRoute, testRoute1),
-                "tab2" to listOf(rootRoute)
+                "tab1" to listOf(ScreenEntry(rootRoute, "1"), ScreenEntry(testRoute1, "2")),
+                "tab2" to listOf(ScreenEntry(rootRoute, "3"))
             ),
             activeTabId = "tab1"
         )
@@ -188,7 +222,7 @@ class AppCoordinatorTest {
          val tabDef1 = createTabDefinition("tab1", rootRoute)
          val tabNav = TabNavigationState(
              tabDefinitions = listOf(tabDef1),
-             stacksByTab = mapOf("tab1" to listOf(rootRoute)),
+             stacksByTab = mapOf("tab1" to listOf(ScreenEntry(rootRoute, "1"))),
              activeTabId = "tab1"
          )
          val handlers = listOf(
@@ -212,7 +246,7 @@ class AppCoordinatorTest {
          val handler = TestRouteHandler(Destination.RestaurantList, testRoute1)
          val coordinatorWithoutHandlers = AppCoordinator()
          // The default stack is not empty, it contains the root route of the active tab
-         assertEquals(listOf(RestaurantListRoute()), coordinatorWithoutHandlers.navigationState.value.currentStack)
+         assertEquals(listOf(RestaurantListRoute()), coordinatorWithoutHandlers.navigationState.value.currentStack.map { it.route })
          val coordinatorWithHandlers = AppCoordinator(routeHandlers = listOf(handler))
          val initialStackSize = coordinatorWithHandlers.getCurrentState().currentStack.size
          coordinatorWithHandlers.reduceState(NavigationEvent.PushInTab(Destination.RestaurantList))
@@ -409,7 +443,7 @@ class AppCoordinatorTest {
          
          coordinator.markListenerReady()
          assertEquals(listOf("ready"), processedDestinations, "Readiness callback should execute once")
-         assertEquals(testRoute2, coordinator.getCurrentState().tabNavigation.getActiveTabStack().last(), "Final state should reflect last navigation")
+         assertEquals(testRoute2, coordinator.getCurrentState().tabNavigation.getActiveTabStack().last().route, "Final state should reflect last navigation")
      }
 
     //  EDGE CASE: NAVIGATION DURING READINESS PHASE
@@ -466,10 +500,9 @@ class AppCoordinatorTest {
          val coordinator = AppCoordinator(routeHandlers = handlers)
          
          val readinessCallbackCount = mutableListOf<Int>()
-         var callbackIndex = 0
-         
-         coordinator.onListenerReady { readinessCallbackCount.add(callbackIndex++) }
-         
+
+         coordinator.onListenerReady { readinessCallbackCount.add(readinessCallbackCount.size) }
+
          coordinator.reduceState(NavigationEvent.PushInTab(Destination.RestaurantList))
          coordinator.reduceState(NavigationEvent.PushInTab(Destination.RestaurantDetail("1")))
          coordinator.reduceState(NavigationEvent.PushInTab(Destination.RestaurantDetail("2")))
@@ -520,7 +553,7 @@ class AppCoordinatorTest {
         return TabNavigationState(
             tabDefinitions = listOf(tabDef),
             activeTabId = tabDef.id,
-            stacksByTab = mapOf(tabDef.id to routes.toList())
+            stacksByTab = mapOf(tabDef.id to routes.mapIndexed { index, route -> ScreenEntry(route, "${route.key}-$index") })
         )
     }
 }

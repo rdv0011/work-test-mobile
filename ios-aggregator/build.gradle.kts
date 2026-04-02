@@ -1,44 +1,40 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget.Companion.fromTarget
+import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
+
 plugins {
     kotlin("multiplatform")
     id("com.android.library")
 }
 
-import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
-
 kotlin {
     applyDefaultHierarchyTemplate()
-    
+
     androidTarget {
-        compilations.all {
-            kotlinOptions {
-                jvmTarget = Versions.jvmTarget
-            }
+        compilerOptions {
+            jvmTarget.set(fromTarget(Versions.jvmTarget))
         }
     }
-    
+
     val xcframeworkName = "shared"
     val xcf = XCFramework(xcframeworkName)
-    
+
     val iosTargets = listOf(
         iosArm64(),
         iosSimulatorArm64()
     )
-    
+
     iosTargets.forEach { target ->
         target.binaries.framework {
             baseName = xcframeworkName
             isStatic = true
-            
-            // Export all modules for iOS
+
             export(project(":design-tokens"))
             export(project(":core"))
             export(project(":feature-restaurant"))
             export(project(":feature-settings"))
-            
-            // Export Koin and Coroutines for iOS interop
             export("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}")
             export("io.insert-koin:koin-core:${Versions.koin}")
-            
+
             xcf.add(this)
         }
     }
@@ -46,7 +42,6 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                // Aggregate all modules
                 api(project(":design-tokens"))
                 api(project(":core"))
                 api(project(":feature-restaurant"))

@@ -21,7 +21,7 @@ data class NavigationState(
     /**
      * Get the current active stack (active tab's stack)
      */
-    val currentStack: List<Route>
+    val currentStack: List<ScreenEntry>
         get() = tabNavigation.getActiveTabStack()
 
     /**

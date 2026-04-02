@@ -1,7 +1,6 @@
 package io.umain.munchies.di
 
 import io.umain.munchies.core.localization.StringResourceProvider
-import io.umain.munchies.core.localization.getStringResourceProvider
 import io.umain.munchies.navigation.AppCoordinator
 import io.umain.munchies.navigation.RouteHandler
 import io.umain.munchies.navigation.RouteRegistry
@@ -16,7 +15,6 @@ import org.koin.dsl.module
 
 val commonModule = module {
     single { createHttpClient(get()) }
-    single<StringResourceProvider> { getStringResourceProvider() }
     // Register RouteRegistry with all RouteHandlers
     single { RouteRegistry(getAll()) }
     // Register DeepLinkParser with all DeepLinkHandlers

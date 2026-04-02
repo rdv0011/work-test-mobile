@@ -1,4 +1,5 @@
 import org.gradle.kotlin.dsl.implementation
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget.Companion.fromTarget
 
 plugins {
     kotlin("multiplatform")
@@ -8,20 +9,18 @@ plugins {
 
 kotlin {
     applyDefaultHierarchyTemplate()
-    
+
     androidTarget {
-        compilations.all {
-            kotlinOptions {
-                jvmTarget = Versions.jvmTarget
-            }
+        compilerOptions {
+            jvmTarget.set(fromTarget(Versions.jvmTarget))
         }
     }
-    
+
     val iosTargets = listOf(
         iosArm64(),
         iosSimulatorArm64()
     )
-    
+
     iosTargets.forEach { target ->
         target.binaries.framework {
             baseName = "core"
@@ -52,6 +51,7 @@ kotlin {
         val androidMain by getting {
             dependencies {
                 implementation("io.ktor:ktor-client-android:${Versions.ktor}")
+                implementation("io.insert-koin:koin-android:${Versions.koin}")
             }
         }
         val iosMain by getting {

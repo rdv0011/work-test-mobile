@@ -1,7 +1,9 @@
 package io.umain.munchies.navigation
 
 import org.koin.core.Koin
+import org.koin.core.qualifier.named
 import org.koin.core.scope.Scope
+import io.umain.munchies.core.lifecycle.Closeable
 import io.umain.munchies.di.getKoin
 import io.umain.munchies.logging.logInfo
 
@@ -22,3 +24,9 @@ private class IOSKoinScopeCloseable(private val scope: Scope, private val scopeI
         scope.close()
     }
 }
+
+actual fun createKoinScope(scopeId: String, qualifier: String) {
+    val koin: Koin = getKoin()
+    koin.createScope(scopeId, named(qualifier))
+}
+

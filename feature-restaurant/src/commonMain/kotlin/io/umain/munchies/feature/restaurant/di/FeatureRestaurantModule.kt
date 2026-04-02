@@ -43,16 +43,19 @@ val featureRestaurantModule = module {
         scoped<RestaurantListViewModel> { RestaurantListViewModel(get(), get()) }
     }
 
-    // Register RestaurantDetailViewModel as a factory with parameters
-    factory { (restaurantId: String) ->
-        val repository = get<RestaurantRepository>()
-        val stringProvider = get<StringResourceProvider>()
-        val navigationViewModel = get<RestaurantNavigationViewModel>()
-        RestaurantDetailViewModel(
-            restaurantId = restaurantId,
-            repository = repository,
-            navigationViewModel = navigationViewModel,
-            stringProvider = stringProvider
-        )
+    // Restaurant Detail scope: one shared KMM ViewModel per navigation entry.
+    // The Android wrapper (RestaurantDetailAndroidViewModel) is registered in the Android module
+    // inside the same scope so it can resolve this scoped instance.
+    scope(named(RestaurantDetailScope.qualifierName)) {
+        scoped { (restaurantId: String) ->
+            RestaurantDetailViewModel(
+                restaurantId = restaurantId,
+                repository = get(),
+                navigationViewModel = get(),
+                stringProvider = get()
+            )
+        }
     }
+
+    // ViewModels are provided in Koin scopes for navigation lifecycle management
 }

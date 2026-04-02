@@ -10,6 +10,9 @@ interface Route : Comparable<Route> {
     val key: String
     val isRootRoute: Boolean
         get() = false
+    /** The Koin scope qualifier name used when creating the scope for this route. */
+    val scopeQualifier: String
+        get() = "screen"
 
     override fun compareTo(other: Route): Int = key.compareTo(other.key)
 

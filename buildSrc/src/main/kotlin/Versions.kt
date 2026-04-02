@@ -1,34 +1,33 @@
 object Versions {
     // Kotlin & Gradle
-    const val kotlin = "1.9.22"
-    const val androidGradlePlugin = "8.2.2"
+    const val kotlin = "2.3.20"
+    const val agp = "8.7.3"
+    const val googleServices = "4.4.2"
     const val jvmTarget = "17"
-    
+
     // Android SDK
-    const val compileSdk = 34
+    const val compileSdk = 35
     const val minSdk = 24
-    const val targetSdk = 34
-    
+    const val targetSdk = 35
+
     // AndroidX & Compose
-    const val compose = "1.6.0"
-    const val composeCompiler = "1.5.8"
-    const val composeMaterial3 = "1.2.0"
-    const val activityCompose = "1.8.2"
-    const val lifecycleRuntimeCompose = "2.7.0"
-    
+    const val composeBom = "2026.03.11"
+    const val activityCompose = "1.13.0"
+    const val lifecycleRuntimeCompose = "2.10.0"
+
     // Kotlin Libraries
-    const val coroutines = "1.7.3"
-    const val serialization = "1.6.2"
-    
+    const val coroutines = "1.10.2"
+    const val serialization = "1.10.0"
+
     // Ktor
-    const val ktor = "2.3.7"
-    
+    const val ktor = "3.4.2"
+
     // Koin
-    const val koin = "3.5.3"
-    
+    const val koin = "4.2.0"
+
     // Image loading
-    const val coil = "2.5.0"
-    
+    const val coil = "2.7.0"
+
     // Firebase (BOM)
-    const val firebaseBom = "32.7.0"
+    const val firebaseBom = "34.11.0"
 }

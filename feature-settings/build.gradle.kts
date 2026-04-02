@@ -5,20 +5,18 @@ plugins {
 
 kotlin {
     applyDefaultHierarchyTemplate()
-    
+
     androidTarget {
-        compilations.all {
-            kotlinOptions {
-                jvmTarget = Versions.jvmTarget
-            }
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.fromTarget(Versions.jvmTarget))
         }
     }
-    
+
     val iosTargets = listOf(
         iosArm64(),
         iosSimulatorArm64()
     )
-    
+
     iosTargets.forEach { target ->
         target.binaries.framework {
             baseName = "featureSettings"

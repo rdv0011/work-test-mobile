@@ -13,12 +13,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import io.umain.munchies.core.viewmodel.ViewModelStore
 import io.umain.munchies.feature.settings.presentation.SettingsViewModel
 import io.umain.munchies.core.localization.StringResources
 import io.umain.munchies.designtokens.DesignTokens
@@ -26,20 +24,11 @@ import io.umain.munchies.core.localization.StringResourceProvider
 
 @Composable
 fun SettingsScreen(
+    viewModel: SettingsViewModel,
     modifier: Modifier = Modifier,
     stringProvider: StringResourceProvider,
 ) {
-    val viewModel = remember {
-        ViewModelStore.getOrCreate("settings") {
-            SettingsViewModel()
-        }
-    }
     val uiState by viewModel.stateFlow.collectAsStateWithLifecycle()
-    androidx.compose.runtime.DisposableEffect(Unit) {
-        onDispose {
-            ViewModelStore.remove("settings")
-        }
-    }
 
     Scaffold(
         modifier = modifier.fillMaxSize()

@@ -2,12 +2,6 @@ package io.umain.munchies.core.localization
 
 import android.content.Context
 
-private var androidContext: Context? = null
-
-fun setApplicationContext(context: Context) {
-    androidContext = context
-}
-
 class AndroidStringResourceProvider(private val context: Context) : StringResourceProvider {
     override fun stringResource(key: StringKey, vararg args: Any): String {
         return getStringResource(context, key, *args)
@@ -17,10 +11,6 @@ class AndroidStringResourceProvider(private val context: Context) : StringResour
     }
 }
 
-actual fun getStringResourceProvider(): StringResourceProvider {
-    val context = androidContext ?: throw IllegalStateException("Application context not set. Call setApplicationContext() in MainActivity.onCreate()")
-    return AndroidStringResourceProvider(context)
-}
 
 private fun getStringResource(context: Context, key: String, vararg args: Any): String {
     return try {

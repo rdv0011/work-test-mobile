@@ -147,7 +147,6 @@ fun RestaurantDetailContent(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RestaurantDetailScreen(
-    restaurantId: String,
     viewModel: RestaurantDetailAndroidViewModel,
     stringProvider: StringResourceProvider,
     onBackClick: () -> Unit = {},
@@ -155,13 +154,13 @@ fun RestaurantDetailScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     // Load data when entering the screen
-    LaunchedEffect(restaurantId) {
+    LaunchedEffect(viewModel) {
         viewModel.load()
     }
 
     RestaurantDetailContent(
         uiState = uiState,
-        restaurantId = restaurantId,
+        restaurantId = viewModel.restaurantId,
         onBackClick = onBackClick,
         onLeaveReviewClick = { viewModel.submitReview(5, "") },
         stringProvider = stringProvider

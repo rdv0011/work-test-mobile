@@ -103,19 +103,12 @@ class NavigationAnalyticsListener(
     ) {
         val previousTabNav = previousState.tabNavigation
         val currentTabNav = currentState.tabNavigation
-        
-        // Skip if tabs not in use
-        if (currentTabNav == null) {
-            logInfo("NavigationAnalyticsListener", "   trackTabChanges: tabs not in use, skipping")
-            return
-        }
 
-        val previousTabId = previousTabNav?.activeTabId
+        val previousTabId = previousTabNav.activeTabId
         val currentTabId = currentTabNav.activeTabId
 
         logInfo("NavigationAnalyticsListener", "   trackTabChanges: prev=$previousTabId curr=$currentTabId")
 
-        // Track when activeTabId changes
         if (previousTabId != currentTabId) {
             logInfo("NavigationAnalyticsListener", "   ✓ Tab switched! Tracking: $currentTabId")
             analyticsService.trackEvent(
@@ -176,17 +169,17 @@ class NavigationAnalyticsListener(
         return if (state.modalStack.isNotEmpty()) {
             state.modalStack.last()
         } else {
-            state.tabNavigation?.stacksByTab
-                ?.get(state.tabNavigation.activeTabId)
+            state.tabNavigation.stacksByTab
+                .get(state.tabNavigation.activeTabId)
                 ?.lastOrNull()
+                ?.route
         }
     }
 
     private fun getTabLabel(tabNav: TabNavigationState, tabId: String): String {
         return tabNav.tabDefinitions
             .find { it.id == tabId }
-            ?.label
-            ?.toString() ?: tabId
+            ?.label ?: tabId
     }
 
     private fun extractRouteProperties(route: Route): Map<String, String> {

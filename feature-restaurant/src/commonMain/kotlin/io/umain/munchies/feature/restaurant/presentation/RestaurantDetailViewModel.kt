@@ -14,7 +14,7 @@ import io.umain.munchies.feature.restaurant.presentation.state.RestaurantDetailU
 import io.umain.munchies.logging.logInfo
 
 class RestaurantDetailViewModel(
-    private val restaurantId: String,
+    val restaurantId: String,
     private val repository: RestaurantRepository,
     private val navigationViewModel: RestaurantNavigationViewModel,
     private val stringProvider: StringResourceProvider

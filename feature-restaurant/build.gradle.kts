@@ -6,20 +6,18 @@ plugins {
 
 kotlin {
     applyDefaultHierarchyTemplate()
-    
+
     androidTarget {
-        compilations.all {
-            kotlinOptions {
-                jvmTarget = Versions.jvmTarget
-            }
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.fromTarget(Versions.jvmTarget))
         }
     }
-    
+
     val iosTargets = listOf(
         iosArm64(),
         iosSimulatorArm64()
     )
-    
+
     iosTargets.forEach { target ->
         target.binaries.framework {
             baseName = "featureRestaurant"
@@ -31,10 +29,10 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 api(project(":core"))
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${'$'}{Versions.serialization}")
-                implementation("io.ktor:ktor-client-core:${'$'}{Versions.ktor}")
-                implementation("io.ktor:ktor-client-content-negotiation:${'$'}{Versions.ktor}")
-                implementation("io.ktor:ktor-serialization-kotlinx-json:${'$'}{Versions.ktor}")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.serialization}")
+                implementation("io.ktor:ktor-client-core:${Versions.ktor}")
+                implementation("io.ktor:ktor-client-content-negotiation:${Versions.ktor}")
+                implementation("io.ktor:ktor-serialization-kotlinx-json:${Versions.ktor}")
             }
         }
         val commonTest by getting {

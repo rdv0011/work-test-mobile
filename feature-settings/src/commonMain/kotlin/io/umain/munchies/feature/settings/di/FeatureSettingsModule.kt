@@ -17,6 +17,7 @@ val featureSettingsModule = module {
     single { SettingsDeepLinkHandler() } bind DeepLinkHandler::class
 
     scope(named(SettingsScope.qualifierName)) {
+        // SettingsViewModel is provided in a Koin scope for navigation lifecycle management
         scoped { SettingsViewModel() }
     }
 }

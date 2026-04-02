@@ -15,40 +15,36 @@ import io.umain.munchies.android.ui.theme.MunchiesTheme
 import io.umain.munchies.navigation.AppCoordinator
 import io.umain.munchies.core.analytics.NavigationAnalyticsListener
 import io.umain.munchies.android.analytics.FirebaseAnalyticsService
-import io.umain.munchies.core.localization.setApplicationContext
 import org.koin.android.ext.android.inject
 
 class MainActivity : ComponentActivity() {
     
     private val coordinator: AppCoordinator by inject()
     private var analyticsListener: NavigationAnalyticsListener? = null
-    
+    private var launchDeepLinkUri: Uri? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
-        setApplicationContext(this)
-        
-        analyticsListener = NavigationAnalyticsListener(
-            FirebaseAnalyticsService(),
-            coordinator.navigationState
-        ).apply {
-            startTracking()
-        }
-        
-        val pendingDeepLinkUri = extractDeepLinkUri(intent)
-        
+
+        initializeAppState(savedInstanceState)
+
         setContent {
             MunchiesTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    AppNavigation(coordinator, pendingDeepLinkUri)
+                    AppNavigation(coordinator, launchDeepLinkUri)
                 }
             }
         }
     }
-    
+
+    private fun initializeAppState(savedInstanceState: Bundle?) {
+        initAnalyticsTracking()
+        launchDeepLinkUri = getColdStartDeepLinkUri(savedInstanceState)
+    }
+
     override fun onDestroy() {
         analyticsListener?.close()
         analyticsListener = null
@@ -64,6 +60,32 @@ class MainActivity : ComponentActivity() {
         handleDeepLink(intent)
     }
     
+    private fun initAnalyticsTracking() {
+        analyticsListener = NavigationAnalyticsListener(
+            FirebaseAnalyticsService(),
+            coordinator.navigationState
+        ).apply {
+            startTracking()
+        }
+    }
+
+    private fun getColdStartDeepLinkUri(savedInstanceState: Bundle?): Uri? {
+        // Capture the deep link only on a cold start (when savedInstanceState is null).
+        // This prevents the deep link from being re-processed and pushing duplicate screens
+        // onto the navigation stack when the Activity is recreated (e.g., during screen rotation).
+        return if (savedInstanceState == null) {
+            extractDeepLinkUri(intent)?.also { clearConsumedDeepLinkFromIntent() }
+        } else {
+            null
+        }
+    }
+
+    private fun clearConsumedDeepLinkFromIntent() {
+        intent = intent?.apply {
+            data = null
+        }
+    }
+
     private fun extractDeepLinkUri(intent: android.content.Intent): Uri? {
         val data = intent.data ?: return null
         return if (data.scheme == DeepLinkConstants.SCHEME) data else null
@@ -102,4 +124,3 @@ class MainActivity : ComponentActivity() {
         )
     }
 }
-

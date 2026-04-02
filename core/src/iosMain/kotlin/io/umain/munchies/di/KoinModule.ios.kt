@@ -5,6 +5,8 @@ import io.umain.munchies.navigation.RouteHandler
 import io.umain.munchies.network.provideHttpClientEngine
 import io.umain.munchies.core.navigation.NavigationDispatcher
 import io.umain.munchies.logging.logInfo
+import io.umain.munchies.core.localization.IOSStringResourceProvider
+import io.umain.munchies.core.localization.StringResourceProvider
 import org.koin.core.Koin
 import org.koin.core.KoinApplication
 import org.koin.dsl.module
@@ -12,6 +14,7 @@ import org.koin.dsl.module
 private var koinCallCounter = 0
 
 actual val platformModule = module {
+    single<StringResourceProvider> { IOSStringResourceProvider() }
     single { provideHttpClientEngine() }
 }
 
