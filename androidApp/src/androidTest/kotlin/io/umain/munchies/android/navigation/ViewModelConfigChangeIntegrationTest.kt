@@ -10,15 +10,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.umain.munchies.android.features.restaurant.presentation.restaurantlist.RestaurantListAndroidViewModel
-import kotlinx.coroutines.delay
+import io.umain.munchies.feature.restaurant.di.RestaurantListScope
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.koin.core.context.GlobalContext
 import org.koin.core.qualifier.named
 import org.koin.java.KoinJavaComponent.getKoin
-import org.koin.core.context.GlobalContext
-import io.umain.munchies.feature.restaurant.di.RestaurantListScope
 
 /**
  * Instrumented test to verify that ViewModels survive configuration changes
@@ -73,9 +72,12 @@ class ViewModelConfigChangeIntegrationTest {
         var secondViewModel: RestaurantListAndroidViewModel? = null
         var thirdViewModel: RestaurantListAndroidViewModel? = null
 
+        val triggerState = mutableStateOf(0)
+
         composeRule.setContent {
             TestViewModelCaptureUI(
                 scopeId = testScopeId,
+                trigger = triggerState.value,
                 onViewModelRetrieved = { vm, recompositionCount ->
                     when (recompositionCount) {
                         1 -> firstViewModel = vm
@@ -92,9 +94,7 @@ class ViewModelConfigChangeIntegrationTest {
         assert(firstViewModel != null) { "First ViewModel should be retrieved" }
 
         // Force recomposition by changing unrelated state
-        composeRule.runOnUiThread {
-            // UI will recompose via internal state change
-        }
+        triggerState.value = 1
 
         composeRule.waitForIdle()
 
@@ -105,9 +105,7 @@ class ViewModelConfigChangeIntegrationTest {
         }
 
         // Force another recomposition
-        composeRule.runOnUiThread {
-            // UI will recompose via internal state change
-        }
+        triggerState.value = 2
 
         composeRule.waitForIdle()
 
@@ -135,12 +133,16 @@ class ViewModelConfigChangeIntegrationTest {
         var firstViewModel: RestaurantListAndroidViewModel? = null
         var secondViewModel: RestaurantListAndroidViewModel? = null
 
+        val phase = mutableStateOf("first")
+
         composeRule.setContent {
+            val currentPhase = phase.value
             TestStableScopeUI(
-                onViewModelRetrieved = { vm, phase ->
-                    if (phase == "first") {
+                phase = currentPhase,
+                onViewModelRetrieved = { vm, p ->
+                    if (p == "first") {
                         firstViewModel = vm
-                    } else if (phase == "second") {
+                    } else if (p == "second") {
                         secondViewModel = vm
                     }
                 }
@@ -152,9 +154,7 @@ class ViewModelConfigChangeIntegrationTest {
         assert(firstViewModel != null)
 
         // Simulate state update that re-renders UI
-        composeRule.runOnUiThread {
-            // View model should be retrieved again with same scopeId
-        }
+        phase.value = "second"
 
         composeRule.waitForIdle()
 
@@ -264,13 +264,20 @@ class ViewModelConfigChangeIntegrationTest {
         var vmFromCompositionA: RestaurantListAndroidViewModel? = null
         var vmFromCompositionB: RestaurantListAndroidViewModel? = null
 
+        val phase = mutableStateOf("A")
+
         // First composition
         composeRule.setContent {
+            val currentPhase = phase.value
             TestAnimationSimulationUI(
                 scopeId = animScopeId,
-                phase = "A",
+                phase = currentPhase,
                 onViewModelRetrieved = { vm ->
-                    vmFromCompositionA = vm
+                    if (currentPhase == "A") {
+                        vmFromCompositionA = vm
+                    } else if (currentPhase == "B") {
+                        vmFromCompositionB = vm
+                    }
                 }
             )
         }
@@ -279,15 +286,7 @@ class ViewModelConfigChangeIntegrationTest {
         assert(vmFromCompositionA != null)
 
         // Second composition (simulating animation phase change)
-        composeRule.setContent {
-            TestAnimationSimulationUI(
-                scopeId = animScopeId,
-                phase = "B",
-                onViewModelRetrieved = { vm ->
-                    vmFromCompositionB = vm
-                }
-            )
-        }
+        phase.value = "B"
 
         composeRule.waitForIdle()
         assert(vmFromCompositionB != null)
@@ -305,10 +304,10 @@ class ViewModelConfigChangeIntegrationTest {
     @Composable
     private fun TestViewModelCaptureUI(
         scopeId: String,
+        trigger: Int,
         onViewModelRetrieved: (RestaurantListAndroidViewModel, Int) -> Unit
     ) {
         val koin = getKoin()
-        val recompositionCounter = remember { mutableStateOf(0) }
 
         val viewModel: RestaurantListAndroidViewModel = remember(scopeId) {
             val scope = koin.getScopeOrNull(scopeId)
@@ -316,9 +315,8 @@ class ViewModelConfigChangeIntegrationTest {
             scope.get()
         }
 
-        LaunchedEffect(Unit) {
-            onViewModelRetrieved(viewModel, recompositionCounter.value + 1)
-            recompositionCounter.value += 1
+        LaunchedEffect(trigger) {
+            onViewModelRetrieved(viewModel, trigger + 1)
         }
 
         Surface(color = MaterialTheme.colorScheme.background) {
@@ -331,10 +329,10 @@ class ViewModelConfigChangeIntegrationTest {
      */
     @Composable
     private fun TestStableScopeUI(
+        phase: String,
         onViewModelRetrieved: (RestaurantListAndroidViewModel, String) -> Unit
     ) {
         val koin = getKoin()
-        val phase = remember { mutableStateOf("first") }
         val scopeId = "stable-scope-test"
 
         val viewModel: RestaurantListAndroidViewModel = remember(scopeId) {
@@ -343,10 +341,8 @@ class ViewModelConfigChangeIntegrationTest {
             scope.get()
         }
 
-        LaunchedEffect(phase.value) {
-            onViewModelRetrieved(viewModel, phase.value)
-            delay(100)
-            phase.value = "second"
+        LaunchedEffect(phase) {
+            onViewModelRetrieved(viewModel, phase)
         }
 
         Surface(color = MaterialTheme.colorScheme.background) {

@@ -259,7 +259,7 @@ fun RestaurantListScreen(
                                 visible = true,
                                 enter = fadeIn() + expandVertically() + slideInVertically { it / 4 },
                                 exit = fadeOut() + shrinkVertically(),
-                                modifier = Modifier.animateItemPlacement()
+                                modifier = Modifier.animateItem()
                             ) {
                                 RestaurantCardCompose(
                                     data = restaurant,

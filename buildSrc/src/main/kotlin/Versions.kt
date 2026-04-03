@@ -1,17 +1,17 @@
 object Versions {
     // Kotlin & Gradle
     const val kotlin = "2.3.20"
-    const val agp = "8.7.3"
+    const val agp = "8.9.1"
     const val googleServices = "4.4.2"
     const val jvmTarget = "17"
 
     // Android SDK
-    const val compileSdk = 35
+    const val compileSdk = 36
     const val minSdk = 24
-    const val targetSdk = 35
+    const val targetSdk = 36
 
     // AndroidX & Compose
-    const val composeBom = "2026.03.11"
+    const val composeBom = "2024.10.01"
     const val activityCompose = "1.13.0"
     const val lifecycleRuntimeCompose = "2.10.0"
 

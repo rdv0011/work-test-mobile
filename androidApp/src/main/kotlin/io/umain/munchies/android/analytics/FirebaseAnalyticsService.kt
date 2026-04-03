@@ -1,8 +1,8 @@
 package io.umain.munchies.android.analytics
 
 import com.google.firebase.analytics.FirebaseAnalytics
-import com.google.firebase.analytics.ktx.analytics
-import com.google.firebase.ktx.Firebase
+import com.google.firebase.analytics.analytics
+import com.google.firebase.Firebase
 import io.umain.munchies.core.analytics.AnalyticsEvent
 import io.umain.munchies.core.analytics.AnalyticsService
 

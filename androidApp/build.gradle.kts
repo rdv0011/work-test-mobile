@@ -43,6 +43,12 @@ android {
     }
 }
 
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    }
+}
+
 dependencies {
     implementation(project(":design-tokens"))
     implementation(project(":core"))
@@ -68,7 +74,7 @@ dependencies {
     implementation("io.coil-kt:coil-compose:${Versions.coil}")
 
     implementation(platform("com.google.firebase:firebase-bom:${Versions.firebaseBom}"))
-    implementation("com.google.firebase:firebase-analytics-ktx")
+    implementation("com.google.firebase:firebase-analytics")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:${Versions.kotlin}")
