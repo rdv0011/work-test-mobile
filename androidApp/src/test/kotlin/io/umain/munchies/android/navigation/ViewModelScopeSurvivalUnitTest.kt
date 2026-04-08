@@ -6,79 +6,33 @@ import io.umain.munchies.navigation.NavigationReducer
 import io.umain.munchies.navigation.NavigationEvent
 import io.umain.munchies.navigation.NavigationState
 import io.umain.munchies.navigation.RestaurantListRoute
-import io.umain.munchies.navigation.ScreenEntry
 import io.umain.munchies.navigation.TabDefinition
 import io.umain.munchies.navigation.TabNavigationState
 import org.junit.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotEquals
+import kotlin.test.assertTrue
 
 /**
- * Unit tests for ViewModel scope survival through configuration changes.
+ * Unit tests for Route navigation stability and state preservation.
  *
  * These tests verify the pure logic of the navigation system without
  * requiring Android instrumentation. They test:
  *
- * 1. scopeId stability across navigation operations
- * 2. ScreenEntry immutability and equality
- * 3. Navigation state preservation during config changes
+ * 1. Route stability across navigation operations
+ * 2. Navigation state preservation during simulated config changes
  *
  * These tests run quickly (no emulator needed) and provide regression detection.
  */
 class ViewModelScopeSurvivalUnitTest {
 
     /**
-     * Test: scopeId is preserved in ScreenEntry
+     * Test: Navigation state preserves stack routes
      *
-     * Verifies that a ScreenEntry created with a specific scopeId
-     * maintains that scopeId through multiple references and copies.
+     * Simulates pushing a screen and verifies that the navigation state
+     * contains the route.
      */
     @Test
-    fun testScreenEntryScopeIdIsStable() {
-        // Given
-        val route = RestaurantListRoute()
-        val scopeId = "scope-${System.currentTimeMillis()}"
-        val entry = ScreenEntry(route, scopeId)
-
-        // When
-        val copiedEntry = entry.copy()
-        val referencedEntry = entry
-
-        // Then
-        assertEquals(entry.scopeId, scopeId, "Original scopeId should be preserved")
-        assertEquals(copiedEntry.scopeId, scopeId, "Copied entry should have same scopeId")
-        assertEquals(referencedEntry.scopeId, scopeId, "Referenced entry should have same scopeId")
-        assertEquals(entry, copiedEntry, "Entries with same route and scopeId should be equal")
-    }
-
-    /**
-     * Test: Different scopeIds create different ScreenEntry instances
-     *
-     * Verifies that two ScreenEntries with different scopeIds are not equal.
-     */
-    @Test
-    fun testDifferentScopeIdsCreateDifferentEntries() {
-        // Given
-        val route = RestaurantListRoute()
-        val scopeId1 = "scope-1-${System.currentTimeMillis()}"
-        val scopeId2 = "scope-2-${System.currentTimeMillis()}"
-
-        val entry1 = ScreenEntry(route, scopeId1)
-        val entry2 = ScreenEntry(route, scopeId2)
-
-        // Then
-        assertNotEquals(entry1.scopeId, entry2.scopeId, "Different scopeIds should differ")
-        assertNotEquals(entry1, entry2, "Entries with different scopeIds should not be equal")
-    }
-
-    /**
-     * Test: Navigation state preserves stack entries
-     *
-     * Simulates pushing two screens and verifies that the navigation state
-     * contains both entries with their respective scopeIds intact.
-     */
-    @Test
-    fun testNavigationStatePushPreservesScopeIds() {
+    fun testNavigationStatePushPreservesRoutes() {
         // Given
         val initialState = createTestNavigationState()
         val destination1 = Destination.RestaurantList
@@ -91,35 +45,17 @@ class ViewModelScopeSurvivalUnitTest {
 
         // Then
         val stack = stateAfterPush.currentStack
-        assertEquals(1, stack.size, "Stack should have one entry after push")
+        assertEquals(1, stack.size, "Stack should have one route after push")
 
-        val pushEntry = stack.last()
-        assertEquals("RestaurantList", pushEntry.route.key, "Route key should match")
-
-        val scopeIdAfterPush = pushEntry.scopeId
-
-        // When - simulating a config change by reading the same state again
-        val stateAfterConfigChange = stateAfterPush  // No change in state
-
-        // Then
-        val stackAfterConfigChange = stateAfterConfigChange.currentStack
-        val entryAfterConfigChange = stackAfterConfigChange.last()
-
-        assertEquals(
-            scopeIdAfterPush,
-            entryAfterConfigChange.scopeId,
-            "scopeId should be identical after config change simulation"
-        )
+        val route = stack.last()
+        assertEquals("RestaurantList", route.key, "Route key should match")
     }
 
     /**
-     * Test: Multiple push operations create distinct scopeIds
-     *
-     * Verifies that each navigation push creates a unique scopeId,
-     * so ViewModels don't collide.
+     * Test: Multiple push operations add to the stack
      */
     @Test
-    fun testMultiplePushesCreateDistinctScopeIds() {
+    fun testMultiplePushesAddToStack() {
         // Given
         val initialState = createTestNavigationState()
         val destination1 = Destination.RestaurantList
@@ -138,22 +74,16 @@ class ViewModelScopeSurvivalUnitTest {
 
         // Then
         val stack = stateAfterSecondPush.currentStack
-        assertEquals(2, stack.size, "Stack should have two entries")
-
-        val scopeId1 = stack[0].scopeId
-        val scopeId2 = stack[1].scopeId
-
-        assertNotEquals(scopeId1, scopeId2, "Each push should create unique scopeId")
+        assertEquals(2, stack.size, "Stack should have two routes")
+        assertTrue(stack[0] is RestaurantListRoute)
+        assertTrue(stack[1] is RestaurantListRoute)
     }
 
     /**
-     * Test: Popping a screen removes its entry
-     *
-     * Verifies that NavigationReducer.Pop correctly removes the top entry
-     * from the stack, and the remaining entry's scopeId is unchanged.
+     * Test: Popping a screen removes its route
      */
     @Test
-    fun testPopRemovesEntryButPreservesRemaining() {
+    fun testPopRemovesRoute() {
         // Given
         val initialState = createTestNavigationState()
         val destination1 = Destination.RestaurantList
@@ -164,31 +94,28 @@ class ViewModelScopeSurvivalUnitTest {
             NavigationEvent.Push(destination2)
         )
 
-        val firstEntry = stateAfterTwoPushes.currentStack[0]
-        val firstScopeId = firstEntry.scopeId
+        val firstRoute = stateAfterTwoPushes.currentStack[0]
 
         // When
         val stateAfterPop = NavigationReducer.reduce(stateAfterTwoPushes, NavigationEvent.Pop)
 
         // Then
         val remainingStack = stateAfterPop.currentStack
-        assertEquals(1, remainingStack.size, "Stack should have one entry after pop")
+        assertEquals(1, remainingStack.size, "Stack should have one route after pop")
 
-        val remainingEntry = remainingStack.last()
+        val remainingRoute = remainingStack.last()
         assertEquals(
-            firstScopeId,
-            remainingEntry.scopeId,
-            "Remaining entry scopeId should be unchanged after pop"
+            firstRoute.key,
+            remainingRoute.key,
+            "Remaining route should be the first one pushed"
         )
     }
 
     /**
      * Test: Tab switching preserves per-tab stacks
-     *
-     * Verifies that switching tabs doesn't affect the scopeIds in each tab's stack.
      */
     @Test
-    fun testTabSwitchPreservesStackScopeIds() {
+    fun testTabSwitchPreservesRoutes() {
         // Given
         val initialState = createTestNavigationState()
         val destination = Destination.RestaurantList
@@ -199,8 +126,7 @@ class ViewModelScopeSurvivalUnitTest {
             NavigationEvent.PushInTab(destination)
         )
 
-        val restaurantStack = stateAfterPushRestaurant.tabNavigation.getActiveTabStack()
-        val restaurantScopeId = restaurantStack.last().scopeId
+        val restaurantRoute = stateAfterPushRestaurant.tabNavigation.getActiveTabStack().last()
 
         // When - switch to settings tab
         val stateAfterTabSwitch = NavigationReducer.reduce(
@@ -208,99 +134,13 @@ class ViewModelScopeSurvivalUnitTest {
             NavigationEvent.SelectTab("settings")
         )
 
-        // Then - restaurant stack should still have same scopeId
+        // Then - restaurant stack should still have same route
         val restaurantStackAfterSwitch = stateAfterTabSwitch.tabNavigation.getTabStack("restaurants")
         assertEquals(
-            restaurantScopeId,
-            restaurantStackAfterSwitch.last().scopeId,
-            "scopeId should be preserved when switching tabs"
+            restaurantRoute.key,
+            restaurantStackAfterSwitch.last().key,
+            "Route should be preserved when switching tabs"
         )
-    }
-
-    /**
-     * Test: Re-selecting the same tab doesn't mutate stack
-     *
-     * Verifies that selecting the same tab multiple times doesn't change
-     * the entries or their scopeIds.
-     */
-    @Test
-    fun testReSelectingTabPreservesStack() {
-        // Given
-        val initialState = createTestNavigationState()
-        val destination = Destination.RestaurantList
-
-        val stateAfterPush = NavigationReducer.reduce(
-            initialState,
-            NavigationEvent.PushInTab(destination)
-        )
-
-        val stack1 = stateAfterPush.tabNavigation.getActiveTabStack()
-        val scopeId1 = stack1.last().scopeId
-
-        // When - select the same tab multiple times
-        val stateAfterReselect1 = NavigationReducer.reduce(
-            stateAfterPush,
-            NavigationEvent.SelectTab("restaurants")
-        )
-
-        val stateAfterReselect2 = NavigationReducer.reduce(
-            stateAfterReselect1,
-            NavigationEvent.SelectTab("restaurants")
-        )
-
-        // Then
-        val stack2 = stateAfterReselect2.tabNavigation.getActiveTabStack()
-        val scopeId2 = stack2.last().scopeId
-
-        assertEquals(
-            scopeId1,
-            scopeId2,
-            "Reselecting tab should not change scopeIds"
-        )
-    }
-
-    /**
-     * Test: scopeId is unique across all navigation sessions
-     *
-     * Verifies that every time we push a screen, it gets a new unique scopeId.
-     * This ensures VMs don't leak or collide between sessions.
-     */
-    @Test
-    fun testScopeIdUniquenessAcrossSessions() {
-        // Given
-        val destination = Destination.RestaurantList
-        val scopeIds = mutableSetOf<String>()
-
-        // When - perform multiple pushes
-        var state = createTestNavigationState()
-        repeat(10) {
-            state = NavigationReducer.reduce(state, NavigationEvent.Push(destination))
-            scopeIds.add(state.currentStack.last().scopeId)
-        }
-
-        // Then - all scopeIds should be unique
-        assertEquals(10, scopeIds.size, "All 10 pushes should have unique scopeIds")
-    }
-
-    /**
-     * Test: ScreenEntry is immutable (data class contract)
-     *
-     * Verifies that ScreenEntry behaves as an immutable data structure.
-     */
-    @Test
-    fun testScreenEntryImmutability() {
-        // Given
-        val route = RestaurantListRoute()
-        val scopeId = "immutable-test-scope"
-        val entry = ScreenEntry(route, scopeId)
-
-        // When - create a copy with different scopeId
-        val modifiedEntry = entry.copy(scopeId = "different-scope")
-
-        // Then - original should be unchanged
-        assertEquals(scopeId, entry.scopeId, "Original entry should not change")
-        assertEquals("different-scope", modifiedEntry.scopeId, "Copy should have new scopeId")
-        assertNotEquals(entry, modifiedEntry, "Different entries should not be equal")
     }
 
     // ==================== HELPER FUNCTIONS ====================
