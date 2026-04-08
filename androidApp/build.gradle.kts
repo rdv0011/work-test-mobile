@@ -9,6 +9,10 @@ android {
     namespace = "io.umain.munchies.android"
     compileSdk = Versions.compileSdk
 
+    kotlin {
+        jvmToolchain(Versions.javaVersion.majorVersion.toInt())
+    }
+
     defaultConfig {
         applicationId = "io.umain.munchies.android"
         minSdk = Versions.minSdk
@@ -38,14 +42,8 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-}
-
-kotlin {
-    compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        sourceCompatibility = Versions.javaVersion
+        targetCompatibility = Versions.javaVersion
     }
 }
 

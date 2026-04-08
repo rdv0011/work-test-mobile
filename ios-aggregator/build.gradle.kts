@@ -7,12 +7,12 @@ plugins {
 }
 
 kotlin {
-    jvmToolchain(Versions.jvmTarget.toInt())
+    jvmToolchain(Versions.javaVersion.majorVersion.toInt())
     applyDefaultHierarchyTemplate()
 
     androidTarget {
         compilerOptions {
-            jvmTarget.set(fromTarget(Versions.jvmTarget))
+            jvmTarget.set(fromTarget(Versions.javaVersion.majorVersion))
         }
     }
 
@@ -63,7 +63,7 @@ android {
         minSdk = Versions.minSdk
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = Versions.javaVersion
+        targetCompatibility = Versions.javaVersion
     }
 }
