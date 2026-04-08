@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
@@ -38,7 +39,7 @@ import io.umain.munchies.navigation.RestaurantDetailRoute
 import io.umain.munchies.navigation.RestaurantListRoute
 import io.umain.munchies.navigation.ReviewErrorAlertRoute
 import io.umain.munchies.navigation.ReviewSuccessModalRoute
-import io.umain.munchies.navigation.ScreenEntry
+import io.umain.munchies.navigation.Route
 import io.umain.munchies.navigation.SettingsRoute
 import io.umain.munchies.navigation.SubmitReviewModalRoute
 import io.umain.munchies.navigation.TabNavigationState
@@ -110,28 +111,32 @@ private fun RenderTabContent(
             }
         },
         modifier = Modifier.fillMaxSize()
-    ) { entry ->
-        RouteRenderer(entry, stringProvider, coordinator)
+    ) { route ->
+        RouteRenderer(route, stringProvider, coordinator)
     }
 }
 
 @Composable
-private fun RouteRenderer(entry: ScreenEntry?, stringProvider: StringResourceProvider, coordinator: AppCoordinator) {
+private fun RouteRenderer(route: Route?, stringProvider: StringResourceProvider, coordinator: AppCoordinator) {
     val koin = getKoin()
-    when (val route = entry?.route) {
+    when (route) {
         is RestaurantListRoute -> {
-            // Scope was opened by NavigationReducer when this entry was pushed onto the stack.
-            // ViewModel is created once per scopeId and held inside the Koin scope — not in
-            // ViewModelStore. remember(entry.scopeId) caches the lookup so it is not repeated on
-            // every recomposition or during the two simultaneous compositions of AnimatedContent.
-            val viewModel: RestaurantListAndroidViewModel = remember(entry.scopeId) {
-                val scope = koin.getScopeOrNull(entry.scopeId)
+            val scopeId = remember(route.key) { "RestaurantListScope_${route.key.substringAfterLast("/")}" }
+            val viewModel: RestaurantListAndroidViewModel = remember(scopeId) {
+                val scope = koin.getScopeOrNull(scopeId)
                     ?: koin.createScope(
-                        scopeId = entry.scopeId,
+                        scopeId = scopeId,
                         qualifier = org.koin.core.qualifier.named(route.scopeQualifier)
                     )
                 scope.get()
             }
+
+            DisposableEffect(scopeId) {
+                onDispose {
+                    koin.getScopeOrNull(scopeId)?.close()
+                }
+            }
+
             RestaurantListScreen(
                 viewModel = viewModel,
                 navigationViewModel = koinInject(),
@@ -139,18 +144,24 @@ private fun RouteRenderer(entry: ScreenEntry?, stringProvider: StringResourcePro
             )
         }
         is RestaurantDetailRoute -> {
-            // Same principle: scope was already opened by NavigationReducer. Both the shared KMM
-            // ViewModel and the Android wrapper are resolved once and cached by scopeId.
-            val androidViewModel: RestaurantDetailAndroidViewModel = remember(entry.scopeId) {
-                val scope = koin.getScopeOrNull(entry.scopeId)
+            val scopeId = remember(route.key) { "RestaurantDetailScope_${route.key.substringAfterLast("/")}" }
+            val androidViewModel: RestaurantDetailAndroidViewModel = remember(scopeId) {
+                val scope = koin.getScopeOrNull(scopeId)
                     ?: koin.createScope(
-                        scopeId = entry.scopeId,
+                        scopeId = scopeId,
                         qualifier = org.koin.core.qualifier.named(route.scopeQualifier)
                     )
                 val sharedViewModel: RestaurantDetailViewModel =
                     scope.get(parameters = { parametersOf(route.restaurantId) })
                 scope.get(parameters = { parametersOf(sharedViewModel) })
             }
+
+            DisposableEffect(scopeId) {
+                onDispose {
+                    koin.getScopeOrNull(scopeId)?.close()
+                }
+            }
+
             RestaurantDetailScreen(
                 viewModel = androidViewModel,
                 stringProvider = stringProvider,
