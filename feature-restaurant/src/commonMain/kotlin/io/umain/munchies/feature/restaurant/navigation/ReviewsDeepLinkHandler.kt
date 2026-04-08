@@ -9,7 +9,6 @@ import io.umain.munchies.navigation.RestaurantDetailRoute
 import io.umain.munchies.navigation.TabNavigationState
 import io.umain.munchies.navigation.TabDefinition
 import io.umain.munchies.navigation.NavigationDirection
-import io.umain.munchies.navigation.ScreenEntry
 import io.umain.munchies.navigation.ReviewSuccessModalRoute
 
 class ReviewsDeepLinkHandler : DeepLinkHandler {
@@ -34,10 +33,7 @@ class ReviewsDeepLinkHandler : DeepLinkHandler {
             val listRoute = RestaurantListRoute()
             val detailRoute = RestaurantDetailRoute(restaurantId)
             val stacksByTab = mapOf(
-                tabId to listOf(
-                    ScreenEntry(listRoute, listRoute.key),
-                    ScreenEntry(detailRoute, detailRoute.key)
-                )
+                tabId to listOf(listRoute, detailRoute)
             )
             val tabNavigation = TabNavigationState(
                 tabDefinitions = listOf(tabDef),
