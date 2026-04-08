@@ -8,7 +8,6 @@ import io.umain.munchies.navigation.SettingsRoute
 import io.umain.munchies.navigation.TabNavigationState
 import io.umain.munchies.navigation.TabDefinition
 import io.umain.munchies.navigation.NavigationDirection
-import io.umain.munchies.navigation.ScreenEntry
 
 class SettingsDeepLinkHandler : DeepLinkHandler {
     override fun canHandle(deepLink: String): Boolean {
@@ -26,9 +25,7 @@ class SettingsDeepLinkHandler : DeepLinkHandler {
             )
             val settingsRoute = SettingsRoute()
             val stacksByTab = mapOf(
-                tabId to listOf(
-                    ScreenEntry(settingsRoute, settingsRoute.key)
-                )
+                tabId to listOf(settingsRoute)
             )
             val tabNavigation = TabNavigationState(
                 tabDefinitions = listOf(tabDef),
