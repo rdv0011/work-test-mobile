@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     kotlin("multiplatform")
     id("com.android.library")
@@ -8,7 +10,7 @@ kotlin {
 
     androidTarget {
         compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.fromTarget(Versions.jvmTarget))
+            jvmTarget.set(JvmTarget.fromTarget(Versions.javaVersion.majorVersion))
         }
     }
 
@@ -45,11 +47,16 @@ kotlin {
 android {
     namespace = "io.umain.munchies.feature.settings"
     compileSdk = Versions.compileSdk
+
+    kotlin {
+        jvmToolchain(Versions.javaVersion.majorVersion.toInt())
+    }
+
     defaultConfig {
         minSdk = Versions.minSdk
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = Versions.javaVersion
+        targetCompatibility = Versions.javaVersion
     }
 }

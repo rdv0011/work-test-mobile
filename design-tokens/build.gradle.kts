@@ -10,7 +10,7 @@ kotlin {
 
     androidTarget {
         compilerOptions {
-            jvmTarget.set(fromTarget(Versions.jvmTarget))
+            jvmTarget.set(fromTarget(Versions.javaVersion.majorVersion))
         }
     }
 
@@ -39,12 +39,16 @@ android {
     namespace = "io.umain.munchies.designtokens"
     compileSdk = Versions.compileSdk
 
+    kotlin {
+        jvmToolchain(Versions.javaVersion.majorVersion.toInt())
+    }
+
     defaultConfig {
         minSdk = Versions.minSdk
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = Versions.javaVersion
+        targetCompatibility = Versions.javaVersion
     }
 }

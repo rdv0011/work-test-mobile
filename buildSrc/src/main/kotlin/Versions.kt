@@ -1,9 +1,11 @@
+import org.gradle.api.JavaVersion
+
 object Versions {
     // Kotlin & Gradle
-    const val kotlin = "2.3.20"
+    const val kotlin = "2.3.0"
     const val agp = "8.9.1"
     const val googleServices = "4.4.2"
-    const val jvmTarget = "17"
+    val javaVersion = JavaVersion.VERSION_11
 
     // Android SDK
     const val compileSdk = 36
