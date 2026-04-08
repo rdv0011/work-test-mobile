@@ -169,10 +169,8 @@ class NavigationAnalyticsListener(
         return if (state.modalStack.isNotEmpty()) {
             state.modalStack.last()
         } else {
-            state.tabNavigation.stacksByTab
-                .get(state.tabNavigation.activeTabId)
+            state.tabNavigation.stacksByTab[state.tabNavigation.activeTabId]
                 ?.lastOrNull()
-                ?.route
         }
     }
 

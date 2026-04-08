@@ -202,8 +202,8 @@ class AppCoordinatorTest {
         val tabNav = TabNavigationState(
             tabDefinitions = listOf(tabDef1, tabDef2),
             stacksByTab = mapOf(
-                "tab1" to listOf(ScreenEntry(rootRoute, "1"), ScreenEntry(testRoute1, "2")),
-                "tab2" to listOf(ScreenEntry(rootRoute, "3"))
+                "tab1" to listOf(rootRoute, testRoute1),
+                "tab2" to listOf(rootRoute)
             ),
             activeTabId = "tab1"
         )
@@ -222,7 +222,7 @@ class AppCoordinatorTest {
          val tabDef1 = createTabDefinition("tab1", rootRoute)
          val tabNav = TabNavigationState(
              tabDefinitions = listOf(tabDef1),
-             stacksByTab = mapOf("tab1" to listOf(ScreenEntry(rootRoute, "1"))),
+             stacksByTab = mapOf("tab1" to listOf(rootRoute)),
              activeTabId = "tab1"
          )
          val handlers = listOf(
@@ -553,7 +553,7 @@ class AppCoordinatorTest {
         return TabNavigationState(
             tabDefinitions = listOf(tabDef),
             activeTabId = tabDef.id,
-            stacksByTab = mapOf(tabDef.id to routes.mapIndexed { index, route -> ScreenEntry(route, "${route.key}-$index") })
+            stacksByTab = mapOf(tabDef.id to routes.mapIndexed { index, route -> route })
         )
     }
 }
