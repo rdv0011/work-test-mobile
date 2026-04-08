@@ -15,36 +15,31 @@ enum class NavigationDirection {
     TabSwitch
 }
 
-data class ScreenEntry(
-    val route: Route,
-    val scopeId: String
-)
-
 data class TabNavigationState(
     val tabDefinitions: List<TabDefinition>,
     val activeTabId: String,
-    val stacksByTab: Map<String, List<ScreenEntry>>,
+    val stacksByTab: Map<String, List<Route>>,
     val navigationDirection: NavigationDirection = NavigationDirection.Forward
 ) {
 
     /**
      * Get the current stack for the active tab
      */
-    fun getActiveTabStack(): List<ScreenEntry> {
+    fun getActiveTabStack(): List<Route> {
         return stacksByTab[activeTabId] ?: emptyList()
     }
 
     /**
      * Get stack for a specific tab
      */
-    fun getTabStack(tabId: String): List<ScreenEntry> {
+    fun getTabStack(tabId: String): List<Route> {
         return stacksByTab[tabId] ?: emptyList()
     }
 
     /**
      * Create a new TabNavigationState with updated active tab's stack
      */
-    fun updateActiveTabStack(newStack: List<ScreenEntry>): TabNavigationState {
+    fun updateActiveTabStack(newStack: List<Route>): TabNavigationState {
         return copy(
             stacksByTab = stacksByTab.toMutableMap().apply {
                 this[activeTabId] = newStack
@@ -55,7 +50,7 @@ data class TabNavigationState(
     /**
      * Create a new TabNavigationState with updated tab stack
      */
-    fun updateTabStack(tabId: String, newStack: List<ScreenEntry>): TabNavigationState {
+    fun updateTabStack(tabId: String, newStack: List<Route>): TabNavigationState {
         return copy(
             stacksByTab = stacksByTab.toMutableMap().apply {
                 this[tabId] = newStack

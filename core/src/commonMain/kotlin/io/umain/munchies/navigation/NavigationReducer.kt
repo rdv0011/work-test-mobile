@@ -74,7 +74,7 @@ object NavigationReducer {
         return state.copy(
             tabNavigation = state.tabNavigation.copy(
                 stacksByTab = state.tabNavigation.stacksByTab.mapValues { entry ->
-                    val stack: List<ScreenEntry> = entry.value
+                    val stack: List<Route> = entry.value
                     if (stack.isNotEmpty()) listOf(stack.first()) else emptyList()
                 }
             )
@@ -164,10 +164,7 @@ object NavigationReducer {
 
         val tabNav = state.tabNavigation
         val currentStack = tabNav.getActiveTabStack()
-        val scopeId = "${route.key}-${Random.nextLong()}"
-        createKoinScope(scopeId, route.scopeQualifier)
-        val entry = ScreenEntry(route, scopeId)
-        val newStack = currentStack + entry
+        val newStack = currentStack + route
 
         return state.copy(
             tabNavigation = tabNav.updateActiveTabStack(newStack)
@@ -181,8 +178,6 @@ object NavigationReducer {
 
         if (currentStack.size <= 1) return state
 
-        val popped = currentStack.last()
-        getKoinScopeOrNull(popped.scopeId)?.close()
         val newStack = currentStack.dropLast(1)
         return state.copy(
             tabNavigation = tabNav.updateActiveTabStack(newStack)

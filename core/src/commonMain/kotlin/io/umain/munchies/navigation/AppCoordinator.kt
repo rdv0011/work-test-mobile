@@ -259,7 +259,7 @@ open class AppCoordinator(
         } else {
             state.tabNavigation.stacksByTab
                 .get(state.tabNavigation.activeTabId)
-                ?.lastOrNull()?.route?.key ?: "unknown"
+                ?.lastOrNull()?.key ?: "unknown"
         }
     }
 
@@ -286,8 +286,8 @@ open class AppCoordinator(
                 tabDefinitions = listOf(restaurantsTab, settingsTab),
                 activeTabId = "restaurants",
                 stacksByTab = mapOf(
-                    "restaurants" to listOf(ScreenEntry(RestaurantListRoute(), RestaurantListRoute().key)),
-                    "settings" to listOf(ScreenEntry(SettingsRoute(), SettingsRoute().key))
+                    "restaurants" to listOf(RestaurantListRoute()),
+                    "settings" to listOf(SettingsRoute())
                 )
             )
 
