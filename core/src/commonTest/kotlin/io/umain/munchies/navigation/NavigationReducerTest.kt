@@ -541,17 +541,6 @@ class NavigationReducerTest {
 
     //  TEST HELPERS
 
-    private data class TestRoute(
-        override val key: String,
-        override val isRootRoute: Boolean
-    ) : StackRoute
-
-    private data class TestModalRoute(
-        override val key: String
-    ) : ModalRoute {
-        override val presentationStyle: ModalPresentationStyle = ModalPresentationStyle.SHEET
-    }
-
     private data class TestRouteHandler(
         val destination: Destination,
         override val route: Route

@@ -1,35 +1,49 @@
 package io.umain.munchies.navigation
 
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
+
+@Serializable
 data class RestaurantListRoute(
     override val key: String = KEY
-) : Route {
-    override val isRootRoute: Boolean = true
-    override val scopeQualifier: String = "RestaurantListScope"
+) : Route() {
+    @Transient override val isRootRoute: Boolean = true
+    @Transient override val scopeQualifier: String = "RestaurantListScope"
 
     companion object {
         const val KEY = "RestaurantList"
     }
 }
 
+@Serializable
 data class RestaurantDetailRoute(
     val restaurantId: String
-) : Route {
+) : Route() {
     override val key: String = "${KEY_PREFIX}$restaurantId"
-    override val isRootRoute: Boolean = false
-    override val scopeQualifier: String = "RestaurantDetailScope"
+    @Transient override val isRootRoute: Boolean = false
+    @Transient override val scopeQualifier: String = "RestaurantDetailScope"
 
     companion object {
         const val KEY_PREFIX = "RestaurantDetail_"
     }
 }
 
+@Serializable
 data class SettingsRoute(
     override val key: String = KEY
-) : Route {
-    override val isRootRoute: Boolean = true
-    override val scopeQualifier: String = "screen"
+) : Route() {
+    @Transient override val isRootRoute: Boolean = true
+    @Transient override val scopeQualifier: String = "screen"
 
     companion object {
         const val KEY = "Settings"
     }
 }
+
+fun Route.toDestination(): Destination? = when (this) {
+    is RestaurantListRoute -> Destination.RestaurantList
+    is RestaurantDetailRoute -> Destination.RestaurantDetail(restaurantId)
+    is SettingsRoute -> Destination.Settings
+    else -> null
+}
+

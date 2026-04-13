@@ -57,7 +57,7 @@ class AppCoordinatorTest {
          val newState = coordinator.getCurrentState()
          
          assertEquals(initialStackSize + 1, newState.currentStack.size)
-         assertEquals(testRoute1, newState.currentStack.last().route)
+         assertEquals(testRoute1, newState.currentStack.last())
      }
 
     @Test
@@ -70,7 +70,7 @@ class AppCoordinatorTest {
         val newState = coordinator.getCurrentState()
         
         assertEquals(2, newState.tabNavigation.getActiveTabStack().size)
-        assertEquals(testRoute1, newState.tabNavigation.getActiveTabStack().last().route)
+        assertEquals(testRoute1, newState.tabNavigation.getActiveTabStack().last())
     }
 
     @Test
@@ -100,7 +100,7 @@ class AppCoordinatorTest {
          
          val finalState = coordinator.getCurrentState()
          assertEquals(initialStackSize + 2, finalState.currentStack.size)
-         assertEquals(testRoute2, finalState.currentStack.last().route)
+         assertEquals(testRoute2, finalState.currentStack.last())
      }
 
     //  EVENT REPLAY TESTS
@@ -246,7 +246,7 @@ class AppCoordinatorTest {
          val handler = TestRouteHandler(Destination.RestaurantList, testRoute1)
          val coordinatorWithoutHandlers = AppCoordinator()
          // The default stack is not empty, it contains the root route of the active tab
-         assertEquals(listOf(RestaurantListRoute()), coordinatorWithoutHandlers.navigationState.value.currentStack.map { it.route })
+         assertEquals(listOf(RestaurantListRoute()), coordinatorWithoutHandlers.navigationState.value.currentStack)
          val coordinatorWithHandlers = AppCoordinator(routeHandlers = listOf(handler))
          val initialStackSize = coordinatorWithHandlers.getCurrentState().currentStack.size
          coordinatorWithHandlers.reduceState(NavigationEvent.PushInTab(Destination.RestaurantList))
@@ -443,7 +443,7 @@ class AppCoordinatorTest {
          
          coordinator.markListenerReady()
          assertEquals(listOf("ready"), processedDestinations, "Readiness callback should execute once")
-         assertEquals(testRoute2, coordinator.getCurrentState().tabNavigation.getActiveTabStack().last().route, "Final state should reflect last navigation")
+         assertEquals(testRoute2, coordinator.getCurrentState().tabNavigation.getActiveTabStack().last(), "Final state should reflect last navigation")
      }
 
     //  EDGE CASE: NAVIGATION DURING READINESS PHASE
@@ -516,17 +516,6 @@ class AppCoordinatorTest {
 
     //  TEST HELPERS
 
-    private data class TestRoute(
-        override val key: String,
-        override val isRootRoute: Boolean
-    ) : StackRoute
-
-    private data class TestModalRoute(
-        override val key: String
-    ) : ModalRoute {
-        override val presentationStyle: ModalPresentationStyle = ModalPresentationStyle.SHEET
-    }
-
     private data class TestRouteHandler(
         val destination: Destination,
         override val route: Route
@@ -553,7 +542,196 @@ class AppCoordinatorTest {
         return TabNavigationState(
             tabDefinitions = listOf(tabDef),
             activeTabId = tabDef.id,
-            stacksByTab = mapOf(tabDef.id to routes.mapIndexed { index, route -> route })
+            stacksByTab = mapOf(tabDef.id to routes.toList())
         )
     }
+
+    // ── TestScopedRouteHandler ───────────────────────────────────────────────
+
+    /**
+     * A ScopedRouteHandler that records every createScope() call so tests can
+     * assert that AppCoordinator calls it at the right times without needing Koin.
+     */
+    private inner class TestScopedRouteHandler(
+        val destination: Destination,
+        override val route: Route
+    ) : ScopedRouteHandler {
+        val scopesCreated = mutableListOf<Route>()
+
+        override fun toRouteString(): String = route.key
+        override fun canHandle(destination: Destination) = this.destination == destination
+        override fun destinationToRoute(destination: Destination): Route? =
+            if (canHandle(destination)) route else null
+
+        /**
+         * Record the call and return null cast to Scope.
+         * AppCoordinator calls createScope() but never dereferences the returned value,
+         * so null is safe here. No real Koin runtime is needed in commonTest.
+         */
+        @Suppress("UNCHECKED_CAST")
+        override fun createScope(route: Route): org.koin.core.scope.Scope {
+            scopesCreated.add(route)
+            return null as org.koin.core.scope.Scope
+        }
+    }
+
+    // ── SCOPE LIFECYCLE TESTS ────────────────────────────────────────────────
+
+    @Test
+    fun testInitCreatesScopes_ForInitialTabRoots() {
+        val listHandler   = TestScopedRouteHandler(Destination.RestaurantList,    RestaurantListRoute())
+        val detailHandler = TestScopedRouteHandler(Destination.RestaurantDetail("x"), RestaurantDetailRoute("x"))
+
+        // AppCoordinator default state has RestaurantListRoute + SettingsRoute as tab roots
+        AppCoordinator(routeHandlers = listOf(listHandler, detailHandler))
+
+        // listHandler must have been called once (for RestaurantListRoute root)
+        assertEquals(
+            1, listHandler.scopesCreated.size,
+            "createScope should be called once for RestaurantListRoute tab root"
+        )
+        assertTrue(listHandler.scopesCreated[0] is RestaurantListRoute)
+        // detail handler should NOT have been called — detail is not in initial state
+        assertEquals(0, detailHandler.scopesCreated.size)
+    }
+
+    @Test
+    fun testInitDoesNotCreateScopeWhenNoHandlerMatches() {
+        val handler = TestScopedRouteHandler(Destination.RestaurantDetail("x"), RestaurantDetailRoute("x"))
+        // default initial state has RestaurantListRoute — no handler for it → no scope
+        AppCoordinator(routeHandlers = listOf(handler))
+        assertEquals(0, handler.scopesCreated.size)
+    }
+
+    @Test
+    fun testReduceState_PushCallsCreateScopeForNewRoute() {
+        val detailRoute   = RestaurantDetailRoute("r1")
+        val detailHandler = TestScopedRouteHandler(Destination.RestaurantDetail("r1"), detailRoute)
+        val coordinator   = AppCoordinator(routeHandlers = listOf(detailHandler))
+
+        val countBefore = detailHandler.scopesCreated.size
+
+        coordinator.reduceState(NavigationEvent.Push(Destination.RestaurantDetail("r1")))
+
+        assertEquals(
+            countBefore + 1, detailHandler.scopesCreated.size,
+            "createScope should be called once when a new route is pushed"
+        )
+        assertEquals(detailRoute, detailHandler.scopesCreated.last())
+    }
+
+    @Test
+    fun testReduceState_PushInTabCallsCreateScopeForNewRoute() {
+        val detailRoute   = RestaurantDetailRoute("r2")
+        val detailHandler = TestScopedRouteHandler(Destination.RestaurantDetail("r2"), detailRoute)
+        val coordinator   = AppCoordinator(routeHandlers = listOf(detailHandler))
+
+        coordinator.reduceState(NavigationEvent.PushInTab(Destination.RestaurantDetail("r2")))
+
+        assertTrue(
+            detailHandler.scopesCreated.any { it == detailRoute },
+            "createScope should be called when PushInTab adds a new route"
+        )
+    }
+
+    @Test
+    fun testReduceState_PopDoesNotCallCreateScope() {
+        val detailRoute   = RestaurantDetailRoute("r3")
+        val detailHandler = TestScopedRouteHandler(Destination.RestaurantDetail("r3"), detailRoute)
+        val initialState  = NavigationState(
+            tabNavigation = createSingleTabNav(rootRoute, detailRoute)
+        )
+        val coordinator   = AppCoordinator(initialState, listOf(detailHandler))
+
+        val countAfterInit = detailHandler.scopesCreated.size
+
+        coordinator.reduceState(NavigationEvent.Pop)
+
+        // Pop removes the route — no NEW scope should be created
+        assertEquals(
+            countAfterInit, detailHandler.scopesCreated.size,
+            "createScope must NOT be called on Pop — only scope closure happens"
+        )
+    }
+
+    @Test
+    fun testReduceState_NoCreateScope_WhenRouteAlreadyPresent() {
+        // Push the same destination twice — it's already in the state after first push,
+        // so the second push adds another instance with same key — diff picks it up once.
+        val listRoute   = RestaurantListRoute()
+        val listHandler = TestScopedRouteHandler(Destination.RestaurantList, listRoute)
+        val coordinator = AppCoordinator(routeHandlers = listOf(listHandler))
+
+        val countAfterInit = listHandler.scopesCreated.size
+
+        // First push — detail route not in initial state → one new scope
+        coordinator.reduceState(NavigationEvent.PushInTab(Destination.RestaurantList))
+        val countAfterFirst = listHandler.scopesCreated.size
+
+        // Second push of the same route — still adds to stack (same key, so set diff = 0)
+        coordinator.reduceState(NavigationEvent.PushInTab(Destination.RestaurantList))
+        val countAfterSecond = listHandler.scopesCreated.size
+
+        // First push: new entry in diff → createScope called
+        assertEquals(countAfterInit + 1, countAfterFirst, "First push should create a scope")
+        // Second push: same route key already in set → no new scope
+        assertEquals(countAfterFirst, countAfterSecond, "Second push of same route should NOT create another scope")
+    }
+
+    @Test
+    fun testReduceState_ApplyNavigationState_CreatesAndClosesCorrectScopes() {
+        val detailRoute   = RestaurantDetailRoute("r4")
+        val detailHandler = TestScopedRouteHandler(Destination.RestaurantDetail("r4"), detailRoute)
+        // Start with the detail route already in the stack
+        val initialState  = NavigationState(
+            tabNavigation = createSingleTabNav(rootRoute, detailRoute)
+        )
+        val coordinator = AppCoordinator(initialState, listOf(detailHandler))
+
+        val countAfterInit = detailHandler.scopesCreated.size
+
+        // Apply a state that NO LONGER contains detailRoute — scope should be closed (no-op in test)
+        val newState = NavigationState(tabNavigation = createSingleTabNav(rootRoute))
+        coordinator.reduceState(NavigationEvent.ApplyNavigationState(newState))
+
+        // No new scopes should be created (detailRoute was removed, not added)
+        assertEquals(countAfterInit, detailHandler.scopesCreated.size)
+    }
+
+    @Test
+    fun testReduceState_ScopedHandlerNotCalledForNonScopedHandler() {
+        // Regular (non-scoped) handler alongside a scoped handler.
+        // Only the scoped one should have createScope() called.
+        val regularHandler = TestRouteHandler(Destination.RestaurantList, testRoute1)
+        val scopedRoute    = RestaurantDetailRoute("r5")
+        val scopedHandler  = TestScopedRouteHandler(Destination.RestaurantDetail("r5"), scopedRoute)
+
+        val coordinator = AppCoordinator(routeHandlers = listOf(regularHandler, scopedHandler))
+
+        coordinator.reduceState(NavigationEvent.PushInTab(Destination.RestaurantDetail("r5")))
+
+        assertTrue(
+            scopedHandler.scopesCreated.isNotEmpty(),
+            "Scoped handler's createScope must be called"
+        )
+        // TestRouteHandler has no createScope — the test just verifies no ClassCast / NPE
+    }
+
+    @Test
+    fun testReduceState_TabSwitchDoesNotCreateDuplicateScopes() {
+        val listHandler = TestScopedRouteHandler(Destination.RestaurantList, RestaurantListRoute())
+        val coordinator = AppCoordinator(routeHandlers = listOf(listHandler))
+
+        val countAfterInit = listHandler.scopesCreated.size
+
+        // Switching tabs doesn't add new routes to the sets → no new scopes
+        coordinator.reduceState(NavigationEvent.SelectTab("settings"))
+        coordinator.reduceState(NavigationEvent.SelectTab("restaurants"))
+
+        assertEquals(
+            countAfterInit, listHandler.scopesCreated.size,
+            "Tab switching must not trigger extra createScope calls"
+        )
+    }
+
 }

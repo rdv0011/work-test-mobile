@@ -1,5 +1,9 @@
 package io.umain.munchies.navigation
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -8,7 +12,9 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import io.umain.munchies.core.localization.StringResources
 import io.umain.munchies.core.ui.IconId
+import io.umain.munchies.logging.logError
 import io.umain.munchies.logging.logInfo
+import io.umain.munchies.navigation.persistence.NavigationPersistenceStore
 
 /**
  * Central coordinator for all navigation in the application.
@@ -23,12 +29,30 @@ import io.umain.munchies.logging.logInfo
  */
 open class AppCoordinator(
     initialState: NavigationState = createInitialTabNavigationState(),
-    private val routeHandlers: List<RouteHandler> = emptyList()
+    private val routeHandlers: List<RouteHandler> = emptyList(),
+    private val persistenceStore: NavigationPersistenceStore? = null
 ) {
     // INTERNAL STATE
 
     private val _navigationState = MutableStateFlow(initialState)
     val navigationState: StateFlow<NavigationState> = _navigationState.asStateFlow()
+
+    private val persistenceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    init {
+        // Create Koin scopes for all routes already present in the initial navigation state
+        // (e.g. RestaurantListRoute and SettingsRoute that are pre-seeded as tab roots).
+        initialState.getAllRoutes().forEach { route ->
+            val destination = route.toDestination() ?: return@forEach
+            val handler = routeHandlers
+                .filterIsInstance<ScopedRouteHandler>()
+                .firstOrNull { it.canHandle(destination) }
+            if (handler != null) {
+                logInfo("AppCoordinator", "🔧 init: Creating scope for initial route=${route.key}")
+                handler.createScope(route)
+            }
+        }
+    }
 
     // EVENTS (for platform layer)
 
@@ -238,19 +262,52 @@ open class AppCoordinator(
     }
 
     /**
-     * Reduce current state with event and update internal state
-     * 
-     * Called by platform layers to process navigation events and update state.
+     * Reduce current state with event and update internal state.
+     *
+     * Scope lifecycle is fully owned here (per refactoring plan):
+     * - Scopes for newly appearing routes are created via ScopedRouteHandler.createScope()
+     * - Scopes for removed routes are closed via NavigationEffects
+     * UI layer only resolves already-open scopes; it never creates or closes them.
      */
     open fun reduceState(event: NavigationEvent) {
         val currentState = _navigationState.value
-        logInfo("AppCoordinator", "🔄 reduceState: Event={event::class.simpleName}, handlers=${routeHandlers.size}")
+        logInfo("AppCoordinator", "🔄 reduceState: Event=${event::class.simpleName}, handlers=${routeHandlers.size}")
         val newState = NavigationReducer.reduce(currentState, event, routeHandlers)
-        // Close Koin scopes for removed routes
+
+        // Create Koin scopes for routes that just entered the navigation state
+        val addedRoutes = newState.getAllRoutes() - currentState.getAllRoutes()
+        addedRoutes.forEach { route ->
+            val destination = route.toDestination() ?: return@forEach
+            val handler = routeHandlers
+                .filterIsInstance<ScopedRouteHandler>()
+                .firstOrNull { it.canHandle(destination) }
+            if (handler != null) {
+                logInfo("AppCoordinator", "🔧 Creating scope for route=${route.key}")
+                handler.createScope(route)
+            }
+        }
+
+        // Close Koin scopes for routes that just left the navigation state
         NavigationEffects.handleNavigationSideEffects(currentState, newState)
-        logInfo("AppCoordinator", "🔄 reduceState: Event=${event::class.simpleName}, Old route=${getRouteKey(currentState)}, New route=${getRouteKey(newState)}")
+
+        logInfo("AppCoordinator", "🔄 reduceState done: Old=${getRouteKey(currentState)}, New=${getRouteKey(newState)}")
         _navigationState.value = newState
         logInfo("AppCoordinator", "✅ State updated and emitted via StateFlow")
+        if (persistenceStore != null) {
+            persistNavigationStateAsync(newState)
+        }
+    }
+
+    private fun persistNavigationStateAsync(state: NavigationState) {
+        persistenceScope.launch {
+            try {
+                val snapshot = state.toSnapshot()
+                persistenceStore?.saveNavigationState(snapshot)
+                    ?.onFailure { e -> logError("AppCoordinator", "Failed to persist navigation state: ${e.message}") }
+            } catch (e: Exception) {
+                logError("AppCoordinator", "Unexpected error persisting navigation state: ${e.message}")
+            }
+        }
     }
     
     private fun getRouteKey(state: NavigationState): String {

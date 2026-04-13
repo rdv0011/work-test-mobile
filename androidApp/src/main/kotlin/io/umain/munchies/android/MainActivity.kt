@@ -8,13 +8,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.lifecycleScope
 import io.umain.munchies.navigation.DeepLinkConstants
 import io.umain.munchies.navigation.DeepLinkProcessor
 import io.umain.munchies.android.navigation.AppNavigation
 import io.umain.munchies.android.ui.theme.MunchiesTheme
 import io.umain.munchies.navigation.AppCoordinator
+import io.umain.munchies.navigation.persistence.NavigationStateRestorer
 import io.umain.munchies.core.analytics.NavigationAnalyticsListener
 import io.umain.munchies.android.analytics.FirebaseAnalyticsService
+import io.umain.munchies.logging.logError
+import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 
 class MainActivity : ComponentActivity() {
@@ -41,6 +45,18 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun initializeAppState(savedInstanceState: Bundle?) {
+        if (savedInstanceState == null) {
+            lifecycleScope.launch {
+                try {
+                    val restorer: NavigationStateRestorer by inject()
+                    val restoredState = restorer.restoreNavigationState()
+                    coordinator.applyNavigationState(restoredState)
+                } catch (e: Exception) {
+                    logError("MainActivity", "Failed to restore navigation state: ${e.message}")
+                }
+            }
+        }
+
         initAnalyticsTracking()
         launchDeepLinkUri = getColdStartDeepLinkUri(savedInstanceState)
     }
@@ -54,9 +70,6 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        
-        // When app is already running, process deep link immediately
-        // The event listener is already active
         handleDeepLink(intent)
     }
     
@@ -70,9 +83,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun getColdStartDeepLinkUri(savedInstanceState: Bundle?): Uri? {
-        // Capture the deep link only on a cold start (when savedInstanceState is null).
-        // This prevents the deep link from being re-processed and pushing duplicate screens
-        // onto the navigation stack when the Activity is recreated (e.g., during screen rotation).
         return if (savedInstanceState == null) {
             extractDeepLinkUri(intent)?.also { clearConsumedDeepLinkFromIntent() }
         } else {
@@ -93,7 +103,6 @@ class MainActivity : ComponentActivity() {
     
     private fun handleDeepLink(intent: android.content.Intent) {
         val data = intent.data ?: return
-        
         if (data.scheme != DeepLinkConstants.SCHEME) return
         processDeepLinkUri(data)
     }

@@ -23,6 +23,8 @@ struct MunchiesApp: App {
         _ = KoinModule_iosKt.createAppCoordinator()
         logInfo(tag: tag, message: "✅ AppCoordinator created")
         
+        restoreNavigationStateOnColdStart()
+        
         _ = KoinModule_iosKt.getAnalyticsService()
         _ = FirebaseAnalyticsService()
         logInfo(tag: tag, message: "✅ Firebase Analytics initialized")
@@ -56,4 +58,18 @@ struct MunchiesApp: App {
          pendingDeepLinkUrl = url
          logInfo(tag: tag, message: "🔗 pendingDeepLinkUrl set to: \(String(describing: pendingDeepLinkUrl))")
      }
+    
+    private func restoreNavigationStateOnColdStart() {
+        Task {
+            do {
+                let restorer = KoinModule_iosKt.getNavigationStateRestorer()
+                let restoredState = try await restorer.restoreNavigationState()
+                let coordinator = KoinModule_iosKt.getAppCoordinator()
+                coordinator.applyNavigationState(restoredState: restoredState)
+                logInfo(tag: tag, message: "✅ Navigation state restored from crash")
+            } catch {
+                logInfo(tag: tag, message: "⚠️ Failed to restore navigation state: \(error.localizedDescription)")
+            }
+        }
+    }
 }

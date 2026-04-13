@@ -52,11 +52,24 @@ kotlin {
             dependencies {
                 implementation("io.ktor:ktor-client-android:${Versions.ktor}")
                 implementation("io.insert-koin:koin-android:${Versions.koin}")
+                implementation("androidx.datastore:datastore-preferences:1.0.0")
             }
         }
         val iosMain by getting {
             dependencies {
                 implementation("io.ktor:ktor-client-darwin:${Versions.ktor}")
+            }
+        }
+        val androidInstrumentedTest by getting {
+            dependencies {
+                implementation(kotlin("test-junit"))
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.coroutines}")
+            }
+        }
+        val iosTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}")
             }
         }
     }

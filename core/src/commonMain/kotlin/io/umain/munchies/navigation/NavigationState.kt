@@ -1,5 +1,8 @@
 package io.umain.munchies.navigation
 
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
+
 /**
  * Complete navigation state of the application.
  *
@@ -42,35 +45,17 @@ data class NavigationState(
     }
 }
 
-/**
- * Marks a Route as a stack-based screen route.
- * Screens can be pushed/popped from the back stack.
- * This is the default for most Route implementations.
- */
-interface StackRoute : Route {
-    override val isRootRoute: Boolean
-        get() = false
+abstract class StackRoute : Route() {
+    override val isRootRoute: Boolean = false
 }
 
-/**
- * Marks a Route as a modal overlay route.
- * Modals are presented independently of the primary stack.
- */
-interface ModalRoute : Route {
-    override val isRootRoute: Boolean
-        get() = false
+@Serializable
+sealed class ModalRoute : Route() {
+    @Transient override val isRootRoute: Boolean = false
 
-    /**
-     * Presentation style for this modal
-     */
-    val presentationStyle: ModalPresentationStyle
-        get() = ModalPresentationStyle.SHEET
+    abstract val presentationStyle: ModalPresentationStyle
 
-    /**
-     * Whether tapping outside the modal dismisses it
-     */
-    val dismissOnBackgroundTap: Boolean
-        get() = true
+    @Transient open val dismissOnBackgroundTap: Boolean = true
 }
 
 /**

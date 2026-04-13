@@ -7,6 +7,9 @@ import io.umain.munchies.core.navigation.NavigationDispatcher
 import io.umain.munchies.logging.logInfo
 import io.umain.munchies.core.localization.IOSStringResourceProvider
 import io.umain.munchies.core.localization.StringResourceProvider
+import io.umain.munchies.navigation.persistence.NavigationPersistenceStore
+import io.umain.munchies.navigation.persistence.NavigationStateRestorer
+import io.umain.munchies.navigation.persistence.IosUserDefaultsPersistence
 import org.koin.core.Koin
 import org.koin.core.KoinApplication
 import org.koin.dsl.module
@@ -16,6 +19,8 @@ private var koinCallCounter = 0
 actual val platformModule = module {
     single<StringResourceProvider> { IOSStringResourceProvider() }
     single { provideHttpClientEngine() }
+    single<NavigationPersistenceStore> { IosUserDefaultsPersistence() }
+    single { NavigationStateRestorer(get<NavigationPersistenceStore>()) }
 }
 
 private lateinit var koinApplication: KoinApplication
@@ -64,7 +69,10 @@ actual fun createAppCoordinator(): AppCoordinator {
         logInfo("KoinModule.ios", "⚠️ WARNING: No route handlers found! This will break navigation.")
     }
     
-    val coordinator = AppCoordinator(routeHandlers = handlers)
+    val coordinator = AppCoordinator(
+        routeHandlers = handlers,
+        persistenceStore = koin.get()
+    )
     koin.declare(coordinator)
     koin.declare(NavigationDispatcher(coordinator))
     logInfo("KoinModule.ios", "✅ AppCoordinator created successfully")
@@ -72,6 +80,8 @@ actual fun createAppCoordinator(): AppCoordinator {
 }
 
 fun getAppCoordinator(): AppCoordinator = koinApplication.koin.get()
+
+fun getNavigationStateRestorer(): NavigationStateRestorer = koinApplication.koin.get()
 
 fun getAnalyticsService(): io.umain.munchies.core.analytics.AnalyticsService {
     val service = koinApplication.koin.get<io.umain.munchies.core.analytics.AnalyticsService>()

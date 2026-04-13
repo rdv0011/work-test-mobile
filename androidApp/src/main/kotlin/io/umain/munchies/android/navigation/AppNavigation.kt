@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
@@ -118,24 +117,10 @@ private fun RenderTabContent(
 
 @Composable
 private fun RouteRenderer(route: Route?, stringProvider: StringResourceProvider, coordinator: AppCoordinator) {
-    val koin = getKoin()
     when (route) {
         is RestaurantListRoute -> {
-            val scopeId = remember(route.key) { "RestaurantListScope_${route.key.substringAfterLast("/")}" }
-            val viewModel: RestaurantListAndroidViewModel = remember(scopeId) {
-                val scope = koin.getScopeOrNull(scopeId)
-                    ?: koin.createScope(
-                        scopeId = scopeId,
-                        qualifier = org.koin.core.qualifier.named(route.scopeQualifier)
-                    )
-                scope.get()
-            }
-
-            DisposableEffect(scopeId) {
-                onDispose {
-                    koin.getScopeOrNull(scopeId)?.close()
-                }
-            }
+            val scope = remember(route.key) { getKoin().getScope(route.key) }
+            val viewModel = remember(route.key) { scope.get<RestaurantListAndroidViewModel>() }
 
             RestaurantListScreen(
                 viewModel = viewModel,
@@ -144,23 +129,8 @@ private fun RouteRenderer(route: Route?, stringProvider: StringResourceProvider,
             )
         }
         is RestaurantDetailRoute -> {
-            val scopeId = remember(route.key) { "RestaurantDetailScope_${route.key.substringAfterLast("/")}" }
-            val androidViewModel: RestaurantDetailAndroidViewModel = remember(scopeId) {
-                val scope = koin.getScopeOrNull(scopeId)
-                    ?: koin.createScope(
-                        scopeId = scopeId,
-                        qualifier = org.koin.core.qualifier.named(route.scopeQualifier)
-                    )
-                val sharedViewModel: RestaurantDetailViewModel =
-                    scope.get(parameters = { parametersOf(route.restaurantId) })
-                scope.get(parameters = { parametersOf(sharedViewModel) })
-            }
-
-            DisposableEffect(scopeId) {
-                onDispose {
-                    koin.getScopeOrNull(scopeId)?.close()
-                }
-            }
+            val scope = remember(route.key) { getKoin().getScope(route.key) }
+            val androidViewModel = remember(route.key) { scope.get<RestaurantDetailAndroidViewModel>() }
 
             RestaurantDetailScreen(
                 viewModel = androidViewModel,
@@ -169,7 +139,8 @@ private fun RouteRenderer(route: Route?, stringProvider: StringResourceProvider,
             )
         }
         is SettingsRoute -> {
-            val settingsViewModel = koinInject<io.umain.munchies.feature.settings.presentation.SettingsViewModel>()
+            val scope = remember(route.key) { getKoin().getScope(route.key) }
+            val settingsViewModel = remember(route.key) { scope.get<io.umain.munchies.feature.settings.presentation.SettingsViewModel>() }
             SettingsScreen(
                 viewModel = settingsViewModel,
                 stringProvider = stringProvider
