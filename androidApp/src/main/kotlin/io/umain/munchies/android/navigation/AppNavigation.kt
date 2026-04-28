@@ -146,7 +146,7 @@ private fun RouteRenderer(route: Route?, stringProvider: StringResourceProvider,
                 stringProvider = stringProvider
             )
         }
-        null -> Unit
+        else -> Unit
     }
 }
 
