@@ -57,9 +57,8 @@ fun RestaurantDetailContent(
             is RestaurantDetailUiState.Loading -> {
                 Column(
                     modifier = Modifier
-                        .fillMaxSize(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
                 ) {
                     RestaurantDetailSkeleton()
                 }
