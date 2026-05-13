@@ -39,7 +39,7 @@ val featureRestaurantModuleIos = module {
     } bind RouteHandler::class
 
     scope(named(RestaurantListScope.qualifierName)) {
-        scoped { RestaurantListViewModel(get()) }
+        scoped { RestaurantListViewModel(get(), get()) }
     }
 
     scope(named(RestaurantDetailScope("").qualifierName)) {
@@ -47,7 +47,8 @@ val featureRestaurantModuleIos = module {
             RestaurantDetailViewModel(
                 restaurantId = restaurantId,
                 repository = get(),
-                navigationViewModel = get()
+                navigationViewModel = get(),
+                stringProvider = get()
             )
         }
     }

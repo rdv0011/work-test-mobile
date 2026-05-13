@@ -9,9 +9,12 @@ import org.koin.dsl.bind
 import org.koin.dsl.module
 
 actual fun loadRestaurantKoinModules() {
-    val restaurantModule = module {
+    // Load the common feature module (contains ViewModels, repository, etc.)
+    loadKoinModules(featureRestaurantModule)
+    
+    val restaurantAndroidModule = module {
         single { restaurantDetailRouteHandlerAndroid() } bind RouteHandler::class
         single { restaurantListRouteHandlerAndroid() } bind RouteHandler::class
     }
-    loadKoinModules(restaurantModule)
+    loadKoinModules(restaurantAndroidModule)
 }
