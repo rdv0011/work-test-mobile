@@ -2,13 +2,20 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget.Companion.fromTarget
 
 plugins {
     kotlin("multiplatform")
-    id("com.android.library")
+    id("com.android.kotlin.multiplatform.library")
 }
 
 kotlin {
     applyDefaultHierarchyTemplate()
 
-    androidTarget {
+    // androidTarget is automatically created by com.android.kotlin.multiplatform.library
+    // Configure it here
+    android {
+        compileSdk = Versions.compileSdk
+        namespace = "io.umain.munchies.designtokens"
+    }
+
+    targets.withType<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget> {
         compilerOptions {
             jvmTarget.set(fromTarget(Versions.javaVersion.majorVersion))
         }
@@ -32,23 +39,5 @@ kotlin {
                 // No external dependencies needed for design tokens
             }
         }
-    }
-}
-
-android {
-    namespace = "io.umain.munchies.designtokens"
-    compileSdk = Versions.compileSdk
-
-    kotlin {
-        jvmToolchain(Versions.javaVersion.majorVersion.toInt())
-    }
-
-    defaultConfig {
-        minSdk = Versions.minSdk
-    }
-
-    compileOptions {
-        sourceCompatibility = Versions.javaVersion
-        targetCompatibility = Versions.javaVersion
     }
 }

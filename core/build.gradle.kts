@@ -1,16 +1,22 @@
-import org.gradle.kotlin.dsl.implementation
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget.Companion.fromTarget
 
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
-    id("com.android.library")
+    id("com.android.kotlin.multiplatform.library")
 }
 
 kotlin {
     applyDefaultHierarchyTemplate()
 
-    androidTarget {
+    // androidTarget is automatically created by com.android.kotlin.multiplatform.library
+    // Configure it here
+    android {
+        compileSdk = Versions.compileSdk
+        namespace = "io.umain.munchies.core"
+    }
+
+    targets.withType<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget> {
         compilerOptions {
             jvmTarget.set(fromTarget(Versions.javaVersion.majorVersion))
         }
@@ -60,12 +66,6 @@ kotlin {
                 implementation("io.ktor:ktor-client-darwin:${Versions.ktor}")
             }
         }
-        val androidInstrumentedTest by getting {
-            dependencies {
-                implementation(kotlin("test-junit"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.coroutines}")
-            }
-        }
         val iosTest by getting {
             dependencies {
                 implementation(kotlin("test"))
@@ -76,27 +76,5 @@ kotlin {
 
     compilerOptions {
         freeCompilerArgs.add("-Xexpect-actual-classes")
-    }
-}
-
-android {
-    namespace = "io.umain.munchies.core"
-    compileSdk = Versions.compileSdk
-
-    kotlin {
-        jvmToolchain(Versions.javaVersion.majorVersion.toInt())
-    }
-
-    defaultConfig {
-        minSdk = Versions.minSdk
-    }
-    compileOptions {
-        sourceCompatibility = Versions.javaVersion
-        targetCompatibility = Versions.javaVersion
-    }
-    sourceSets {
-        getByName("main") {
-            res.srcDirs("src/androidMain/res")
-        }
     }
 }

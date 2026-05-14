@@ -8,14 +8,18 @@ import io.umain.munchies.di.getKoin
 import io.umain.munchies.logging.logInfo
 
 actual fun getKoinScopeOrNull(scopeId: String): Closeable? {
-    val koin: Koin = getKoin()
-    val scope: Scope? = try {
-        koin.getScopeOrNull(scopeId)
+    return try {
+        val koin: Koin = getKoin()
+        val scope: Scope? = try {
+            koin.getScopeOrNull(scopeId)
+        } catch (_: Exception) {
+            null
+        }
+        logInfo("NavigationEffects.ios", "getKoinScopeOrNull called for scopeId=$scopeId, found=${scope != null}")
+        scope?.let { IOSKoinScopeCloseable(it, scopeId) }
     } catch (_: Exception) {
         null
     }
-    logInfo("NavigationEffects.ios", "getKoinScopeOrNull called for scopeId=$scopeId, found=${scope != null}")
-    return scope?.let { IOSKoinScopeCloseable(it, scopeId) }
 }
 
 private class IOSKoinScopeCloseable(private val scope: Scope, private val scopeId: String) : Closeable {
@@ -26,7 +30,10 @@ private class IOSKoinScopeCloseable(private val scope: Scope, private val scopeI
 }
 
 actual fun createKoinScope(scopeId: String, qualifier: String) {
-    val koin: Koin = getKoin()
-    koin.createScope(scopeId, named(qualifier))
+    try {
+        val koin: Koin = getKoin()
+        koin.createScope(scopeId, named(qualifier))
+    } catch (_: Exception) {
+    }
 }
 

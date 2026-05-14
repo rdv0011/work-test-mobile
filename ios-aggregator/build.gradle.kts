@@ -3,14 +3,20 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
 
 plugins {
     kotlin("multiplatform")
-    id("com.android.library")
+    id("com.android.kotlin.multiplatform.library")
 }
 
 kotlin {
-    jvmToolchain(Versions.javaVersion.majorVersion.toInt())
     applyDefaultHierarchyTemplate()
 
-    androidTarget {
+    // androidTarget is automatically created by com.android.kotlin.multiplatform.library
+    // Configure it here
+    android {
+        compileSdk = Versions.compileSdk
+        namespace = "io.umain.munchies.aggregator"
+    }
+
+    targets.withType<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget> {
         compilerOptions {
             jvmTarget.set(fromTarget(Versions.javaVersion.majorVersion))
         }
@@ -53,17 +59,5 @@ kotlin {
 
     compilerOptions {
         freeCompilerArgs.add("-Xexpect-actual-classes")
-    }
-}
-
-android {
-    namespace = "io.umain.munchies.aggregator"
-    compileSdk = Versions.compileSdk
-    defaultConfig {
-        minSdk = Versions.minSdk
-    }
-    compileOptions {
-        sourceCompatibility = Versions.javaVersion
-        targetCompatibility = Versions.javaVersion
     }
 }

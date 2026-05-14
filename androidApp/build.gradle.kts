@@ -1,6 +1,5 @@
 plugins {
     id("com.android.application")
-    kotlin("android")
     id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.gms.google-services")
 }
@@ -8,10 +7,6 @@ plugins {
 android {
     namespace = "io.umain.munchies.android"
     compileSdk = Versions.compileSdk
-
-    kotlin {
-        jvmToolchain(Versions.javaVersion.majorVersion.toInt())
-    }
 
     defaultConfig {
         applicationId = "io.umain.munchies.android"
@@ -56,6 +51,7 @@ dependencies {
     implementation(platform("androidx.compose:compose-bom:${Versions.composeBom}"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
+    implementation("androidx.core:core-ktx:1.18.0")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 

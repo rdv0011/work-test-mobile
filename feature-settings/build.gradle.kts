@@ -2,13 +2,20 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     kotlin("multiplatform")
-    id("com.android.library")
+    id("com.android.kotlin.multiplatform.library")
 }
 
 kotlin {
     applyDefaultHierarchyTemplate()
 
-    androidTarget {
+    // androidTarget is automatically created by com.android.kotlin.multiplatform.library
+    // Configure it here
+    android {
+        compileSdk = Versions.compileSdk
+        namespace = "io.umain.munchies.feature.settings"
+    }
+
+    targets.withType<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget> {
         compilerOptions {
             jvmTarget.set(JvmTarget.fromTarget(Versions.javaVersion.majorVersion))
         }
@@ -41,22 +48,5 @@ kotlin {
 
     compilerOptions {
         freeCompilerArgs.add("-Xexpect-actual-classes")
-    }
-}
-
-android {
-    namespace = "io.umain.munchies.feature.settings"
-    compileSdk = Versions.compileSdk
-
-    kotlin {
-        jvmToolchain(Versions.javaVersion.majorVersion.toInt())
-    }
-
-    defaultConfig {
-        minSdk = Versions.minSdk
-    }
-    compileOptions {
-        sourceCompatibility = Versions.javaVersion
-        targetCompatibility = Versions.javaVersion
     }
 }

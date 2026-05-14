@@ -18,6 +18,7 @@ object ViewModelStore {
         map.remove(key)
     }
 
+    @Suppress("UNCHECKED_CAST")
     fun <T : Any> get(key: String): T? = map[key] as? T
 
     fun clear() {
