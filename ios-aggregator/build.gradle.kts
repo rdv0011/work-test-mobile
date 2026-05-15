@@ -1,63 +1,15 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget.Companion.fromTarget
-import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
-
 plugins {
-    kotlin("multiplatform")
-    id("com.android.kotlin.multiplatform.library")
+    id("io.umain.munchies.kotlin-ios")
 }
 
 kotlin {
-    applyDefaultHierarchyTemplate()
-
-    // androidTarget is automatically created by com.android.kotlin.multiplatform.library
-    // Configure it here
-    android {
-        compileSdk = Versions.compileSdk
-        namespace = "io.umain.munchies.aggregator"
-    }
-
-    targets.withType<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget> {
-        compilerOptions {
-            jvmTarget.set(fromTarget(Versions.javaVersion.majorVersion))
-        }
-    }
-
-    val xcframeworkName = "shared"
-    val xcf = XCFramework(xcframeworkName)
-
-    val iosTargets = listOf(
-        iosArm64(),
-        iosSimulatorArm64()
-    )
-
-    iosTargets.forEach { target ->
-        target.binaries.framework {
-            baseName = xcframeworkName
-            isStatic = true
-
-            export(project(":design-tokens"))
-            export(project(":core"))
-            export(project(":feature-restaurant"))
-            export(project(":feature-settings"))
-            export("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}")
-            export("io.insert-koin:koin-core:${Versions.koin}")
-
-            xcf.add(this)
-        }
-    }
-
     sourceSets {
         val commonMain by getting {
             dependencies {
-                api(project(":design-tokens"))
-                api(project(":core"))
-                api(project(":feature-restaurant"))
-                api(project(":feature-settings"))
+                api(projects.core)
+                api(projects.featureRestaurant)
+                api(projects.featureSettings)
             }
         }
-    }
-
-    compilerOptions {
-        freeCompilerArgs.add("-Xexpect-actual-classes")
     }
 }

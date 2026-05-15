@@ -1,0 +1,12 @@
+package plugins.common
+
+import org.gradle.api.Plugin
+import org.gradle.api.Project
+import versions.Versions
+
+class VersionsOnlyConventionPlugin : Plugin<Project> {
+    override fun apply(target: Project) {
+        val versions = Versions
+        target.extensions.add("versions", versions)
+    }
+}
