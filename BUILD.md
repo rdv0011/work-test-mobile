@@ -15,9 +15,10 @@
 - ✅ KMP iOS targets: `iosArm64`, `iosSimulatorArm64`
 - ✅ `ios-aggregator` module with frameworks configured
 - ✅ Xcode build phase configured (`Build KMP Framework`)
-- ✅ Automatic framework + XCFramework generation
+- ✅ Automatic framework generation via build phase
 - ✅ Swift Package Manager (SPM) configured
-- ✅ **Build phase tested and working** ✓
+- ✅ **Circular dependency RESOLVED** ✓
+- ✅ **Xcode package resolution working** ✓
 
 ---
 
@@ -50,73 +51,70 @@ open iosApp/iosApp.xcodeproj
 
 Press **Cmd+B** to build, then **Cmd+R** to run on simulator or device.
 
-**That's it!** The Xcode build phase automatically:
-1. Builds KMP frameworks for current architecture
-2. Creates XCFramework bundle
-3. Xcode links and embeds in your app
+**That's it!** Subsequent builds automatically update KMP frameworks.
 
 ---
 
 ## How It Works
 
-### Build Phase Flow
+### Architecture Decision: Separating XCFramework Creation from Build
+
+**The Problem We Solved:**
+```
+Original approach (CIRCULAR):
+1. Build phase tries to create XCFramework
+2. Package.swift references build/XCFrameworks/release/shared.xcframework
+3. Xcode resolves packages BEFORE running build phases
+4. XCFramework doesn't exist yet
+5. Xcode can't resolve package → tries to run build phase → circular dependency
+```
+
+**The Solution:**
+```
+Corrected approach (LINEAR):
+1. XCFramework created ONCE during initial setup
+2. Xcode can resolve packages immediately (framework exists)
+3. Build phase ONLY updates framework binaries (./gradlew build)
+4. Framework files updated in-place
+5. No circular dependency
+```
+
+### Build Flow (After Setup)
 
 ```
-You press Cmd+B in Xcode
-         ↓
-Xcode runs build phases (in order)
-         ↓
-Build Phase: "Build KMP Framework" executes
-         ├─ cd "${SRCROOT}/.."
-         ├─ ./gradlew :ios-aggregator:build
-         │  └─ Compiles KMP for arm64 + simulator
-         │  └─ Generates: build/bin/iosArm64/releaseFramework/shared.framework
-         │  └─ Generates: build/bin/iosSimulatorArm64/releaseFramework/shared.framework
-         ├─ ios-aggregator/create-xcframework.sh
-         │  └─ Bundles frameworks into single XCFramework
-         │  └─ Generates: build/XCFrameworks/release/shared.xcframework
-         ↓
-Xcode compiles Swift code
-         ↓
-Xcode links frameworks (via SPM)
-         ↓
+Cmd+B in Xcode
+       ↓
+Xcode starts build process
+       ↓
+Build Phase 1: "Build KMP Framework" executes
+  ├─ cd "${SRCROOT}/.."
+  ├─ ./gradlew :ios-aggregator:build
+  │  └─ Recompiles Kotlin for iosArm64 + iosSimulatorArm64
+  │  └─ Updates binaries in build/bin/ios{Arm64,SimulatorArm64}/...
+  │
+  └─ XCFramework automatically includes updated binaries
+     (Framework bundles point to build/bin/ directories)
+       ↓
+Build Phase 2+: Compile Swift, Link Frameworks, etc.
+       ↓
 Build completes ✓
 ```
 
-### Why This Works
-
-1. **Gradle builds frameworks**: Each architecture gets its own `.framework` bundle with binary
-2. **XCFramework bundles them**: Single file containing all architectures (arm64 + simulator)
-3. **SPM integrates**: `Package.swift` points to XCFramework, Xcode links automatically
-4. **Xcode build phase**: Automatically runs before compilation, ensures fresh KMP binaries
-5. **Environment variables**: Xcode provides SDK_NAME, ARCHS, etc. (automatically used by Gradle)
-
-### Architecture Diagram
+### Key Insight: XCFramework Structure
 
 ```
-ios-aggregator/ (KMP module)
-├── build.gradle.kts (Kotlin/Native config)
-├── Package.swift (SPM manifest)
-├── create-xcframework.sh (bundling script)
-└── build/
-    ├── bin/ (per-architecture frameworks)
-    │   ├── iosArm64/releaseFramework/shared.framework
-    │   │   └── shared (arm64 binary)
-    │   └── iosSimulatorArm64/releaseFramework/shared.framework
-    │       └── shared (arm64 simulator binary)
-    │
-    └── XCFrameworks/release/shared.xcframework (final bundle)
-        ├── Info.plist (metadata)
-        ├── ios-arm64/shared.framework/
-        │   └── shared (arm64 binary)
-        └── ios-arm64-simulator/shared.framework/
-            └── shared (simulator arm64 binary)
+XCFramework is just a wrapper around per-architecture frameworks:
 
-iosApp/ (Swift app)
-├── iosApp.xcodeproj/project.pbxproj
-│   └── Build Phases: "Build KMP Framework"
-│       └── Runs the gradle build + create-xcframework.sh
-└── iosApp/ (Swift source files)
+ios-aggregator/build/XCFrameworks/release/shared.xcframework/
+├── Info.plist (metadata, lists architectures)
+├── ios-arm64/shared.framework/
+│   └── shared (binary for device)
+└── ios-arm64-simulator/shared.framework/
+    └── shared (binary for simulator)
+
+When you update build/bin/.../shared.framework/shared binaries,
+the XCFramework automatically sees the changes.
+No need to recreate it every build.
 ```
 
 ---
@@ -126,50 +124,48 @@ iosApp/ (Swift app)
 ### Normal Development (Most Common)
 
 ```bash
-# Make changes to Kotlin code in core, feature-restaurant, etc.
-# Then in Xcode:
-# Press Cmd+B to build
-# Build phase automatically rebuilds KMP frameworks
-# Press Cmd+R to run on simulator
-```
+# Edit Kotlin code
+# iosApp source changes...
 
-### Make Changes → Test Cycle
-
-```bash
-# Edit: /core/src/commonMain/.../*.kt
-# Edit: /feature-restaurant/src/commonMain/.../*.kt
-# Edit: iosApp/iosApp/*.swift
-
-# Build:
+# Build in Xcode
 open iosApp/iosApp.xcodeproj
-# Press Cmd+B (builds everything)
-# Press Cmd+R (runs on simulator)
+# Press Cmd+B
 
-# Changes automatically included ✓
+# What happens automatically:
+# 1. Build phase runs: ./gradlew :ios-aggregator:build
+# 2. Kotlin compiled for simulator (arm64)
+# 3. Binary updated in build/bin/iosSimulatorArm64/...
+# 4. Xcode links the updated binary
+# 5. Build completes
+
+# Run on simulator
+# Press Cmd+R
 ```
+
+### After Code Changes
+
+Just press **Cmd+B** in Xcode - everything else is automatic.
 
 ### Full Clean Build
 
 If you encounter weird issues:
 
 ```bash
-# Clean everything
-./gradlew clean
-
-# Remove build directories
-rm -rf ios-aggregator/build iosApp/build
-
-# Full rebuild
-./gradlew :ios-aggregator:build
-
-# Recreate XCFramework
+# Option 1: Clean Gradle and Xcode separately
+./gradlew clean :ios-aggregator:build
 ios-aggregator/create-xcframework.sh
 
-# Clean Xcode
 cd iosApp
 xcodebuild clean -project iosApp.xcodeproj -scheme iosApp
 
-# Rebuild in Xcode: Cmd+B
+# Then rebuild in Xcode: Cmd+B
+
+# Option 2: Complete reset
+rm -rf ios-aggregator/build iosApp/build
+./gradlew clean :ios-aggregator:build
+ios-aggregator/create-xcframework.sh
+open iosApp/iosApp.xcodeproj
+# Cmd+B in Xcode
 ```
 
 ---
@@ -179,27 +175,61 @@ xcodebuild clean -project iosApp.xcodeproj -scheme iosApp
 ### Build Targets
 
 ```bash
-# Build all iOS architectures (device + simulator)
+# Build all iOS architectures (creates binaries)
 ./gradlew :ios-aggregator:build
 
 # Build specific architecture
-./gradlew :ios-aggregator:iosArm64Binaries         # Device (arm64)
+./gradlew :ios-aggregator:iosArm64Binaries         # Device
 ./gradlew :ios-aggregator:iosSimulatorArm64Binaries # Simulator
 
-# Create XCFramework bundle
+# Create/update XCFramework bundle (only needed once or after framework changes)
 ios-aggregator/create-xcframework.sh
 
 # Verify available tasks
-./gradlew :ios-aggregator:tasks | grep -i "framework"
+./gradlew :ios-aggregator:tasks | grep -i framework
 ```
 
 ---
 
 ## Troubleshooting
 
+### "Cycle inside iosApp" Build Error
+
+**This was the main issue we solved!**
+
+If you see this error:
+```
+error: Cycle inside iosApp; building could produce unreliable results.
+Cycle details: ProcessXCFramework depends on script phase "Build KMP Framework"
+```
+
+**Root cause:** XCFramework creation was in the build phase.
+
+**Solution:** Ensure:
+1. XCFramework exists BEFORE opening Xcode:
+   ```bash
+   ./gradlew :ios-aggregator:build
+   ios-aggregator/create-xcframework.sh
+   ```
+
+2. Build phase only runs gradle (not create-xcframework.sh):
+   ```bash
+   grep "shellScript" iosApp/iosApp.xcodeproj/project.pbxproj
+   # Should show: ./gradlew :ios-aggregator:build (no create-xcframework.sh)
+   ```
+
+3. Clean and rebuild:
+   ```bash
+   rm -rf ios-aggregator/build iosApp/build
+   ./gradlew :ios-aggregator:build
+   ios-aggregator/create-xcframework.sh
+   cd iosApp
+   xcodebuild clean -project iosApp.xcodeproj -scheme iosApp
+   ```
+
 ### "No such module 'shared'" in Xcode
 
-1. **Ensure XCFramework exists:**
+1. **Verify XCFramework exists:**
    ```bash
    ls ios-aggregator/build/XCFrameworks/release/shared.xcframework/Info.plist
    ```
@@ -210,54 +240,66 @@ ios-aggregator/create-xcframework.sh
    ios-aggregator/create-xcframework.sh
    ```
 
-3. **Clean and rebuild in Xcode:**
+3. **Verify Package.swift is correct:**
+   ```bash
+   grep "xcframework" ios-aggregator/Package.swift
+   # Should show: path: "./build/XCFrameworks/release/shared.xcframework"
+   ```
+
+4. **Clean and rebuild:**
    ```bash
    cd iosApp
    xcodebuild clean -project iosApp.xcodeproj -scheme iosApp
-   # Then Cmd+B in Xcode
+   # Then Cmd+B
    ```
 
-4. **Verify framework is linked:**
-   - Target → General → Frameworks, Libraries, and Embedded Content
-   - Should show "shared" with "Embed & Sign" status
+### Xcode Build Fails: "Symbol Not Found"
+
+1. **Rebuild KMP frameworks:**
+   ```bash
+   ./gradlew clean :ios-aggregator:build
+   ```
+
+2. **Verify binaries were created:**
+   ```bash
+   ls -la ios-aggregator/build/bin/*/releaseFramework/shared.framework/shared
+   ```
+
+3. **Recreate XCFramework:**
+   ```bash
+   ios-aggregator/create-xcframework.sh
+   ```
+
+4. **Clean Xcode cache:**
+   ```bash
+   rm -rf ~/Library/Developer/Xcode/DerivedData/iosApp-*
+   ```
+
+5. **Rebuild:**
+   ```bash
+   cd iosApp
+   xcodebuild clean -project iosApp.xcodeproj -scheme iosApp
+   # Then Cmd+B
+   ```
 
 ### Build Phase Not Running
 
-1. **Check phase exists:**
+1. **Verify phase exists:**
    - Target → Build Phases → Look for "Build KMP Framework"
 
-2. **Check phase order:**
+2. **Check it's positioned correctly:**
    - Should be **before** "Compile Sources"
 
-3. **Verify it's executable:**
+3. **Verify script:**
    ```bash
-   grep -A10 "Build KMP Framework" iosApp/iosApp.xcodeproj/project.pbxproj | grep shellScript
+   grep -A5 "Build KMP Framework" iosApp/iosApp.xcodeproj/project.pbxproj | grep "shellScript"
+   # Should contain: ./gradlew :ios-aggregator:build
    ```
 
 4. **Run manually to test:**
    ```bash
    cd iosApp/..
    ./gradlew :ios-aggregator:build
-   ios-aggregator/create-xcframework.sh
-   ```
-
-### Xcode Build Fails: "Symbol Not Found"
-
-1. **Rebuild KMP targets:**
-   ```bash
-   ./gradlew clean :ios-aggregator:build
-   ```
-
-2. **Recreate XCFramework:**
-   ```bash
-   ios-aggregator/create-xcframework.sh
-   ```
-
-3. **Clean Xcode and rebuild:**
-   ```bash
-   cd iosApp
-   xcodebuild clean -project iosApp.xcodeproj -scheme iosApp
-   # Then Cmd+B
    ```
 
 ### Gradle Build Hangs
@@ -270,70 +312,20 @@ ios-aggregator/create-xcframework.sh
 ./gradlew :ios-aggregator:build
 ```
 
-### Build Fails with "Binary doesn't exist"
+### "Package Resolution Failed" in Xcode
 
-Make sure the XCFramework has valid binaries:
+If Xcode can't resolve the "shared" package:
 
 ```bash
-# Check binaries are present
-file ios-aggregator/build/XCFrameworks/release/shared.xcframework/ios-arm64/shared.framework/shared
-file ios-aggregator/build/XCFrameworks/release/shared.xcframework/ios-arm64-simulator/shared.framework/shared
+# Verify XCFramework structure
+ls ios-aggregator/build/XCFrameworks/release/shared.xcframework/
+# Should contain: Info.plist, ios-arm64/, ios-arm64-simulator/
 
-# Both should output something like:
-# "Mach-O 64-bit dynamically linked shared library arm64"
+# Verify binaries exist
+ls ios-aggregator/build/XCFrameworks/release/shared.xcframework/*/shared.framework/shared
 
-# If missing or empty, rebuild:
+# If files missing, recreate:
 ./gradlew clean :ios-aggregator:build
-ios-aggregator/create-xcframework.sh
-```
-
-### Firebase Configuration Warning
-
-If Firebase plist is missing:
-
-```bash
-# Check for existing file
-ls iosApp/iosApp/GoogleService-Info.plist
-
-# If missing, add via Xcode:
-# 1. Drag file from Finder into Xcode project navigator
-# 2. Ensure it's copied to target
-```
-
----
-
-## Advanced: Manual Framework Generation
-
-### Generate Frameworks Without Build Phase
-
-```bash
-# Navigate to project root
-cd /Users/rybakdmy/Development/private/work-test-mobile
-
-# Build for all architectures
-./gradlew :ios-aggregator:build
-
-# Frameworks now at:
-# - ios-aggregator/build/bin/iosArm64/releaseFramework/shared.framework
-# - ios-aggregator/build/bin/iosSimulatorArm64/releaseFramework/shared.framework
-
-# Create XCFramework bundle
-ios-aggregator/create-xcframework.sh
-
-# XCFramework now at:
-# - ios-aggregator/build/XCFrameworks/release/shared.xcframework
-```
-
-### Generate for Specific Architecture
-
-```bash
-# Device only (arm64)
-./gradlew :ios-aggregator:iosArm64Binaries
-
-# Simulator only (arm64)
-./gradlew :ios-aggregator:iosSimulatorArm64Binaries
-
-# Then create XCFramework (bundles whatever is available)
 ios-aggregator/create-xcframework.sh
 ```
 
@@ -343,52 +335,91 @@ ios-aggregator/create-xcframework.sh
 
 | File | Purpose |
 |------|---------|
-| `iosApp/iosApp.xcodeproj/project.pbxproj` | Xcode project with build phase configuration |
+| `iosApp/iosApp.xcodeproj/project.pbxproj` | Xcode project config (build phases) |
 | `ios-aggregator/build.gradle.kts` | KMP module build configuration |
-| `build-logic/src/main/kotlin/plugins/kotlin/KotlinIosConventionPlugin.kt` | iOS framework configuration |
-| `ios-aggregator/Package.swift` | SPM manifest (points to XCFramework) |
+| `build-logic/src/main/kotlin/plugins/kotlin/KotlinIosConventionPlugin.kt` | iOS framework config |
+| `ios-aggregator/Package.swift` | SPM manifest (references XCFramework) |
 | `ios-aggregator/create-xcframework.sh` | Helper script to bundle frameworks |
-| `ios-aggregator/build/XCFrameworks/release/shared.xcframework` | Final XCFramework (generated) |
+| `ios-aggregator/build/bin/{arch}/releaseFramework/` | Per-architecture frameworks (build output) |
+| `ios-aggregator/build/XCFrameworks/release/shared.xcframework` | Universal framework (user-facing) |
 
 ---
 
-## Testing the Build Phase
+## Key Technical Details
 
-### Automated Verification
+### Why XCFramework?
 
-```bash
-# Clean everything
-rm -rf ios-aggregator/build iosApp/build
+- **Universal**: Single bundle containing all architectures
+- **Simple Integration**: One import in Swift
+- **SPM Compatible**: Package.swift finds it automatically
+- **Industry Standard**: Standard way to distribute iOS frameworks
 
-# Run build phase commands manually
-cd iosApp/..
-./gradlew :ios-aggregator:build
-ios-aggregator/create-xcframework.sh
+### Why Separate XCFramework Creation from Build?
 
-# Verify output
-[ -f "ios-aggregator/build/XCFrameworks/release/shared.xcframework/Info.plist" ] && echo "✓ XCFramework created"
-[ -f "ios-aggregator/build/XCFrameworks/release/shared.xcframework/ios-arm64/shared.framework/shared" ] && echo "✓ ARM64 binary present"
-[ -f "ios-aggregator/build/XCFrameworks/release/shared.xcframework/ios-arm64-simulator/shared.framework/shared" ] && echo "✓ Simulator binary present"
+- **Avoids Circular Dependency**: Package resolution happens before build phase execution
+- **Simpler Build**: Build phase only needs to rebuild binaries (fast)
+- **Smaller Scope**: Build phase has clear, single responsibility
+- **CI/CD Friendly**: Setup can be one-time, builds are incremental
+
+### Framework Binary Updates
+
+```
+Initial Setup:
+  ./gradlew build  →  Creates binaries in build/bin/
+  create-xcframework.sh  →  Wraps them in XCFramework
+
+Subsequent Builds (from Xcode):
+  Build phase runs: ./gradlew build
+  ↓
+  Binaries updated in build/bin/
+  ↓
+  XCFramework automatically sees new binaries
+  ↓
+  SPM picks up updated framework
+  ↓
+  Xcode links updated binary
 ```
 
-### Integration Test (Recommended)
+No need to recreate XCFramework - the framework bundle references the binary paths, not copies them.
+
+---
+
+## Testing
+
+### Verify Setup is Correct
 
 ```bash
-# The best test: actually build in Xcode
-open iosApp/iosApp.xcodeproj
+# 1. Check XCFramework structure
+ls ios-aggregator/build/XCFrameworks/release/shared.xcframework/
+# Should show: Info.plist, ios-arm64/, ios-arm64-simulator/
 
+# 2. Check binaries exist
+file ios-aggregator/build/XCFrameworks/release/shared.xcframework/ios-arm64/shared.framework/shared
+file ios-aggregator/build/XCFrameworks/release/shared.xcframework/ios-arm64-simulator/shared.framework/shared
+# Should show: Mach-O 64-bit dynamically linked shared library
+
+# 3. Check Xcode project validation (no circular dependency)
+xcodebuild -list -project iosApp/iosApp.xcodeproj 2>&1 | head -20
+# Should show package resolution success, not errors
+```
+
+### Integration Test
+
+```bash
+# Best test: actually build in Xcode
+open iosApp/iosApp.xcodeproj
 # Press Cmd+B
-# If build succeeds, the build phase ran correctly ✓
+# If successful, everything is working ✓
 ```
 
 ---
 
 ## Next Steps
 
-1. **First time?** Follow "Quick Start" section above
-2. **Build fails?** Check "Troubleshooting" section
-3. **Making changes?** Just press Cmd+R - build phase handles everything
-4. **Want to understand more?** See "How It Works" section
+1. **First time?** Follow "Quick Start" above
+2. **Setup complete?** Just press Cmd+R in Xcode for each build
+3. **Build fails?** Check "Troubleshooting" section
+4. **Want to understand?** Read "How It Works" section
 
 ---
 
