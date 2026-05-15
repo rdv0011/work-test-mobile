@@ -14,8 +14,19 @@ class KotlinIosConventionPlugin : Plugin<Project> {
         target.extensions.configure<KotlinMultiplatformExtension> {
             applyDefaultHierarchyTemplate()
             
-            iosArm64()
-            iosSimulatorArm64()
+            iosArm64("iosArm64")
+            iosSimulatorArm64("iosSimulatorArm64")
+            
+            // Configure XCFramework generation for iOS
+            val xcFrameworkName = "shared"
+            val xcFrameworkTargets = listOf("iosArm64", "iosSimulatorArm64")
+            
+            targets.withType(org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget::class.java) {
+                binaries.framework {
+                    baseName = xcFrameworkName
+                    isStatic = false
+                }
+            }
         }
     }
 }
