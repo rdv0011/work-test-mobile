@@ -9,15 +9,15 @@
 
 ## Current Status
 
-✅ **iOS + KMP Integration: COMPLETE**
+✅ **iOS + KMP Integration: COMPLETE & TESTED**
 
 **What's configured**:
 - ✅ KMP iOS targets: `iosArm64`, `iosSimulatorArm64`
 - ✅ `ios-aggregator` module with frameworks configured
 - ✅ Xcode build phase configured (`Build KMP Framework`)
-- ✅ XCFramework generation integrated
+- ✅ Automatic framework + XCFramework generation
 - ✅ Swift Package Manager (SPM) configured
-- ✅ `embedSwiftExportForXcode` task available
+- ✅ **Build phase tested and working** ✓
 
 ---
 
@@ -26,12 +26,11 @@
 ### Step 1: Initial Setup (One-Time)
 
 ```bash
-# Build Gradle configuration
+# Build frameworks
 ./gradlew clean :ios-aggregator:build
 
-# Create initial XCFramework
-./gradlew :ios-aggregator:tasks > /dev/null 2>&1  # Verify tasks are available
-ios-aggregator/create-xcframework.sh  # Create XCFramework for SPM
+# Create XCFramework
+ios-aggregator/create-xcframework.sh
 ```
 
 ### Step 2: Open Xcode
@@ -51,67 +50,126 @@ open iosApp/iosApp.xcodeproj
 
 Press **Cmd+B** to build, then **Cmd+R** to run on simulator or device.
 
-**That's it!** The Xcode build phase automatically handles Gradle compilation.
+**That's it!** The Xcode build phase automatically:
+1. Builds KMP frameworks for current architecture
+2. Creates XCFramework bundle
+3. Xcode links and embeds in your app
 
 ---
 
 ## How It Works
 
-### Architecture
+### Build Phase Flow
 
 ```
-Xcode Build Process:
-  ↓
-Build Phase: "Build KMP Framework"
-  ↓
-Runs: ./gradlew :ios-aggregator:embedSwiftExportForXcode
-  ↓
-Gradle compiles KMP code for current architecture
-  ↓
-Framework embedded in DerivedData
-  ↓
-Xcode links framework
-  ↓
-Build completes
+You press Cmd+B in Xcode
+         ↓
+Xcode runs build phases (in order)
+         ↓
+Build Phase: "Build KMP Framework" executes
+         ├─ cd "${SRCROOT}/.."
+         ├─ ./gradlew :ios-aggregator:build
+         │  └─ Compiles KMP for arm64 + simulator
+         │  └─ Generates: build/bin/iosArm64/releaseFramework/shared.framework
+         │  └─ Generates: build/bin/iosSimulatorArm64/releaseFramework/shared.framework
+         ├─ ios-aggregator/create-xcframework.sh
+         │  └─ Bundles frameworks into single XCFramework
+         │  └─ Generates: build/XCFrameworks/release/shared.xcframework
+         ↓
+Xcode compiles Swift code
+         ↓
+Xcode links frameworks (via SPM)
+         ↓
+Build completes ✓
 ```
 
-### Automatic Flow
+### Why This Works
 
-When you press **Cmd+B** or **Cmd+R** in Xcode:
+1. **Gradle builds frameworks**: Each architecture gets its own `.framework` bundle with binary
+2. **XCFramework bundles them**: Single file containing all architectures (arm64 + simulator)
+3. **SPM integrates**: `Package.swift` points to XCFramework, Xcode links automatically
+4. **Xcode build phase**: Automatically runs before compilation, ensures fresh KMP binaries
+5. **Environment variables**: Xcode provides SDK_NAME, ARCHS, etc. (automatically used by Gradle)
 
-1. Xcode runs all build phases **before** compiling Swift
-2. Our "Build KMP Framework" phase calls Gradle
-3. Gradle automatically detects Xcode's environment variables:
-   - `SDK_NAME`: iOS or iPhoneSimulator
-   - `ARCHS`: arm64, x86_64, etc.
-   - `CONFIGURATION`: Debug or Release
-4. Gradle embeds the framework in the correct location
-5. Xcode compiles Swift code and links the framework
-6. App builds successfully
+### Architecture Diagram
 
-### Environment Variables Passed
+```
+ios-aggregator/ (KMP module)
+├── build.gradle.kts (Kotlin/Native config)
+├── Package.swift (SPM manifest)
+├── create-xcframework.sh (bundling script)
+└── build/
+    ├── bin/ (per-architecture frameworks)
+    │   ├── iosArm64/releaseFramework/shared.framework
+    │   │   └── shared (arm64 binary)
+    │   └── iosSimulatorArm64/releaseFramework/shared.framework
+    │       └── shared (arm64 simulator binary)
+    │
+    └── XCFrameworks/release/shared.xcframework (final bundle)
+        ├── Info.plist (metadata)
+        ├── ios-arm64/shared.framework/
+        │   └── shared (arm64 binary)
+        └── ios-arm64-simulator/shared.framework/
+            └── shared (simulator arm64 binary)
 
-The `embedSwiftExportForXcode` task receives:
-- `SDK_NAME`: SDK being built for (iphoneos, iphonesimulator)
-- `ARCHS`: Target architectures
-- `CONFIGURATION`: Debug or Release
-- `TARGET_BUILD_DIR`: Where to place output
-- `FRAMEWORKS_FOLDER_PATH`: Where to embed frameworks
+iosApp/ (Swift app)
+├── iosApp.xcodeproj/project.pbxproj
+│   └── Build Phases: "Build KMP Framework"
+│       └── Runs the gradle build + create-xcframework.sh
+└── iosApp/ (Swift source files)
+```
 
 ---
 
-## Manual Framework Generation (If Needed)
+## Development Workflow
 
-If the build phase doesn't run or you need to manually trigger XCFramework creation:
+### Normal Development (Most Common)
 
 ```bash
-# Build the Kotlin/Native frameworks
+# Make changes to Kotlin code in core, feature-restaurant, etc.
+# Then in Xcode:
+# Press Cmd+B to build
+# Build phase automatically rebuilds KMP frameworks
+# Press Cmd+R to run on simulator
+```
+
+### Make Changes → Test Cycle
+
+```bash
+# Edit: /core/src/commonMain/.../*.kt
+# Edit: /feature-restaurant/src/commonMain/.../*.kt
+# Edit: iosApp/iosApp/*.swift
+
+# Build:
+open iosApp/iosApp.xcodeproj
+# Press Cmd+B (builds everything)
+# Press Cmd+R (runs on simulator)
+
+# Changes automatically included ✓
+```
+
+### Full Clean Build
+
+If you encounter weird issues:
+
+```bash
+# Clean everything
+./gradlew clean
+
+# Remove build directories
+rm -rf ios-aggregator/build iosApp/build
+
+# Full rebuild
 ./gradlew :ios-aggregator:build
 
-# Create XCFramework bundle
+# Recreate XCFramework
 ios-aggregator/create-xcframework.sh
 
-# Then rebuild in Xcode: Cmd+B
+# Clean Xcode
+cd iosApp
+xcodebuild clean -project iosApp.xcodeproj -scheme iosApp
+
+# Rebuild in Xcode: Cmd+B
 ```
 
 ---
@@ -128,60 +186,11 @@ ios-aggregator/create-xcframework.sh
 ./gradlew :ios-aggregator:iosArm64Binaries         # Device (arm64)
 ./gradlew :ios-aggregator:iosSimulatorArm64Binaries # Simulator
 
-# Embed for Xcode (called by build phase automatically)
-./gradlew :ios-aggregator:embedSwiftExportForXcode
-
 # Create XCFramework bundle
 ios-aggregator/create-xcframework.sh
-```
 
-### Verify Available Tasks
-
-```bash
-./gradlew :ios-aggregator:tasks | grep -i "embed\|framework"
-```
-
----
-
-## Development Workflow
-
-### Normal Development (Most Common)
-
-```bash
-# Just press Cmd+R in Xcode
-# Build phase handles everything automatically
-```
-
-After making KMP code changes, the build phase will automatically rebuild the framework when you build in Xcode.
-
-### Full Clean Build
-
-```bash
-# If you encounter issues, try:
-./gradlew clean :ios-aggregator:build
-
-# Recreate XCFramework
-ios-aggregator/create-xcframework.sh
-
-# Clean Xcode
-cd iosApp
-xcodebuild clean -project iosApp.xcodeproj -scheme iosApp
-
-# Rebuild in Xcode: Cmd+B
-```
-
-### Debugging Build Issues
-
-```bash
-# Run Gradle manually to see what happens
-./gradlew :ios-aggregator:embedSwiftExportForXcode --info
-
-# Check if frameworks were created
-ls ios-aggregator/build/bin/iosArm64/releaseFramework/shared.framework
-ls ios-aggregator/build/bin/iosSimulatorArm64/releaseFramework/shared.framework
-
-# Check if XCFramework exists
-ls ios-aggregator/build/XCFrameworks/release/shared.xcframework/Info.plist
+# Verify available tasks
+./gradlew :ios-aggregator:tasks | grep -i "framework"
 ```
 
 ---
@@ -190,145 +199,186 @@ ls ios-aggregator/build/XCFrameworks/release/shared.xcframework/Info.plist
 
 ### "No such module 'shared'" in Xcode
 
-1. Check XCFramework exists:
+1. **Ensure XCFramework exists:**
    ```bash
    ls ios-aggregator/build/XCFrameworks/release/shared.xcframework/Info.plist
    ```
 
-2. If missing, create it:
+2. **If missing, create it:**
    ```bash
    ./gradlew :ios-aggregator:build
    ios-aggregator/create-xcframework.sh
    ```
 
-3. Clean Xcode and rebuild:
+3. **Clean and rebuild in Xcode:**
    ```bash
    cd iosApp
    xcodebuild clean -project iosApp.xcodeproj -scheme iosApp
    # Then Cmd+B in Xcode
    ```
 
+4. **Verify framework is linked:**
+   - Target → General → Frameworks, Libraries, and Embedded Content
+   - Should show "shared" with "Embed & Sign" status
+
 ### Build Phase Not Running
 
-1. Verify phase exists: Target → Build Phases → Look for "Build KMP Framework"
-2. Check it's **before** "Compile Sources"
-3. Run manually:
+1. **Check phase exists:**
+   - Target → Build Phases → Look for "Build KMP Framework"
+
+2. **Check phase order:**
+   - Should be **before** "Compile Sources"
+
+3. **Verify it's executable:**
    ```bash
-   ./gradlew :ios-aggregator:embedSwiftExportForXcode
+   grep -A10 "Build KMP Framework" iosApp/iosApp.xcodeproj/project.pbxproj | grep shellScript
    ```
 
-### Build Fails with Symbol Not Found
+4. **Run manually to test:**
+   ```bash
+   cd iosApp/..
+   ./gradlew :ios-aggregator:build
+   ios-aggregator/create-xcframework.sh
+   ```
 
-1. Rebuild all targets:
+### Xcode Build Fails: "Symbol Not Found"
+
+1. **Rebuild KMP targets:**
    ```bash
    ./gradlew clean :ios-aggregator:build
    ```
 
-2. Recreate XCFramework:
+2. **Recreate XCFramework:**
    ```bash
    ios-aggregator/create-xcframework.sh
    ```
 
-3. Clean Xcode and rebuild: Cmd+Shift+K, then Cmd+B
+3. **Clean Xcode and rebuild:**
+   ```bash
+   cd iosApp
+   xcodebuild clean -project iosApp.xcodeproj -scheme iosApp
+   # Then Cmd+B
+   ```
 
 ### Gradle Build Hangs
 
-Stop Gradle daemon and retry:
 ```bash
+# Stop Gradle daemon
 ./gradlew --stop
+
+# Try again
 ./gradlew :ios-aggregator:build
+```
+
+### Build Fails with "Binary doesn't exist"
+
+Make sure the XCFramework has valid binaries:
+
+```bash
+# Check binaries are present
+file ios-aggregator/build/XCFrameworks/release/shared.xcframework/ios-arm64/shared.framework/shared
+file ios-aggregator/build/XCFrameworks/release/shared.xcframework/ios-arm64-simulator/shared.framework/shared
+
+# Both should output something like:
+# "Mach-O 64-bit dynamically linked shared library arm64"
+
+# If missing or empty, rebuild:
+./gradlew clean :ios-aggregator:build
+ios-aggregator/create-xcframework.sh
 ```
 
 ### Firebase Configuration Warning
 
-`GoogleService-Info.plist` is expected. Ensure it exists:
+If Firebase plist is missing:
+
 ```bash
+# Check for existing file
 ls iosApp/iosApp/GoogleService-Info.plist
-```
 
-If missing, add it via Xcode: drag file into Project Navigator.
+# If missing, add via Xcode:
+# 1. Drag file from Finder into Xcode project navigator
+# 2. Ensure it's copied to target
+```
 
 ---
 
-## Architecture Details
+## Advanced: Manual Framework Generation
 
-### Module Structure
+### Generate Frameworks Without Build Phase
 
-```
-ios-aggregator/ (KMP module)
-├── build.gradle.kts
-├── Package.swift (SPM manifest)
-├── create-xcframework.sh (Helper script)
-└── build/
-    ├── bin/
-    │   ├── iosArm64/releaseFramework/shared.framework
-    │   └── iosSimulatorArm64/releaseFramework/shared.framework
-    └── XCFrameworks/release/shared.xcframework
-        ├── Info.plist
-        ├── ios-arm64/shared.framework
-        └── ios-arm64-simulator/shared.framework
+```bash
+# Navigate to project root
+cd /Users/rybakdmy/Development/private/work-test-mobile
 
-Exported modules:
-├── :core (navigation, logging, DI, networking)
-├── :ui-components (reusable components)
-└── :feature-restaurant (business logic)
+# Build for all architectures
+./gradlew :ios-aggregator:build
+
+# Frameworks now at:
+# - ios-aggregator/build/bin/iosArm64/releaseFramework/shared.framework
+# - ios-aggregator/build/bin/iosSimulatorArm64/releaseFramework/shared.framework
+
+# Create XCFramework bundle
+ios-aggregator/create-xcframework.sh
+
+# XCFramework now at:
+# - ios-aggregator/build/XCFrameworks/release/shared.xcframework
 ```
 
-### Why XCFramework?
+### Generate for Specific Architecture
 
-- **Universal**: Single bundle containing all architectures
-- **Simple Integration**: One import in Swift
-- **SPM Compatible**: Package.swift finds it automatically
-- **Standards-Compliant**: Industry standard for iOS frameworks
+```bash
+# Device only (arm64)
+./gradlew :ios-aggregator:iosArm64Binaries
+
+# Simulator only (arm64)
+./gradlew :ios-aggregator:iosSimulatorArm64Binaries
+
+# Then create XCFramework (bundles whatever is available)
+ios-aggregator/create-xcframework.sh
+```
 
 ---
 
-## File Structure
+## File Reference
 
 | File | Purpose |
 |------|---------|
-| `iosApp/iosApp.xcodeproj/project.pbxproj` | Xcode project with build phase |
-| `ios-aggregator/build.gradle.kts` | KMP module with framework config |
-| `ios-aggregator/Package.swift` | SPM manifest pointing to XCFramework |
-| `ios-aggregator/create-xcframework.sh` | Script to bundle frameworks into XCFramework |
+| `iosApp/iosApp.xcodeproj/project.pbxproj` | Xcode project with build phase configuration |
+| `ios-aggregator/build.gradle.kts` | KMP module build configuration |
+| `build-logic/src/main/kotlin/plugins/kotlin/KotlinIosConventionPlugin.kt` | iOS framework configuration |
+| `ios-aggregator/Package.swift` | SPM manifest (points to XCFramework) |
+| `ios-aggregator/create-xcframework.sh` | Helper script to bundle frameworks |
 | `ios-aggregator/build/XCFrameworks/release/shared.xcframework` | Final XCFramework (generated) |
 
 ---
 
-## Testing
+## Testing the Build Phase
 
-### Verify Build Phase is Configured
-
-```bash
-# Check pbxproj has our build phase
-grep "Build KMP Framework" iosApp/iosApp.xcodeproj/project.pbxproj
-```
-
-### Manual Test of embedSwiftExportForXcode
+### Automated Verification
 
 ```bash
-# This requires Xcode environment variables
-# Normally only runs during Xcode build
-# But can be tested by setting them manually:
-export SDK_NAME=iphoneos
-export ARCHS=arm64
-export CONFIGURATION=Release
-export TARGET_BUILD_DIR=/tmp/test_build
-export FRAMEWORKS_FOLDER_PATH=/tmp/test_build/Frameworks
+# Clean everything
+rm -rf ios-aggregator/build iosApp/build
 
-./gradlew :ios-aggregator:embedSwiftExportForXcode
+# Run build phase commands manually
+cd iosApp/..
+./gradlew :ios-aggregator:build
+ios-aggregator/create-xcframework.sh
 
-# (This will likely fail without full Xcode environment, but shows the task works)
+# Verify output
+[ -f "ios-aggregator/build/XCFrameworks/release/shared.xcframework/Info.plist" ] && echo "✓ XCFramework created"
+[ -f "ios-aggregator/build/XCFrameworks/release/shared.xcframework/ios-arm64/shared.framework/shared" ] && echo "✓ ARM64 binary present"
+[ -f "ios-aggregator/build/XCFrameworks/release/shared.xcframework/ios-arm64-simulator/shared.framework/shared" ] && echo "✓ Simulator binary present"
 ```
 
 ### Integration Test (Recommended)
 
 ```bash
-# Best test: actually build in Xcode
+# The best test: actually build in Xcode
 open iosApp/iosApp.xcodeproj
 
-# Then press Cmd+B to build
-# If successful, the build phase ran and framework was embedded correctly
+# Press Cmd+B
+# If build succeeds, the build phase ran correctly ✓
 ```
 
 ---
@@ -337,208 +387,15 @@ open iosApp/iosApp.xcodeproj
 
 1. **First time?** Follow "Quick Start" section above
 2. **Build fails?** Check "Troubleshooting" section
-3. **Making changes?** Just press Cmd+R - build phase handles Gradle automatically
-4. **Want to understand more?** See "Architecture Details" section
+3. **Making changes?** Just press Cmd+R - build phase handles everything
+4. **Want to understand more?** See "How It Works" section
 
 ---
 
-## Reference
+## Related Documentation
 
-### Related Documentation
-
-- `notes.md` - Project architecture and decisions
-- `NAVIGATION.md` - iOS navigation setup
-- `ios-aggregator/build.gradle.kts` - KMP build configuration
+- `notes.md` - Architecture and design decisions
+- `NAVIGATION.md` - iOS navigation setup details
 - `/core/src/iosMain/` - iOS-specific Kotlin code
-- `iosApp/iosApp/` - Swift app code
-
----
-
-## Troubleshooting
-
-### "No such module 'shared'" in Xcode
-
-1. Verify KMP binaries were built:
-   ```bash
-   ./gradlew :ios-aggregator:iosArm64Binaries :ios-aggregator:iosSimulatorArm64Binaries
-   ```
-
-2. In Xcode: Product → Clean Build Folder (Cmd+Shift+K)
-
-3. Rebuild: Cmd+B
-
-4. If still failing, check framework is linked:
-   - Target → General → Frameworks, Libraries, and Embedded Content
-   - Should show "shared" with status "Embed & Sign"
-
-### Xcode Build Fails: "Symbol Not Found"
-
-1. Rebuild all KMP targets:
-   ```bash
-   ./gradlew :ios-aggregator:build
-   ```
-
-2. Clean Xcode:
-   ```bash
-   cd iosApp
-   xcodebuild clean -project iosApp.xcodeproj -scheme iosApp
-   ```
-
-3. Rebuild: Cmd+B
-
-### Gradle Build Hangs or is Slow
-
-- Gradle daemon consuming memory:
-  ```bash
-  ./gradlew --stop
-  ```
-- Then try again
-
-### "GoogleService-Info.plist" Warning
-
-Firebase is configured. Ensure file exists:
-```bash
-ls iosApp/iosApp/GoogleService-Info.plist
-```
-
-If missing, drag it into Xcode project from Finder.
-
-### XCFramework Support: "assembleDebugXCFramework Task Not Found"
-
-XCFramework support not yet enabled. Follow "Method B: Enable XCFramework Support" section above.
-
-### After Enabling XCFramework: Build Phase Fails
-
-1. Check build phase exists: Target → Build Phases → Look for "Build KMP Framework"
-2. Verify phase order: Should be **before** "Compile Sources"
-3. Check script syntax:
-   ```bash
-   # Should match exactly:
-   if [ "$CONFIGURATION" = "Debug" ]; then
-       ./gradlew :ios-aggregator:assembleDebugXCFramework
-   else
-       ./gradlew :ios-aggregator:assembleReleaseXCFramework
-   fi
-   ```
-
-4. Test manually:
-   ```bash
-   cd ios-aggregator
-   ../gradlew assembleReleaseXCFramework
-   ```
-
----
-
-## Testing
-
-### Unit Tests (Shared Code)
-
-```bash
-# Test all modules
-./gradlew test
-
-# Test specific module
-./gradlew :core:test
-./gradlew :feature-restaurant:test
-```
-
-### Integration Tests (iOS)
-
-After building, run iOS app on simulator:
-```bash
-open iosApp/iosApp.xcodeproj
-# Press Cmd+R in Xcode
-```
-
-### Debugging KMP Code from Swift
-
-1. Set breakpoints in Swift files
-2. Run app with debugger attached
-3. Execution will stop at breakpoints in both Swift and generated KMP code
-
----
-
-## Architecture
-
-### Module Structure
-
-```
-Shared Kotlin Code (ios-aggregator)
-├── :core
-│   ├── navigation/ (AppCoordinator, routes)
-│   ├── logging/ (cross-platform logging)
-│   ├── localization/ (tr() function)
-│   ├── di/ (Koin DI setup)
-│   └── networking/ (Ktor HTTP)
-├── :ui-components (reusable components)
-└── :feature-restaurant (business logic)
-
-      ↓ Compiled to ↓
-
-Kotlin/Native Binaries (current)
-├── .klib (debug)
-└── .xcframework (with XCFramework support)
-
-      ↓ Linked by ↓
-
-iOS App (iosApp)
-├── Swift UI views
-├── navigation (SwiftUI NavigationStack)
-└── Firebase analytics integration
-```
-
-### iOS vs Android Strategy
-
-**Android**:
-- Depends directly on `:core`, `:ui-components`, `:feature-restaurant`
-- Allows parallel Gradle builds and incremental compilation
-
-**iOS**:
-- Aggregates all modules into single framework (ios-aggregator)
-- Simplifies Xcode integration (one import: `import shared`)
-- Single Swift Package (Package.swift) manages all shared code
-
----
-
-## When to Rebuild
-
-### Before XCFramework Support
-
-Rebuild KMP when:
-```bash
-./gradlew :ios-aggregator:iosArm64Binaries :ios-aggregator:iosSimulatorArm64Binaries
-```
-
-After:
-- Any Kotlin code changes
-- Dependencies updated in build.gradle.kts
-- Build errors in Xcode (symbol not found)
-
-### After XCFramework Support Enabled
-
-Rebuild when:
-```bash
-./gradlew :ios-aggregator:assembleReleaseXCFramework
-```
-
-**Or automatically** via Xcode build phase when you press Cmd+R
-
----
-
-## Next Steps
-
-1. **Try Method A first** (current working setup)
-   - Build Kotlin/Native binaries
-   - Link in Xcode
-   - Test on simulator
-
-2. **Enable XCFramework support** (one-time, ~15 mins)
-   - Update KotlinIosConventionPlugin.kt
-   - Add Xcode build phase
-   - Enjoy automated builds
-
-3. **Questions?** Check "Troubleshooting" section above or refer to:
-   - `notes.md` - Architecture decisions
-   - `NAVIGATION.md` - iOS navigation setup
-   - `/core/src/iosMain/` - iOS-specific code
-
+- `iosApp/iosApp/` - Swift app source code
+- `ios-aggregator/build.gradle.kts` - Complete KMP build configuration
