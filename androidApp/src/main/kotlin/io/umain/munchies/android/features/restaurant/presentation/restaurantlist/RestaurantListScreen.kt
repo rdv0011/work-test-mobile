@@ -76,8 +76,6 @@ fun RestaurantListScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val selectedFilterIds by viewModel.selectedFilters.collectAsStateWithLifecycle()
-    // Trigger load once
-    LaunchedEffect(Unit) { viewModel.load() }
 
     val filteredRestaurants = when (val state = uiState) {
         is RestaurantListUiState.Success -> state.restaurants

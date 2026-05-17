@@ -29,9 +29,10 @@ class RestaurantDetailViewModel(
 
     init {
         logInfo("RestaurantDetailViewModel", "Created for restaurantId=$restaurantId")
+        load()
     }
 
-    fun load() {
+    private fun load() {
         scope.launch {
             try {
                 val restaurants = repository.getRestaurants()

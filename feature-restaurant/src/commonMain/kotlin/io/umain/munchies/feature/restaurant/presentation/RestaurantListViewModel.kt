@@ -34,7 +34,11 @@ class RestaurantListViewModel(
     private var allRestaurants: List<Restaurant> = emptyList()
     private var allFilters: List<Filter> = emptyList()
 
-    fun load() {
+    init {
+        load()
+    }
+
+    private fun load() {
         scope.launch {
             try {
                 allRestaurants = repository.getRestaurants()

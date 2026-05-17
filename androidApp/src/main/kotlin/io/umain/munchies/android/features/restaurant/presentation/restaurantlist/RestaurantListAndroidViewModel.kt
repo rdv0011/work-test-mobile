@@ -11,8 +11,6 @@ class RestaurantListAndroidViewModel(
 ) : ViewModel(), Closeable {
     val uiState: StateFlow<RestaurantListUiState> = shared.stateFlow
     val selectedFilters = shared.selectedFilters
-
-    fun load() = shared.load()
     fun toggleFilter(filterId: String) = shared.toggleFilter(filterId)
 
     override fun onCleared() {

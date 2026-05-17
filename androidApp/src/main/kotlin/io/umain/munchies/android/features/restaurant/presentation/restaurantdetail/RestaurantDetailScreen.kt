@@ -152,11 +152,6 @@ fun RestaurantDetailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // Load data when entering the screen
-    LaunchedEffect(viewModel) {
-        viewModel.load()
-    }
-
     RestaurantDetailContent(
         uiState = uiState,
         restaurantId = viewModel.restaurantId,
