@@ -1,12 +1,12 @@
 //
-//  NavigationEventCollector.swift
+//  CoreNavigationEventCollector.swift
 //  iosApp
 //
 //  Created by Dmitry Rybakov on 2026-02-01.
 //
 import shared
 
-class FlowValuesCollector<T>: shared.FlowCollector {
+class FlowValuesCollector<T>: Kotlinx_coroutines_coreFlowCollector {
     
     let callback: (T) -> Void
     

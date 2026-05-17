@@ -1,299 +1,57 @@
-//
-//  NavigationCoordinator.swift
-//  iosApp
-//
-//  Created by Dmitry Rybakov on 2026-02-01.
-//
 import SwiftUI
 import shared
 
-private let tag = "NavigationCoordinator"
-
 @MainActor
 class NavigationCoordinator: ObservableObject {
-    @Published var activeTabId = "restaurants" {
-        didSet {
-            if activeTabId != oldValue {
-                logInfo(tag: tag, message: "🗂️  activeTabId changed from \(oldValue) to \(activeTabId) - calling selectTab()")
-                coordinator.selectTab(tabId: activeTabId)
-            }
-        }
-    }
+    @Published var activeTabId = "restaurants"
     @Published var tabStacks: [String: NavigationPath] = [
         "restaurants": NavigationPath(),
         "settings": NavigationPath()
     ]
     @Published private(set) var activeRoutes = Set<String>()
-    @Published var modalStack: [shared.ModalRoute] = []
-    @Published var showingModal: shared.ModalRoute?
+    @Published var modalStack: [CoreModalRoute] = []
+    @Published var showingModal: CoreModalRoute?
     @Published private(set) var showingModalKey: String? = nil
     
-    let coordinator: AppCoordinator
+    let coordinator: CoreAppCoordinator
     private let registry: RouteHolderRegistry
     private let routeProviders: [RouteProvider]
-    private var routeStack: [Route] = []
-    private var isListenerActive = false
     
     init(
-        coordinator: AppCoordinator,
+        coordinator: CoreAppCoordinator,
         routeProviders: [RouteProvider] = []
     ) {
         self.coordinator = coordinator
         self.routeProviders = routeProviders
         self.registry = RouteHolderRegistry(coordinator: coordinator, providers: routeProviders)
-        observeNavigationEvents()
     }
-    
-      func observeNavigationEvents() {
-          Task { [weak self] in
-              guard let self = self else { return }
-              logInfo(tag: tag, message: "🗂️  starting to observe navigation events")
-              await self.collectNavigationEvents()
-          }
-      }
-
-      private func collectNavigationEvents() async {
-          isListenerActive = true
-          logInfo(tag: tag, message: "🗂️  listener is now ACTIVE")
-          coordinator.markListenerReady()
-          for await event in asyncKotlinStream(coordinator.navigationEvents) as AsyncStream<NavigationEvent> {
-              handle(event: event)
-          }
-      }
-    
-     func processPendingDeepLink(_ url: URL) {
-         logInfo(tag: tag, message: "🔗 processPendingDeepLink called with: \(url), listenerActive=\(isListenerActive)")
-         
-         guard url.scheme == DeepLinkConstants().SCHEME else {
-             logInfo(tag: tag, message: "🔗 Invalid scheme: \(url.scheme ?? "nil")")
-             return
-         }
-         
-         let host = url.host ?? ""
-         let path = url.path
-         let pathComponents = path.split(separator: "/").map(String.init)
-         
-         logInfo(tag: tag, message: "🔗 Parsed URL - host='\(host)', path='\(path)', components=\(pathComponents)")
-         
-         var queryParams: [String: String] = [:]
-         if let components = URLComponents(url: url, resolvingAgainstBaseURL: false) {
-             components.queryItems?.forEach { item in
-                 queryParams[item.name] = item.value ?? ""
-             }
-         }
-         
-         logInfo(tag: tag, message: "🔗 Calling DeepLinkProcessor.processDeepLink with host='\(host)', pathSegments=\(pathComponents), queryParams=\(queryParams)")
-         
-         shared.DeepLinkProcessor.shared.processDeepLink(
-             host: host,
-             pathSegments: pathComponents,
-             queryParams: queryParams,
-             coordinator: coordinator
-         )
-         
-         logInfo(tag: tag, message: "🔗 DeepLinkProcessor.processDeepLink completed")
-     }
-    
-     func handle(event: NavigationEvent) {
-         logInfo(tag: tag, message: "🗂️  handle(event: \(type(of: event)))")
-         coordinator.reduceState(event: event)
-         
-         switch event {
-         case let push as NavigationEvent.Push:
-             logInfo(tag: tag, message: "🗂️  Handling Push for destination: \(push.destination)")
-             handlePush(destination: push.destination)
-          case is NavigationEvent.Pop:
-              logInfo(tag: tag, message: "🗂️  Handling Pop")
-               if !routeStack.isEmpty {
-                   routeStack.removeLast()
-               }
-               recomputeTabStacks()
-               updateActiveRoutes()
-               syncCleanup()
-           case is NavigationEvent.PopToRoot:
-               logInfo(tag: tag, message: "🗂️  Handling PopToRoot")
-               routeStack.removeAll()
-               recomputeTabStacks()
-               activeRoutes.removeAll()
-               registry.cleanup(activeRoutes: [])
-          case let selectTab as NavigationEvent.SelectTab:
-              logInfo(tag: tag, message: "🗂️  Handling SelectTab(\(selectTab.tabId))")
-              handleSelectTab(selectTab.tabId)
-          case let showModal as NavigationEvent.ShowModal:
-              logInfo(tag: tag, message: "🗂️  Handling ShowModal for \(type(of: showModal.destination))")
-              handleShowModal(showModal.destination)
-          case is NavigationEvent.DismissModal:
-              logInfo(tag: tag, message: "🗂️  Handling DismissModal")
-              handleDismissModal()
-          case is NavigationEvent.DismissAllModals:
-              logInfo(tag: tag, message: "🗂️  Handling DismissAllModals")
-              handleDismissAllModals()
-          case let dismissUntil as NavigationEvent.DismissModalUntil:
-              logInfo(tag: tag, message: "🗂️  Handling DismissModalUntil")
-              handleDismissModalUntil(dismissUntil.predicate)
-          default:
-              logInfo(tag: tag, message: "🗂️  Unhandled event type: \(type(of: event))")
-              break
-         }
-     }
-    
-      private func handleSelectTab(_ tabId: String) {
-          activeTabId = tabId
-          updateActiveRoutes()
-          syncCleanup()
-      }
-    
-      private func handlePush(destination: shared.Destination) {
-          logInfo(tag: tag, message: "🗂️  handlePush - looking for route provider to handle \(type(of: destination))")
-          for (index, provider) in routeProviders.enumerated() {
-              logInfo(tag: tag, message: "🗂️    Provider \(index): \(type(of: provider))")
-              let handler = provider.getRoutes().first { 
-                  $0.canHandle(destination: destination) 
-              }
-              
-              if let handler = handler {
-                  logInfo(tag: tag, message: "🗂️    ✓ Found handler: \(type(of: handler))")
-                  if let kmpRoute = handler.destinationToRoute(destination: destination) {
-                      logInfo(tag: tag, message: "🗂️      ✓ Converted to KMP route: \(kmpRoute)")
-                      if let iosRoute = convertToIOSRoute(kmpRoute) {
-                          logInfo(tag: tag, message: "🗂️      ✓ Converted to iOS route: \(iosRoute)")
-                          routeStack.append(iosRoute)
-                          recomputeTabStacks()
-                          updateActiveRoutes()
-                          syncCleanup()
-                          return
-                      } else {
-                          logInfo(tag: tag, message: "🗂️      ✗ Failed to convert KMP route to iOS route")
-                      }
-                  } else {
-                      logInfo(tag: tag, message: "🗂️      ✗ Handler returned nil for destinationToRoute")
-                  }
-              }
-          }
-          
-          logInfo(tag: tag, message: "🗂️  ERROR: No route provider found for destination: \(destination)")
-          fatalError("No route provider found for destination: \(destination)")
-      }
-    
-      private func convertToIOSRoute(_ kmpRoute: shared.Route) -> Route? {
-          logInfo(tag: tag, message: "🗂️  convertToIOSRoute - converting \(type(of: kmpRoute))")
-          switch kmpRoute {
-          case _ as RestaurantListRoute:
-              logInfo(tag: tag, message: "🗂️    ✓ RestaurantListRoute -> .restaurantList")
-              return .restaurantList
-          case let detailRoute as RestaurantDetailRoute:
-              logInfo(tag: tag, message: "🗂️    ✓ RestaurantDetailRoute -> .restaurantDetail(\(detailRoute.restaurantId))")
-              return .restaurantDetail(detailRoute.restaurantId)
-          case _ as SettingsRoute:
-              logInfo(tag: tag, message: "🗂️    ✓ SettingsRoute -> .settings")
-              return .settings
-          default:
-              logInfo(tag: tag, message: "🗂️    ✗ Unknown route type: \(type(of: kmpRoute))")
-              return nil
-          }
-      }
-    
-    private func updateActiveRoutes() {
-        activeRoutes.removeAll()
-        for rootRoute in Route.rootRoutes {
-            activeRoutes.insert(rootRoute.key)
-        }
-        for route in routeStack {
-            activeRoutes.insert(route.key)
-        }
-    }
-    
-     private func recomputeTabStacks() {
-         var newTabStacks: [String: NavigationPath] = [
-             "restaurants": NavigationPath(),
-             "settings": NavigationPath()
-         ]
-         
-         for route in routeStack {
-             let tabId = tabIdForRoute(route)
-             newTabStacks[tabId]?.append(route)
-         }
-         
-         tabStacks = newTabStacks
-     }
-     
-     private func tabIdForRoute(_ route: Route) -> String {
-         switch route {
-         case .restaurantList:
-             return "restaurants"
-         case .restaurantDetail:
-             return "restaurants"
-         case .settings:
-             return "settings"
-         }
-     }
     
     func restaurantListHolder() -> RestaurantListViewModelHolder {
-        registry.restaurantListHolder()
+        return RestaurantListViewModelHolder(
+            scope: IosAggregatorExportsKt.createRestaurantListScope(),
+            viewModel: IosAggregatorExportsKt.getRestaurantListViewModelFromFramework()
+        )
     }
     
-    func restaurantDetailHolder(restaurantId: String) -> RestaurantDetailViewModelHolder {
-        registry.restaurantDetailHolder(restaurantId: restaurantId)
+    func restaurantDetailHolder(restaurantId: String) -> Feature_restaurantRestaurantDetailViewModelHolder {
+        return Feature_restaurantRestaurantDetailViewModelHolder(
+            restaurantId: restaurantId,
+            scope: IosAggregatorExportsKt.createRestaurantDetailScope(restaurantId: restaurantId),
+            viewModel: IosAggregatorExportsKt.getRestaurantDetailViewModelFromFramework(restaurantId: restaurantId)
+        )
     }
     
-    func settingsHolder() -> SettingsViewModelHolder {
-        registry.settingsHolder()
+    func settingsHolder() -> AnyObject? {
+        return nil
     }
     
-    private func syncCleanup() {
+    func processPendingDeepLink(_ url: URL) {
+        
+    }
+    
+    func cleanup(activeRoutes: Set<String>) {
         registry.cleanup(activeRoutes: activeRoutes)
     }
-    
-     private func handleShowModal(_ destination: shared.ModalDestination) {
-         if let modal = destinationToModalRoute(destination) {
-             modalStack.append(modal)
-             showingModal = modal
-             showingModalKey = modal.key
-             return
-         }
-         
-         fatalError("Unable to convert ModalDestination to ModalRoute: \(destination)")
-     }
-    
-    private func destinationToModalRoute(_ destination: shared.ModalDestination) -> shared.ModalRoute? {
-        switch destination {
-        case let filter as shared.ModalDestination.Filter:
-            return FilterModalRoute(preSelectedFilters: filter.preSelectedFilters)
-        case let review as shared.ModalDestination.SubmitReviewModal:
-            return SubmitReviewModalRoute(restaurantId: review.restaurantId)
-        case let confirm as shared.ModalDestination.ConfirmAction:
-            return ConfirmActionModalRoute(message: confirm.message, confirmText: confirm.confirmText, cancelText: confirm.cancelText)
-        case let picker as shared.ModalDestination.DatePicker:
-            return DatePickerModalRoute(initialDate: picker.initialDate)
-        default:
-            return nil
-        }
-    }
-    
-     private func handleDismissModal() {
-         if !modalStack.isEmpty {
-             modalStack.removeLast()
-         }
-         showingModal = modalStack.last
-         showingModalKey = modalStack.last?.key
-     }
-    
-     private func handleDismissAllModals() {
-         modalStack.removeAll()
-         showingModal = nil
-         showingModalKey = nil
-     }
-    
-     private func handleDismissModalUntil(_ predicate: @escaping (shared.ModalRoute) -> KotlinBoolean) {
-         while !modalStack.isEmpty {
-             if let last = modalStack.last {
-                 if predicate(last).boolValue {
-                     break
-                 }
-             }
-             modalStack.removeLast()
-         }
-         showingModal = modalStack.last
-         showingModalKey = modalStack.last?.key
-     }
 }
+
+

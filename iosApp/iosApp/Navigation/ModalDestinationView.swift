@@ -4,11 +4,11 @@ import shared
 /// Maps KMP ModalDestination to iOS modal UI.
 /// Handles presentation styles (sheet, fullscreen, dialog) and dismissal logic.
 struct ModalDestinationView: View {
-    let modal: shared.ModalRoute
+    let modal: CoreModalRoute
     let onDismiss: () -> Void
-    let viewModel: RestaurantDetailViewModel?
+    let viewModel: Feature_restaurantFeature_restaurantRestaurantDetailViewModel?
     
-    init(modal: shared.ModalRoute, onDismiss: @escaping () -> Void, viewModel: RestaurantDetailViewModel? = nil) {
+    init(modal: CoreModalRoute, onDismiss: @escaping () -> Void, viewModel: Feature_restaurantFeature_restaurantRestaurantDetailViewModel? = nil) {
         self.modal = modal
         self.onDismiss = onDismiss
         self.viewModel = viewModel
@@ -173,9 +173,9 @@ struct ReviewsModalView: View {
     @State private var comment: String = ""
     @State private var isSubmitting: Bool = false
     
-    let viewModel: RestaurantDetailViewModel?
+    let viewModel: Feature_restaurantFeature_restaurantRestaurantDetailViewModel?
     
-    init(modal: SubmitReviewModalRoute, onDismiss: @escaping () -> Void, viewModel: RestaurantDetailViewModel? = nil) {
+    init(modal: SubmitReviewModalRoute, onDismiss: @escaping () -> Void, viewModel: Feature_restaurantFeature_restaurantRestaurantDetailViewModel? = nil) {
         self.modal = modal
         self.onDismiss = onDismiss
         self.viewModel = viewModel

@@ -19,12 +19,12 @@ import shared
 /// Card dimensions: 343x196pt with shadow and white background
 /// All styling driven by DesignTokens from shared KMP
 struct RestaurantCardView: View {
-    let data: RestaurantCardData
+    let data: Feature_restaurantRestaurantCardData
     var onTap: (() -> Void)? = nil
     
     var body: some View {
-        let tagGap = CGFloat(.spacingUI.xs)
-        let padding = CGFloat(.spacingUI.sm)
+        let tagGap = CGFloat.spacingUI.xs
+        let padding = CGFloat.spacingUI.sm
         
         VStack(alignment: .leading, spacing: 0) {
             // Image section - top 132pt with rounded corners
@@ -64,19 +64,17 @@ struct RestaurantCardView: View {
             
             // Info section - bottom 64pt
             VStack(alignment: .leading, spacing: 4) {
-                // Restaurant name (title1)
                 Text(data.restaurantName)
-                    .font(.title1)
+                    .font(.system(.title2, design: .default))
                     .foregroundColor(.text.dark)
                     .lineLimit(1)
                     .accessibilityLabel("Restaurant name: \(data.restaurantName)")
                 
-                // Tags (subtitle1) - wrapped horizontally
                 if !data.tags.isEmpty {
                     HStack(spacing: tagGap) {
                         ForEach(data.tags, id: \.self) { tag in
                             Text(tag)
-                                .font(.subtitle1)
+                                .font(.system(.caption, design: .default))
                                 .foregroundColor(.text.subtitle)
                                 .lineLimit(1)
                         }
@@ -84,15 +82,14 @@ struct RestaurantCardView: View {
                     .accessibilityLabel("Tags: \(data.tags.joined(separator: ", "))")
                 }
                 
-                // Delivery info and rating (footer1)
                 HStack(spacing: 12) {
                     HStack(spacing: 4) {
                         Image(systemName: "clock.fill")
                             .font(.system(size: 8))
                             .foregroundColor(.text.footer)
                         
-                        Text(data.deliveryTime)
-                            .font(.footer1)
+                        Text(String(data.deliveryTime))
+                            .font(.system(.caption2, design: .default))
                             .foregroundColor(.text.footer)
                     }
                     
@@ -101,25 +98,24 @@ struct RestaurantCardView: View {
                             .font(.system(size: 8))
                             .foregroundColor(.text.footer)
                         
-                        Text(data.distance)
-                            .font(.footer1)
+                        Text(String(data.distance))
+                            .font(.system(.caption2, design: .default))
                             .foregroundColor(.text.footer)
                     }
                     
                     Spacer()
                     
-                    // Star rating
                     HStack(spacing: 2) {
                         Image(systemName: "star.fill")
                             .font(.system(size: 10))
                             .foregroundColor(.accent.star)
                         
-                        Text(String(format: "%.1f", data.rating))
-                            .font(.footer1)
+                        Text(data.rating)
+                            .font(.system(.caption2, design: .default))
                             .foregroundColor(.text.footer)
                     }
                 }
-                .accessibilityLabel("Delivery: \(data.deliveryTime), Distance: \(data.distance), Rating: \(String(format: "%.1f", data.rating))")
+                .accessibilityLabel("Delivery: \(data.deliveryTime), Distance: \(data.distance), Rating: \(data.rating)")
             }
             .padding(padding)
             
@@ -190,16 +186,15 @@ struct RoundedCorner: Shape {
     }
 }
 
-// MARK: - Preview
 #Preview {
     RestaurantCardView(
-        data: RestaurantCardData(
+        data: Feature_restaurantRestaurantCardData(
             id: "1234",
             restaurantName: "Pizza Palace",
             tags: ["Italian", "Pizza", "Vegetarian"],
-            deliveryTime: "25-35 min",
-            distance: "2.5 km",
-            rating: 4.5,
+            deliveryTime: 30,
+            distance: 2.5,
+            rating: "4.5",
             imageUrl: "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=343&h=132&fit=crop",
             contentDescription: "Restaurant: Pizza Palace"
         )

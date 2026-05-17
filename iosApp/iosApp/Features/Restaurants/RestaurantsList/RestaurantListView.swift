@@ -8,8 +8,8 @@ import SwiftUI
 import shared
 
 struct RestaurantListView: View {
-    let navigationViewModel: RestaurantNavigationViewModel
-    let viewModel: RestaurantListViewModel
+    let navigationViewModel: Feature_restaurantRestaurantNavigationViewModel
+    let viewModel: Feature_restaurantRestaurantListViewModel
     
     @State private var uiState: RestaurantListUiState = RestaurantListUiState.Loading()
 

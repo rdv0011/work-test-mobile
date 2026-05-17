@@ -7,7 +7,7 @@
 import shared
 
 @MainActor
-func asyncKotlinStream<T>(_ flow: any Flow) -> AsyncStream<T> {
+func asyncKotlinStream<T>(_ flow: any Kotlinx_coroutines_coreFlow) -> AsyncStream<T> {
     AsyncStream { continuation in
         Task {
             do {

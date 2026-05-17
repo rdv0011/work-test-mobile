@@ -8,7 +8,7 @@ import shared
 
 func asyncStateStream<S, VM: ViewModelState>(_ viewModel: VM) -> AsyncStream<S> {
     AsyncStream { continuation in
-        let job = (viewModel as? KmpViewModel)?.subscribeState(viewModel.stateFlow) { value in
+        let job = (viewModel as? LifecycleOwner)?.subscribeState(viewModel.stateFlow) { value in
             if let typed = value as? S {
                 continuation.yield(typed)
             }

@@ -1,6 +1,7 @@
 package io.umain.munchies.android
 
 import android.app.Application
+import io.umain.munchies.android.di.registerAnalyticsModule
 import io.umain.munchies.android.features.restaurant.di.registerAndroidUIWrappersModule
 import io.umain.munchies.android.features.settings.di.registerAndroidSettingsModule
 import io.umain.munchies.di.createAppCoordinator
@@ -21,6 +22,7 @@ class MunchiesApplication : Application() {
         registerFeatureSettingsModule()
         registerAndroidUIWrappersModule()
         registerAndroidSettingsModule()
+        registerAnalyticsModule()
 
         createAppCoordinator()
     }

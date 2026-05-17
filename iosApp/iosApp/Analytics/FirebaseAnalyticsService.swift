@@ -1,48 +1,71 @@
 import Foundation
-import shared
 import FirebaseAnalytics
+import shared
 
-private let tag = "FirebaseAnalyticsService"
-
-class FirebaseAnalyticsService: NSObject, shared.AnalyticsService {
+class FirebaseAnalyticsService: NSObject, AnalyticsService {
+    private let queue = DispatchQueue(label: "io.umain.analytics.ios", qos: .background)
     
-    override init() {
-        super.init()
-        registerWithKotlin()
-    }
-    
-    private func registerWithKotlin() {
-        FirebaseAnalyticsFactoryKt.injectSwiftFirebaseAnalyticsService(service: self)
-    }
-    
-     func trackEvent(event: shared.AnalyticsEvent) async throws {
-         let parameters = extractParameters(from: event)
-         Analytics.logEvent(event.eventName, parameters: parameters)
-         logInfo(tag: tag, message: "📊 Logged event: \(event.eventName) with \(parameters.count) parameters")
-     }
-    
-    private func extractParameters(from event: shared.AnalyticsEvent) -> [String: Any] {
-        var parameters: [String: Any] = [:]
-        
-        event.properties.forEach { (key: String, value: String) in
-            parameters[key] = value
+    func trackEvent(event: AnalyticsEvent) async throws {
+        await queue.async {
+            let bundle = NSMutableDictionary()
+            
+            switch event {
+            case let screenView as AnalyticsEvent.ScreenView:
+                bundle["screen_name"] = screenView.screenName
+                bundle["screen_class"] = screenView.screenClass
+                if let previousScreen = screenView.previousScreen {
+                    bundle["previous_screen"] = previousScreen
+                }
+                
+            case let tabSwitch as AnalyticsEvent.TabSwitch:
+                bundle["tab_id"] = tabSwitch.tabId
+                bundle["tab_name"] = tabSwitch.tabName
+                
+            case let modalOpen as AnalyticsEvent.ModalOpen:
+                bundle["modal_name"] = modalOpen.modalName
+                bundle["modal_class"] = modalOpen.modalClass
+                
+            case let modalDismiss as AnalyticsEvent.ModalDismiss:
+                bundle["modal_name"] = modalDismiss.modalName
+                bundle["time_spent_ms"] = NSNumber(value: modalDismiss.timeSpentMs)
+                
+            case let errorEvent as AnalyticsEvent.ErrorEvent:
+                bundle["error_type"] = errorEvent.errorType
+                bundle["error_message"] = errorEvent.errorMessage
+                bundle["error_context"] = errorEvent.errorContext
+                
+            case is AnalyticsEvent.CustomEvent:
+                break
+                
+            default:
+                break
+            }
+            
+            event.properties.forEach { (key, value) in
+                bundle[key] = value
+            }
+            
+            Analytics.logEvent(event.eventName, parameters: bundle as? [String: Any])
         }
-        
-        return parameters
     }
     
-     func setUserProperties(properties: [String: String]) async throws {
-         for (key, value) in properties {
-             Analytics.setUserProperty(value, forName: key)
-         }
-         logInfo(tag: tag, message: "👤 Set \(properties.count) user properties")
-     }
+    func setUserProperties(properties: [String : String]) async throws {
+        await queue.async {
+            properties.forEach { (key, value) in
+                Analytics.setUserProperty(value, forName: key)
+            }
+        }
+    }
     
-     func clearUserProperties() async throws {
-         logInfo(tag: tag, message: "⚠️ Firebase Analytics doesn't support clearing all user properties.")
-     }
+    func clearUserProperties() async throws {
+        await queue.async {
+            Analytics.setUserID(nil)
+        }
+    }
     
-     func flush() async throws {
-         logInfo(tag: tag, message: "📤 Manual flush requested (Firebase batches automatically)")
-     }
+    func flush() async throws {
+        await queue.async {
+            Analytics.resetAnalyticsData()
+        }
+    }
 }

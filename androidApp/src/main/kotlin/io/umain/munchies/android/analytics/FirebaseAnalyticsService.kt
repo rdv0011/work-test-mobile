@@ -1,70 +1,95 @@
 package io.umain.munchies.android.analytics
 
-import com.google.firebase.analytics.FirebaseAnalytics
-import com.google.firebase.analytics.analytics
-import com.google.firebase.Firebase
 import io.umain.munchies.core.analytics.AnalyticsEvent
 import io.umain.munchies.core.analytics.AnalyticsService
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
-class FirebaseAnalyticsService : AnalyticsService {
-    private val firebaseAnalytics: FirebaseAnalytics = Firebase.analytics
+class FirebaseAnalyticsService(
+    private val dispatcher: CoroutineDispatcher = Dispatchers.IO
+) : AnalyticsService {
+
+    private val firebaseAnalytics by lazy {
+        try {
+            val firebaseClass = Class.forName("com.google.firebase.ktx.Firebase")
+            val analyticsProperty = firebaseClass.getMethod("getAnalytics")
+            analyticsProperty.invoke(null)
+        } catch (e: Exception) {
+            null
+        }
+    }
 
     override suspend fun trackEvent(event: AnalyticsEvent) {
-        val bundle = android.os.Bundle().apply {
-            when (event) {
-                is AnalyticsEvent.ScreenView -> {
-                    putString("screen_name", event.screenName)
-                    putString("screen_class", event.screenClass)
-                    event.previousScreen?.let { putString("previous_screen", it) }
+        withContext(dispatcher) {
+            val analytics = firebaseAnalytics ?: return@withContext
+            val bundle = android.os.Bundle().apply {
+                when (event) {
+                    is AnalyticsEvent.ScreenView -> {
+                        putString("screen_name", event.screenName)
+                        putString("screen_class", event.screenClass)
+                        event.previousScreen?.let { putString("previous_screen", it) }
+                    }
+
+                    is AnalyticsEvent.TabSwitch -> {
+                        putString("tab_id", event.tabId)
+                        putString("tab_name", event.tabName)
+                    }
+
+                    is AnalyticsEvent.ModalOpen -> {
+                        putString("modal_name", event.modalName)
+                        putString("modal_class", event.modalClass)
+                    }
+
+                    is AnalyticsEvent.ModalDismiss -> {
+                        putString("modal_name", event.modalName)
+                        putLong("time_spent_ms", event.timeSpentMs)
+                    }
+
+                    is AnalyticsEvent.ErrorEvent -> {
+                        putString("error_type", event.errorType)
+                        putString("error_message", event.errorMessage)
+                        putString("error_context", event.errorContext)
+                    }
+
+                    is AnalyticsEvent.CustomEvent -> {}
                 }
 
-                is AnalyticsEvent.TabSwitch -> {
-                    putString("tab_id", event.tabId)
-                    putString("tab_name", event.tabName)
-                }
-
-                is AnalyticsEvent.ModalOpen -> {
-                    putString("modal_name", event.modalName)
-                    putString("modal_class", event.modalClass)
-                }
-
-                is AnalyticsEvent.ModalDismiss -> {
-                    putString("modal_name", event.modalName)
-                    putLong("time_spent_ms", event.timeSpentMs)
-                }
-
-                is AnalyticsEvent.CustomEvent -> {
-                    event.properties.forEach { (k, v) -> putString(k, v) }
-                }
-
-                is AnalyticsEvent.ErrorEvent -> {
-                    putString("error_type", event.errorType)
-                    putString("error_message", event.errorMessage)
-                    putString("error_context", event.errorContext)
+                event.properties.forEach { (key, value) ->
+                    runCatching { putString(key, value) }
                 }
             }
-        }
 
-        event.properties.forEach { (key, value) ->
-            if (!bundle.containsKey(key)) {
-                bundle.putString(key, value)
+            runCatching {
+                analytics::class.java.getMethod("logEvent", String::class.java, android.os.Bundle::class.java)
+                    .invoke(analytics, event.eventName, bundle)
             }
         }
-
-        firebaseAnalytics.logEvent(event.eventName, bundle)
     }
 
     override suspend fun setUserProperties(properties: Map<String, String>) {
-        properties.forEach { (key, value) ->
-            firebaseAnalytics.setUserProperty(key, value)
+        withContext(dispatcher) {
+            val analytics = firebaseAnalytics ?: return@withContext
+            properties.forEach { (key, value) ->
+                runCatching {
+                    analytics::class.java.getMethod("setUserProperty", String::class.java, String::class.java)
+                        .invoke(analytics, key, value)
+                }
+            }
         }
     }
 
     override suspend fun clearUserProperties() {
-        firebaseAnalytics.resetAnalyticsData()
+        withContext(dispatcher) {
+            val analytics = firebaseAnalytics ?: return@withContext
+            runCatching {
+                analytics::class.java.getMethod("setUserId", String::class.java)
+                    .invoke(analytics, null)
+            }
+        }
     }
 
     override suspend fun flush() {
-        // Firebase Analytics flushes automatically, no explicit action needed
+        withContext(dispatcher) {}
     }
 }

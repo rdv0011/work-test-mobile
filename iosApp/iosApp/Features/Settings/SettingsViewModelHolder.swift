@@ -2,14 +2,14 @@ import SwiftUI
 import shared
 
 class SettingsViewModelHolder {
-    let viewModel: SettingsViewModel
-    let navigationViewModel: SettingsNavigationViewModel
-    let scope: Scope
+    let viewModel: Feature_settingsSettingsViewModel
+    let navigationViewModel: Feature_settingsSettingsNavigationViewModel
+    let scope: Koin_coreScope
     
-    init(scope: Scope) {
+    init(scope: Koin_coreScope) {
         self.scope = scope
-        self.viewModel = scope.getSettingsViewModel()
-        self.navigationViewModel = scope.getSettingsNavigationViewModel()
+        self.viewModel = scope.getFeature_settingsSettingsViewModel()
+        self.navigationViewModel = scope.getFeature_settingsSettingsNavigationViewModel()
     }
     
     deinit {

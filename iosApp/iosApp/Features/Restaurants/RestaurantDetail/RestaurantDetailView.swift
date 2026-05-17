@@ -9,12 +9,12 @@ import shared
 
 struct RestaurantDetailView: View {
     let restaurantId: String
-    let navigationViewModel: RestaurantNavigationViewModel
-    let viewModel: RestaurantDetailViewModel
+    let navigationViewModel: Feature_restaurantRestaurantNavigationViewModel
+    let viewModel: Feature_restaurantFeature_restaurantRestaurantDetailViewModel
     
     /// Keep holder alive for view lifetime.
     /// The scope is managed by RouteRegistry, but the holder keeps ViewModel state.
-    let holder: RestaurantDetailViewModelHolder
+    let holder: Feature_restaurantFeature_restaurantRestaurantDetailViewModelHolder
     
     @State private var uiState: RestaurantDetailUiState = RestaurantDetailUiState.Loading()
     private let R = StringResources.shared

@@ -1,41 +1,24 @@
-//
-//  RestaurantRouteProvider.swift
-//  iosApp
-//
-//  Created by Dmitry Rybakov on 2026-02-14.
-//
-
 import Foundation
 import shared
 
-/**
- * Restaurant feature route provider for iOS.
- *
- * Declares all routes provided by the Restaurant feature
- * and handles the creation of view model holders for each route.
- */
 class RestaurantRouteProvider: RouteProvider {
-    private let coordinator: AppCoordinator
+    private let coordinator: CoreAppCoordinator
     private let holderRegistry: RestaurantHolderProvider
 
-    init(coordinator: AppCoordinator, holderRegistry: RestaurantHolderProvider) {
+    init(coordinator: CoreAppCoordinator, holderRegistry: RestaurantHolderProvider) {
         self.coordinator = coordinator
         self.holderRegistry = holderRegistry
     }
 
-    func getRoutes() -> [RouteHandler] {
-        return [
-            RestaurantListRouteHandlerImpl.shared,
-            RestaurantDetailRouteHandlerImpl.shared
-        ]
+    func getRoutes() -> [CoreRouteHandler] {
+        return []
     }
 
-    /// Get the appropriate view model holder for a route
-    func getHolder(for route: shared.Route) -> AnyObject? {
+    func getHolder(for route: CoreRoute) -> AnyObject? {
         switch route {
-        case _ as RestaurantListRoute:
+        case _ as CoreRestaurantListRoute:
             return holderRegistry.restaurantListHolder()
-        case let r as RestaurantDetailRoute:
+        case let r as CoreRestaurantDetailRoute:
             return holderRegistry.restaurantDetailHolder(restaurantId: r.restaurantId)
         default:
             return nil
@@ -43,27 +26,17 @@ class RestaurantRouteProvider: RouteProvider {
     }
 }
 
-/**
- * Protocol for restaurant holder creation.
- *
- * Separated to allow for dependency injection of holder creation logic.
- */
 protocol RestaurantHolderProvider {
     func restaurantListHolder() -> RestaurantListViewModelHolder
-    func restaurantDetailHolder(restaurantId: String) -> RestaurantDetailViewModelHolder
+    func restaurantDetailHolder(restaurantId: String) -> AnyObject?
 }
 
-/**
- * Default implementation of RestaurantHolderProvider.
- *
- * Creates view model holders by delegating to RouteHolderRegistry.
- */
 struct RestaurantHolderProviderImpl: RestaurantHolderProvider {
     func restaurantListHolder() -> RestaurantListViewModelHolder {
         fatalError("Use NavigationCoordinator.restaurantListHolder() instead")
     }
     
-    func restaurantDetailHolder(restaurantId: String) -> RestaurantDetailViewModelHolder {
+    func restaurantDetailHolder(restaurantId: String) -> AnyObject? {
         fatalError("Use NavigationCoordinator.restaurantDetailHolder() instead")
     }
 }

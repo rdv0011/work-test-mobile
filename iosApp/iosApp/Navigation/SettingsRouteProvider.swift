@@ -1,24 +1,22 @@
 import Foundation
 import shared
 
-class SettingsRouteProvider: RouteProvider {
-    private let coordinator: AppCoordinator
+class CoreSettingsRouteProvider: RouteProvider {
+    private let coordinator: CoreAppCoordinator
     private let holderRegistry: SettingsHolderProvider
 
-    init(coordinator: AppCoordinator, holderRegistry: SettingsHolderProvider) {
+    init(coordinator: CoreAppCoordinator, holderRegistry: SettingsHolderProvider) {
         self.coordinator = coordinator
         self.holderRegistry = holderRegistry
     }
 
-    func getRoutes() -> [RouteHandler] {
-        return [
-            SettingsRouteHandlerImpl.shared
-        ]
+    func getRoutes() -> [CoreRouteHandler] {
+        return []
     }
 
-    func getHolder(for route: shared.Route) -> AnyObject? {
+    func getHolder(for route: CoreRoute) -> AnyObject? {
         switch route {
-        case _ as SettingsRoute:
+        case _ as CoreSettingsRoute:
             return holderRegistry.settingsHolder()
         default:
             return nil
@@ -27,11 +25,11 @@ class SettingsRouteProvider: RouteProvider {
 }
 
 protocol SettingsHolderProvider {
-    func settingsHolder() -> SettingsViewModelHolder
+    func settingsHolder() -> AnyObject?
 }
 
 struct SettingsHolderProviderImpl: SettingsHolderProvider {
-    func settingsHolder() -> SettingsViewModelHolder {
+    func settingsHolder() -> AnyObject? {
         fatalError("Use NavigationCoordinator.settingsHolder() instead")
     }
 }

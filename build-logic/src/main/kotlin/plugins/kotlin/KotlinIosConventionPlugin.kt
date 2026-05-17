@@ -19,7 +19,6 @@ class KotlinIosConventionPlugin : Plugin<Project> {
             
             // Configure XCFramework generation for iOS
             val xcFrameworkName = "shared"
-            val xcFrameworkTargets = listOf("iosArm64", "iosSimulatorArm64")
             
             targets.withType(org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget::class.java) {
                 binaries.framework {

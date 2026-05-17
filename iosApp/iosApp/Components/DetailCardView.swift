@@ -17,7 +17,7 @@ import shared
 /// Dimensions: 343x144pt white card with 12pt corners
 /// Status color: Green (#2ECC71) for open, Red (#C0392B) for closed
 struct DetailCardView: View {
-    let data: DetailCardData
+    let data: Feature_restaurantDetailCardData
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -60,7 +60,7 @@ struct DetailCardView: View {
 #Preview {
     VStack(spacing: 16) {
         DetailCardView(
-            data: DetailCardData(
+            data: Feature_restaurantDetailCardData(
                 title: "Pizza Palace",
                 tags: [],
                 statusText: "Open",
@@ -69,7 +69,7 @@ struct DetailCardView: View {
         )
         
         DetailCardView(
-            data: DetailCardData(
+            data: Feature_restaurantDetailCardData(
                 title: "Sushi Spot",
                 tags: [],
                 statusText: "Closed",

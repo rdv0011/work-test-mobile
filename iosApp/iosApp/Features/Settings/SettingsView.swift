@@ -6,8 +6,8 @@ import SwiftUI
 import shared
 
 struct SettingsView: View {
-    let navigationViewModel: SettingsNavigationViewModel
-    let viewModel: SettingsViewModel
+    let navigationViewModel: Feature_settingsSettingsNavigationViewModel
+    let viewModel: Feature_settingsSettingsViewModel
 
     @State private var uiState: SettingsUiState = SettingsUiState(
         darkModeEnabled: false,

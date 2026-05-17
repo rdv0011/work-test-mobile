@@ -1,12 +1,11 @@
 //
-//  RestaurantDetailRouteHandlerSwift.swift
+//  CoreRestaurantDetailRouteHandlerSwift.swift
 //  iosApp
 //
 //  Created on 2026-02-17
 //
 //  iOS-specific handler for the RestaurantDetail route.
 //  Centralizes route handling logic: scope creation, view building, and navigation mapping.
-//  Mirrors the Android RestaurantDetailRouteHandlerAndroid pattern.
 
 import SwiftUI
 import shared
@@ -18,21 +17,14 @@ import shared
 /// - Building the view to display
 /// - Mapping navigation destinations to routes
 ///
-/// By centralizing this logic, we follow the same pattern as Android handlers,
-/// making the codebase consistent and easier to extend.
+/// By centralizing this logic, we ensure consistent navigation across the app.
 @MainActor
-class RestaurantDetailRouteHandlerSwift {
+class CoreRestaurantDetailRouteHandlerSwift {
     
-    private let commonHandler = RestaurantDetailRouteHandler()
     private let routeRegistry: RouteRegistry
     
     init(routeRegistry: RouteRegistry) {
         self.routeRegistry = routeRegistry
-    }
-    
-    /// The route this handler manages (template with empty ID).
-    var route: shared.Route {
-        commonHandler.route
     }
     
     /// Route string used by the Swift route enum.
@@ -41,39 +33,18 @@ class RestaurantDetailRouteHandlerSwift {
         "restaurantDetail"
     }
     
-    /// Determines if this handler can process the given destination.
-    func canHandle(destination: shared.Destination) -> Bool {
-        commonHandler.canHandle(destination: destination)
-    }
-    
-    /// Converts a destination to a Route instance.
-    func destinationToRoute(destination: shared.Destination) -> shared.Route? {
-        commonHandler.destinationToRoute(destination: destination)
-    }
-    
-    /// Converts a KMP Route to the iOS-specific Route enum.
-    ///
-    /// - Parameter kmpRoute: The Kotlin route to convert
-    /// - Returns: The iOS route enum case if it's a RestaurantDetailRoute, nil otherwise
-    func convertToIOSRoute(_ kmpRoute: shared.Route) -> Route? {
-        if let detailRoute = kmpRoute as? RestaurantDetailRoute {
-            return .restaurantDetail(detailRoute.restaurantId)
-        }
-        return nil
-    }
-    
     /// Creates or retrieves the ViewModel holder for this route.
     ///
     /// This method owns the complete holder creation lifecycle:
     /// 1. Gets or creates a scope via routeRegistry.lifetimeFor() with the restaurantId
-    /// 2. Creates the holder with that scope
-    /// 3. Returns the holder
+    /// 2. Retrieves the ViewModel from Kotlin for this scope
+    /// 3. Creates and returns the holder with scope and viewModel
     ///
-    /// The calling registry is responsible only for caching.
+    /// The calling registry is responsible only for caching the holder.
     ///
     /// - Parameter restaurantId: The ID of the restaurant to display
     /// - Returns: The holder for the restaurant detail view
-    func createHolder(restaurantId: String) -> RestaurantDetailViewModelHolder {
+    func createHolder(restaurantId: String) -> Feature_restaurantRestaurantDetailViewModelHolder {
         let route = Route.restaurantDetail(restaurantId)
         let key = route.key
         
@@ -81,7 +52,9 @@ class RestaurantDetailRouteHandlerSwift {
             FeatureRestaurantIosKt.createRestaurantDetailScopeIos(restaurantId: restaurantId)
         }
         
-        return RestaurantDetailViewModelHolder(restaurantId: restaurantId, scope: scope)
+        let viewModel = FeatureRestaurantIosKt.getRestaurantDetailViewModelIos(restaurantId: restaurantId)
+        
+        return Feature_restaurantRestaurantDetailViewModelHolder(restaurantId: restaurantId, scope: scope, viewModel: viewModel)
     }
     
     /// Builds the SwiftUI view for this route.
@@ -94,8 +67,8 @@ class RestaurantDetailRouteHandlerSwift {
     @ViewBuilder
     func buildView(
         restaurantId: String,
-        holder: RestaurantDetailViewModelHolder,
-        coordinator: AppCoordinator
+        holder: Feature_restaurantRestaurantDetailViewModelHolder,
+        coordinator: CoreAppCoordinator
     ) -> some View {
         RestaurantDetailView(
             restaurantId: restaurantId,

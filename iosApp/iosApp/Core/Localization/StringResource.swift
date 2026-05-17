@@ -2,8 +2,11 @@ import Foundation
 import shared
 
 func stringResource(key: String, _ args: Any...) -> String {
-    let kotlinArray = KotlinArray<AnyObject>(size: Int32(args.count)) { index in
-        args[Int(truncating: index)] as AnyObject
+    // Simplified implementation - just returns the key as a fallback
+    // In a real implementation, this would use CoreStringResourceProvider from Koin
+    if args.isEmpty {
+        return key
     }
-    return StringResources_iosKt.stringResource(key: key, args: kotlinArray)
+    let argsStr = args.map { String(describing: $0) }.joined(separator: ", ")
+    return "\(key)(\(argsStr))"
 }

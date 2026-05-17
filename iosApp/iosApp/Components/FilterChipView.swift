@@ -18,11 +18,11 @@ import shared
 /// Unselected: semi-transparent white (#FFFFFF66) + dark text
 /// Selected: accent color (#E2A364) + light text
 struct FilterChipView: View {
-    let data: FilterChipData
+    let data: Feature_restaurantFilterChipData
     @State private var isSelected: Bool
     var onSelectionChanged: ((Bool) -> Void)? = nil
     
-    init(data: FilterChipData, onSelectionChanged: ((Bool) -> Void)? = nil) {
+    init(data: Feature_restaurantFilterChipData, onSelectionChanged: ((Bool) -> Void)? = nil) {
         self.data = data
         self.onSelectionChanged = onSelectionChanged
         _isSelected = State(initialValue: data.isSelected)
@@ -95,7 +95,7 @@ struct FilterChipView: View {
 #Preview {
     VStack(spacing: 16) {
         FilterChipView(
-            data: FilterChipData(
+            data: Feature_restaurantFilterChipData(
                 id: "filter-1",
                 label: "Italian",
                 iconUrl: "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=48&h=48&fit=crop",
@@ -105,7 +105,7 @@ struct FilterChipView: View {
         )
         
         FilterChipView(
-            data: FilterChipData(
+            data: Feature_restaurantFilterChipData(
                 id: "filter-2",
                 label: "Sushi",
                 iconUrl: "https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=48&h=48&fit=crop",

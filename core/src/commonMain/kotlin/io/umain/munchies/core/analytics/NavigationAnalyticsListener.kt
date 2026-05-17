@@ -5,7 +5,7 @@ import io.umain.munchies.navigation.Route
 import io.umain.munchies.navigation.RestaurantDetailRoute
 import io.umain.munchies.navigation.TabNavigationState
 import io.umain.munchies.core.lifecycle.LifecycleOwner
-import io.umain.munchies.core.util.currentTimeMillis
+import io.umain.munchies.core.utils.currentTimeMillis
 import io.umain.munchies.logging.logInfo
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch

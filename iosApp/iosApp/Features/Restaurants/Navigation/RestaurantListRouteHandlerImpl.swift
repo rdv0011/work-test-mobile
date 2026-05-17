@@ -1,25 +1,25 @@
 //
-//  RestaurantListRouteHandlerImpl.swift
+//  CoreRestaurantListRouteHandlerImpl.swift
 //  iosApp
 //
 //  Created on 2026-02-19
 //
-//  KMP-conforming wrapper for the RestaurantListRouteHandlerSwift.
-//  Bridges the KMP RouteHandler interface to iOS-specific routing logic.
+//  KMP-conforming wrapper for the CoreRestaurantListRouteHandlerSwift.
+//  Bridges the KMP CoreRouteHandler interface to iOS-specific routing logic.
 
 import Foundation
 import shared
 
-/// KMP RouteHandler implementation for the restaurant list route.
+/// KMP CoreRouteHandler implementation for the restaurant list route.
 ///
-/// This singleton wraps RestaurantListRouteHandlerSwift and conforms to the
-/// shared.RouteHandler interface, allowing it to be used with the KMP navigation system.
-class RestaurantListRouteHandlerImpl: shared.RouteHandler {
-    static let shared = RestaurantListRouteHandlerImpl()
+/// This singleton wraps CoreRestaurantListRouteHandlerSwift and conforms to the
+/// CoreRouteHandler interface, allowing it to be used with the KMP navigation system.
+class CoreRestaurantListRouteHandlerImpl: CoreRouteHandler {
+    static let shared = CoreRestaurantListRouteHandlerImpl()
     
     private init() {}
     
-    var route: shared.Route {
+    var route: CoreRoute {
         IosAggregatorKt.createRestaurantListRoute()
     }
     
@@ -27,12 +27,12 @@ class RestaurantListRouteHandlerImpl: shared.RouteHandler {
         "restaurantList"
     }
     
-    func canHandle(destination: shared.Destination) -> Bool {
-        destination is Destination.RestaurantList
+    func canHandle(destination: CoreDestination) -> Bool {
+        destination is CoreRestaurantListRoute
     }
     
-    func destinationToRoute(destination: shared.Destination) -> shared.Route? {
-        if destination is Destination.RestaurantList {
+    func destinationToRoute(destination: CoreDestination) -> CoreRoute? {
+        if destination is CoreRestaurantListRoute {
             return IosAggregatorKt.createRestaurantListRoute()
         }
         return nil

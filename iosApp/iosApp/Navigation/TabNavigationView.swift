@@ -8,7 +8,7 @@ import shared
 
 struct TabNavigationView: View {
     @ObservedObject var navigator: NavigationCoordinator
-    private let R = StringResources.shared
+    // private let R = StringResources.shared
     
     var body: some View {
         ZStack {
@@ -106,7 +106,7 @@ struct TabNavigationView: View {
           }
       }
       
-      private func getViewModelForModal(_ modal: shared.ModalRoute, navigator: NavigationCoordinator) -> RestaurantDetailViewModel? {
+      private func getViewModelForModal(_ modal: CoreModalRoute, navigator: NavigationCoordinator) -> Feature_restaurantRestaurantDetailViewModel? {
           if let submitReview = modal as? SubmitReviewModalRoute {
               let holder = navigator.restaurantDetailHolder(restaurantId: submitReview.restaurantId)
               return holder.viewModel

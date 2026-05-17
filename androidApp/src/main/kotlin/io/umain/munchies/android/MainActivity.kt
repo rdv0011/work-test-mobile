@@ -16,7 +16,6 @@ import io.umain.munchies.android.ui.theme.MunchiesTheme
 import io.umain.munchies.navigation.AppCoordinator
 import io.umain.munchies.navigation.persistence.NavigationStateRestorer
 import io.umain.munchies.core.analytics.NavigationAnalyticsListener
-import io.umain.munchies.android.analytics.FirebaseAnalyticsService
 import io.umain.munchies.logging.logError
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
@@ -74,11 +73,11 @@ class MainActivity : ComponentActivity() {
     }
     
     private fun initAnalyticsTracking() {
-        analyticsListener = NavigationAnalyticsListener(
-            FirebaseAnalyticsService(),
-            coordinator.navigationState
-        ).apply {
-            startTracking()
+        analyticsListener = try {
+            val listener: NavigationAnalyticsListener by inject()
+            listener.apply { startTracking() }
+        } catch (e: Exception) {
+            null
         }
     }
 

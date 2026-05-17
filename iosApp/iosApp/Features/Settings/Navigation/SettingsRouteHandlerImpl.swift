@@ -1,12 +1,12 @@
 import Foundation
 import shared
 
-class SettingsRouteHandlerImpl: shared.RouteHandler {
-    static let shared = SettingsRouteHandlerImpl()
+class CoreSettingsRouteHandlerImpl: CoreRouteHandler {
+    static let shared = CoreSettingsRouteHandlerImpl()
     
     private init() {}
     
-    var route: shared.Route {
+    var route: CoreRoute {
         IosAggregatorKt.createSettingsRoute()
     }
     
@@ -14,12 +14,12 @@ class SettingsRouteHandlerImpl: shared.RouteHandler {
         "settings"
     }
     
-    func canHandle(destination: shared.Destination) -> Bool {
-        destination is Destination.Settings
+    func canHandle(destination: CoreDestination) -> Bool {
+        destination is CoreSettingsRoute
     }
     
-    func destinationToRoute(destination: shared.Destination) -> shared.Route? {
-        if destination is Destination.Settings {
+    func destinationToRoute(destination: CoreDestination) -> CoreRoute? {
+        if destination is CoreSettingsRoute {
             return IosAggregatorKt.createSettingsRoute()
         }
         return nil

@@ -1,5 +1,5 @@
 //
-//  SettingsRouteHandlerSwift.swift
+//  CoreSettingsRouteHandlerSwift.swift
 //  iosApp
 //
 
@@ -7,33 +7,33 @@ import SwiftUI
 import shared
 
 @MainActor
-class SettingsRouteHandlerSwift {
+class CoreSettingsRouteHandlerSwift {
     
-    private let commonHandler = SettingsRouteHandler()
+    private let commonHandler = CoreSettingsRouteHandler()
     private let routeRegistry: RouteRegistry
     
     init(routeRegistry: RouteRegistry) {
         self.routeRegistry = routeRegistry
     }
     
-    var route: shared.Route {
-        IosAggregatorKt.createSettingsRoute()
+    var route: CoreRoute {
+        IosAggregatorKt.createCoreSettingsRoute()
     }
     
     var routeString: String {
         "settings"
     }
     
-    func canHandle(destination: shared.Destination) -> Bool {
+    func canHandle(destination: CoreDestination) -> Bool {
         commonHandler.canHandle(destination: destination)
     }
     
-    func destinationToRoute(destination: shared.Destination) -> shared.Route? {
+    func destinationToRoute(destination: CoreDestination) -> CoreRoute? {
         commonHandler.destinationToRoute(destination: destination)
     }
     
-    func convertToIOSRoute(_ kmpRoute: shared.Route) -> Route? {
-        if kmpRoute is SettingsRoute {
+    func convertToIOSRoute(_ kmpRoute: CoreRoute) -> Route? {
+        if kmpRoute is CoreSettingsRoute {
             return .settings
         }
         return nil
@@ -52,8 +52,8 @@ class SettingsRouteHandlerSwift {
     
      @ViewBuilder
      func buildView(
-         holder: SettingsViewModelHolder,
-         coordinator: AppCoordinator
+         holder: Feature_settingsSettingsViewModelHolder,
+         coordinator: CoreAppCoordinator
      ) -> some View {
          SettingsView(navigationViewModel: holder.navigationViewModel, viewModel: holder.viewModel)
      }

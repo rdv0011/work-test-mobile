@@ -72,7 +72,6 @@ fun getRestaurantListRouteHandler() = RestaurantListRouteHandlerImpl
 
 fun getRestaurantDetailRouteHandler() = RestaurantDetailRouteHandlerImpl
 
-// ViewModel export functions (for framework public API)
 /**
  * Get the RestaurantListViewModel from the scope.
  * Must be called after the scope is created via createRestaurantListScopeIos().

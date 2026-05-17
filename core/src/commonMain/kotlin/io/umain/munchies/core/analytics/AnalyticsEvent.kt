@@ -1,6 +1,6 @@
 package io.umain.munchies.core.analytics
 
-import io.umain.munchies.core.util.currentTimeMillis
+import io.umain.munchies.core.utils.currentTimeMillis
 
 sealed class AnalyticsEvent {
     abstract val eventName: String
