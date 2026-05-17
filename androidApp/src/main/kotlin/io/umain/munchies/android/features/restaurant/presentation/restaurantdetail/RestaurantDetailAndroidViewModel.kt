@@ -17,7 +17,6 @@ class RestaurantDetailAndroidViewModel(
     val uiState: StateFlow<RestaurantDetailUiState> = shared.stateFlow
     val restaurantId: String get() = shared.restaurantId
 
-    fun load() = shared.load()
     fun submitReview(rating: Int, comment: String) = shared.submitReview(rating, comment)
 
     override fun close() {
