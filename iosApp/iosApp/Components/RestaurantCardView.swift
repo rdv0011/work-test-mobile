@@ -23,7 +23,6 @@ struct RestaurantCardView: View {
     var onTap: (() -> Void)? = nil
     
     var body: some View {
-        let tagGap = CGFloat.spacingUI.xs
         let padding = CGFloat.spacingUI.sm
         
         VStack(alignment: .leading, spacing: 0) {
@@ -71,15 +70,11 @@ struct RestaurantCardView: View {
                     .accessibilityLabel("Restaurant name: \(data.restaurantName)")
                 
                 if !data.tags.isEmpty {
-                    HStack(spacing: tagGap) {
-                        ForEach(data.tags, id: \.self) { tag in
-                            Text(tag)
-                                .font(.system(.caption, design: .default))
-                                .foregroundColor(.text.subtitle)
-                                .lineLimit(1)
-                        }
-                    }
-                    .accessibilityLabel("Tags: \(data.tags.joined(separator: ", "))")
+                    Text(data.tags.joined(separator: " • "))
+                        .font(.system(.caption, design: .default))
+                        .foregroundColor(.text.subtitle)
+                        .lineLimit(1)
+                        .accessibilityLabel("Tags: \(data.tags.joined(separator: ", "))")
                 }
                 
                 HStack(spacing: 12) {

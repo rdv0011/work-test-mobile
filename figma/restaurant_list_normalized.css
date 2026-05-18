@@ -1,0 +1,27 @@
+.restaurant-list {
+  background: #F8F8F8;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.restaurant-list__header {
+  padding: 16px;
+}
+
+/* Filters */
+.restaurant-list__filters {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding: 8px 16px;
+}
+
+/* List */
+.restaurant-list__content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+}

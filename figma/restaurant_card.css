@@ -1,0 +1,236 @@
+/* Restaurant Card */
+
+position: relative;
+width: 343px;
+height: 196px;
+
+background: #FFFFFF;
+box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.1);
+border-radius: 12px 12px 0px 0px;
+
+
+/* Restaurant Card/On */
+
+position: absolute;
+left: 0%;
+right: 0%;
+top: 0%;
+bottom: 0%;
+
+background: #FFFFFF;
+box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.1);
+border-radius: 12px 12px 0px 0px;
+
+
+/* Image */
+
+position: absolute;
+width: 343px;
+height: 132px;
+left: calc(50% - 343px/2);
+top: calc(50% - 132px/2 - 32px);
+
+background: url(placeholder-image.png);
+border-radius: 12px 12px 0px 0px;
+
+
+/* info */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 0px 8px 8px;
+gap: 18px;
+
+position: absolute;
+width: 343px;
+height: 56px;
+left: 0px;
+top: 140px;
+
+
+
+/* text */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+gap: 2px;
+
+width: 278px;
+height: 48px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Title */
+
+width: 269px;
+height: 16px;
+
+/* title1 */
+font-family: 'Helvetica';
+font-style: normal;
+font-weight: 400;
+font-size: 18px;
+line-height: 16px;
+/* identical to box height, or 89% */
+
+/* text */
+color: #1F2B2E;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Tag • Tag • Tag */
+
+width: 327px;
+height: 16px;
+
+/* subtitle1 */
+font-family: 'Helvetica';
+font-style: normal;
+font-weight: 700;
+font-size: 12px;
+line-height: 16px;
+/* identical to box height, or 133% */
+
+/* subtitle */
+color: #999999;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* time */
+
+width: 138px;
+height: 12px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+
+
+/* 30 mins - 1.2 km */
+
+position: absolute;
+width: 125px;
+height: 12px;
+left: 13px;
+top: 36px;
+
+/* footer1 */
+font-family: 'Inter';
+font-style: normal;
+font-weight: 500;
+font-size: 10px;
+line-height: 12px;
+
+color: #50555C;
+
+
+
+/* clock icon */
+
+position: absolute;
+width: 10px;
+height: 10px;
+left: 0px;
+top: 37px;
+
+
+
+/* Vector */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 10px;
+left: 0px;
+top: 77.08%;
+bottom: 2.08%;
+
+/* Bright Red */
+border: 1px solid #FF5252;
+
+
+/* Vector */
+
+position: absolute;
+width: 2px;
+left: 5px;
+top: 81.25%;
+bottom: 10.42%;
+
+/* Bright Red */
+border: 1px solid #FF5252;
+
+
+/* rating */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 0px;
+gap: 3px;
+
+width: 31px;
+height: 12px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* star icon */
+
+width: 12px;
+height: 12px;
+
+background: #F9CA24;
+border-radius: 0.8px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* 5.0 */
+
+width: 16px;
+height: 12px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 10px;
+line-height: 12px;
+
+color: #50555C;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;

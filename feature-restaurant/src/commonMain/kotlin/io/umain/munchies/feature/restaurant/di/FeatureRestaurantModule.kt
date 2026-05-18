@@ -1,7 +1,6 @@
 package io.umain.munchies.feature.restaurant.di
 
 import io.ktor.client.HttpClient
-import io.umain.munchies.core.localization.StringResourceProvider
 import io.umain.munchies.core.navigation.NavigationDispatcher
 import io.umain.munchies.feature.restaurant.data.remote.KtorRestaurantApi
 import io.umain.munchies.feature.restaurant.data.repository.RestaurantRepositoryImpl

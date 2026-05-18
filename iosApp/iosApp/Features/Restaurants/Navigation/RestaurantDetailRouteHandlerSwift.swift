@@ -44,17 +44,17 @@ class CoreRestaurantDetailRouteHandlerSwift {
     ///
     /// - Parameter restaurantId: The ID of the restaurant to display
     /// - Returns: The holder for the restaurant detail view
-    func createHolder(restaurantId: String) -> Feature_restaurantRestaurantDetailViewModelHolder {
+    func createHolder(restaurantId: String) -> RestaurantDetailViewModelHolder {
         let route = Route.restaurantDetail(restaurantId)
         let key = route.key
         
         let scope = routeRegistry.lifetimeFor(routeId: key) {
-            FeatureRestaurantIosKt.createRestaurantDetailScopeIos(restaurantId: restaurantId)
+            IosAggregatorExportsKt.createRestaurantDetailScope(restaurantId: restaurantId)
         }
         
-        let viewModel = FeatureRestaurantIosKt.getRestaurantDetailViewModelIos(restaurantId: restaurantId)
+        let viewModel = IosAggregatorExportsKt.getRestaurantDetailViewModelFromFramework(restaurantId: restaurantId)
         
-        return Feature_restaurantRestaurantDetailViewModelHolder(restaurantId: restaurantId, scope: scope, viewModel: viewModel)
+        return RestaurantDetailViewModelHolder(restaurantId: restaurantId, scope: scope, viewModel: viewModel)
     }
     
     /// Builds the SwiftUI view for this route.
@@ -67,7 +67,7 @@ class CoreRestaurantDetailRouteHandlerSwift {
     @ViewBuilder
     func buildView(
         restaurantId: String,
-        holder: Feature_restaurantRestaurantDetailViewModelHolder,
+        holder: RestaurantDetailViewModelHolder,
         coordinator: CoreAppCoordinator
     ) -> some View {
         RestaurantDetailView(

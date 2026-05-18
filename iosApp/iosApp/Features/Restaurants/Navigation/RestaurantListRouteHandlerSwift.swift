@@ -47,11 +47,11 @@ class CoreRestaurantListRouteHandlerSwift {
         let route = Route.restaurantList
         let key = route.key
         
-        let scope = routeRegistry.lifetimeFor(routeId: key) {
-            FeatureRestaurantIosKt.createRestaurantListScopeIos()
-        }
-        
-        let viewModel = FeatureRestaurantIosKt.getRestaurantListViewModelIos()
+         let scope = routeRegistry.lifetimeFor(routeId: key) {
+             IosAggregatorExportsKt.createRestaurantListScope()
+         }
+         
+         let viewModel = IosAggregatorExportsKt.getRestaurantListViewModelFromFramework()
         
         return RestaurantListViewModelHolder(scope: scope, viewModel: viewModel)
     }

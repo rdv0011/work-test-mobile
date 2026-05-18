@@ -1,0 +1,63 @@
+/* Filter/selected */
+
+position: relative;
+width: 144px;
+height: 48px;
+
+
+
+/* Burgers filter */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 0px 16px 0px 0px;
+gap: 8px;
+
+position: absolute;
+width: 144px;
+height: 48px;
+left: 0px;
+top: 0px;
+
+background: #E2A364;
+box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.04);
+border-radius: 24px;
+
+
+/* filter_top_rated 1 */
+
+width: 48px;
+height: 48px;
+
+background: url(filter_top_rated.png);
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Text */
+
+width: 72px;
+height: 20px;
+
+/* title2 */
+font-family: 'Poppins';
+font-style: normal;
+font-weight: 500;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #FFFFFF;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+

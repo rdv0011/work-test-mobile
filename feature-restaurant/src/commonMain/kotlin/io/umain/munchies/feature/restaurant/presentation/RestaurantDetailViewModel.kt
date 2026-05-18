@@ -16,7 +16,7 @@ import io.umain.munchies.logging.logInfo
 class RestaurantDetailViewModel(
     val restaurantId: String,
     private val repository: RestaurantRepository,
-    private val navigationViewModel: RestaurantNavigationViewModel,
+    val navigationViewModel: RestaurantNavigationViewModel,
     private val stringProvider: StringResourceProvider
 ) : LifecycleOwner(), ViewModelState<RestaurantDetailUiState> {
 

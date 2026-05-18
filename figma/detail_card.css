@@ -1,0 +1,87 @@
+/* Subtitle/Detail Card */
+
+position: relative;
+width: 343px;
+height: 144px;
+
+background: #FFFFFF;
+box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.1);
+border-radius: 12px;
+
+
+/* Title */
+
+position: absolute;
+width: 311px;
+height: 42px;
+left: 16px;
+top: 16px;
+
+font-family: 'Helvetica';
+font-style: normal;
+font-weight: 400;
+font-size: 24px;
+line-height: 16px;
+/* or 67% */
+display: flex;
+align-items: center;
+
+/* text */
+color: #1F2B2E;
+
+
+
+/* Subtitle */
+
+position: absolute;
+width: 311px;
+height: 35px;
+left: 16px;
+top: 58px;
+
+font-family: 'Helvetica';
+font-style: normal;
+font-weight: 400;
+font-size: 16px;
+line-height: 16px;
+/* or 100% */
+display: flex;
+align-items: center;
+
+/* subtitle */
+color: #999999;
+
+
+
+/* Subtitle/Positive */
+
+position: absolute;
+width: 311px;
+height: 35px;
+left: 16px;
+top: 93px;
+
+
+
+/* Open */
+
+position: absolute;
+left: 0%;
+right: 0%;
+top: 0%;
+bottom: 0%;
+
+/* title1 */
+font-family: 'Helvetica';
+font-style: normal;
+font-weight: 400;
+font-size: 18px;
+line-height: 16px;
+/* or 89% */
+display: flex;
+align-items: center;
+
+/* postitive */
+color: #2ECC71;
+
+

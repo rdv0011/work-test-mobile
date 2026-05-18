@@ -52,9 +52,9 @@ class CoreSettingsRouteHandlerSwift {
     
      @ViewBuilder
      func buildView(
-         holder: Feature_settingsSettingsViewModelHolder,
+         holder: SettingsViewModelHolder,
          coordinator: CoreAppCoordinator
      ) -> some View {
-         SettingsView(navigationViewModel: holder.navigationViewModel, viewModel: holder.viewModel)
+         SettingsView(viewModel: holder.viewModel)
      }
 }

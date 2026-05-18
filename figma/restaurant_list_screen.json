@@ -1,0 +1,96 @@
+{
+  "type": "Screen",
+  "id": "restaurant_list_screen",
+  "backgroundColor": "#F8F8F8",
+  "scroll": "vertical",
+  "padding": { "horizontal": 16 },
+
+  "children": [
+    {
+      "type": "Spacer",
+      "height": 44
+    },
+
+    {
+      "type": "Header",
+      "height": 98,
+      "layout": "row",
+      "alignment": "center",
+      "padding": { "horizontal": 16 },
+
+      "children": [
+        {
+          "type": "Image",
+          "id": "logo",
+          "width": 54,
+          "height": 54
+        },
+        {
+          "type": "Spacer",
+          "width": 12
+        },
+        {
+          "type": "Column",
+          "id": "address_block",
+          "spacing": 2,
+          "children": [
+            {
+              "type": "Text",
+              "value": "Current Location",
+              "style": "titleSmall"
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "type": "HorizontalScroll",
+      "id": "filters",
+      "height": 48,
+      "spacing": 16,
+      "padding": { "vertical": 12 },
+
+      "children": [
+        {
+          "type": "FilterChip",
+          "icon": "filter_top_rated",
+          "label": "Top Rated"
+        },
+        {
+          "type": "FilterChip",
+          "icon": "filter_take_out",
+          "label": "Take-Out"
+        },
+        {
+          "type": "FilterChip",
+          "icon": "filter_fast_delivery",
+          "label": "Fast Delivery"
+        }
+      ]
+    },
+
+    {
+      "type": "Column",
+      "id": "restaurant_list",
+      "spacing": 16,
+      "padding": { "top": 16, "bottom": 24 },
+
+      "children": [
+        {
+          "type": "RestaurantCard",
+          "dataRef": "restaurants[0]"
+        },
+        {
+          "type": "RestaurantCard",
+          "dataRef": "restaurants[1]"
+        },
+        {
+          "type": "RestaurantCard",
+          "dataRef": "restaurants[2]"
+        }
+      ]
+    }
+  ]
+}
+

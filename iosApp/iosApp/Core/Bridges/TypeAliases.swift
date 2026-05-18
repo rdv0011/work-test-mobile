@@ -1,36 +1,30 @@
-import Foundation
 import shared
 
-// MARK: - ViewModel Type Aliases
-typealias Feature_restaurantRestaurantDetailViewModel = Feature_restaurantFeature_restaurantRestaurantDetailViewModel
+// MARK: - Restaurant Feature ViewModels
+typealias RestaurantNavigationViewModel = Feature_restaurantRestaurantNavigationViewModel
 typealias RestaurantListViewModel = Feature_restaurantRestaurantListViewModel
+typealias RestaurantDetailViewModel = Feature_restaurantRestaurantDetailViewModel
+
+// MARK: - Settings Feature ViewModels
 typealias SettingsViewModel = Feature_settingsSettingsViewModel
+typealias SettingsNavigationViewModel = Feature_settingsSettingsNavigationViewModel
 
-// MARK: - Data Type Aliases
-typealias RestaurantCardData = Feature_restaurantRestaurantCardData
-typealias FilterChipData = Feature_restaurantFilterChipData
-typealias DetailCardData = Feature_restaurantDetailCardData
+// MARK: - ViewModelHolders
+typealias RestaurantListViewModelHolder = RestaurantListViewModelHolder
+typealias RestaurantDetailViewModelHolder = RestaurantDetailViewModelHolder
+typealias SettingsViewModelHolder = SettingsViewModelHolder
 
-// MARK: - Navigation Type Aliases
-typealias AppCoordinator = CoreAppCoordinator
-typealias CoreRouteHandler = SharedCoreRoute
-typealias Route = SharedCoreRoute
-typealias ModalRoute = SharedCoreModalRoute
-typealias Destination = SharedCoreDestination
-typealias ModalDestination = SharedCoreModalDestination
-typealias StringResources = CoreStringResources
-typealias DeepLinkConstants = SharedCoreDeepLinkConstants
-typealias RouteConstants = String
+// MARK: - UI State Types
+typealias RestaurantListUiState = Feature_restaurantRestaurantListUiState
+typealias RestaurantListUiStateSuccess = Feature_restaurantRestaurantListUiStateSuccess
+typealias RestaurantDetailUiState = Feature_restaurantRestaurantDetailUiState
+typealias SettingsUiState = Feature_settingsSettingsUiState
 
-// MARK: - Infrastructure Type Aliases
+// MARK: - Navigation Types
+typealias CoreRoute = CoreRoute
+typealias CoreDestination = CoreDestination
+typealias CoreModalRoute = CoreModalRoute
+
+// MARK: - DI & Scope Types
 typealias Scope = Koin_coreScope
-typealias Koin = SharedKoin_coreKoin
-
-// MARK: - Route Subtypes
-typealias CoreRestaurantListRoute = SharedCoreCoreRestaurantListRoute
-typealias CoreRestaurantDetailRoute = SharedCoreCoreRestaurantDetailRoute
-typealias CoreSettingsRoute = SharedCoreCoreSettingsRoute
-
-// MARK: - Kotlin Flow Type Aliases
-typealias Flow = SharedKotlinx_coroutines_coreFlow
-typealias FlowCollector = SharedKotlinx_coroutines_coreFlowCollector
+typealias Koin = Koin_coreKoin

@@ -8,11 +8,14 @@ import io.umain.munchies.feature.restaurant.presentation.RestaurantDetailViewMod
 import io.umain.munchies.feature.restaurant.navigation.RestaurantNavigationViewModel
 import io.umain.munchies.feature.restaurant.presentation.state.RestaurantListUiState
 import io.umain.munchies.feature.restaurant.presentation.state.RestaurantDetailUiState
+import io.umain.munchies.feature.restaurant.presentation.model.RestaurantCardData
 import io.umain.munchies.navigation.RestaurantDetailRoute
 import io.umain.munchies.navigation.RestaurantListRoute
 import org.koin.core.qualifier.named
 import org.koin.core.scope.Scope
 import org.koin.core.parameter.parametersOf
+import kotlin.native.ObjCName
+import kotlin.experimental.ExperimentalObjCName
 
 /**
  * iOS helpers to retrieve shared ViewModel instances from Koin.
@@ -100,3 +103,37 @@ fun getRestaurantNavigationViewModelIos(): RestaurantNavigationViewModel {
     val koin = getKoin()
     return koin.get<RestaurantNavigationViewModel>()
 }
+
+// ============================================================================
+// Scope Extension for iOS (re-export for Swift visibility)
+// ============================================================================
+
+@OptIn(ExperimentalObjCName::class)
+@ObjCName("getRestaurantNavigationViewModel")
+fun Scope.getRestaurantNavigationViewModelIos(): RestaurantNavigationViewModel =
+    this.getRestaurantNavigationViewModel()
+
+@OptIn(ExperimentalObjCName::class)
+@ObjCName("getRestaurantNavigationViewModelFromScope")
+fun getScopeRestaurantNavigationViewModel(scope: Scope): RestaurantNavigationViewModel =
+    scope.getRestaurantNavigationViewModel()
+
+// ============================================================================
+// Type Exports for iOS Swift Interop
+// ============================================================================
+// These functions force KMP to export types by returning them in signatures.
+// By including types in function returns, the KMP framework includes them
+// in the generated Swift headers.
+
+/**
+ * Type export wrapper - forces RestaurantCardData into Swift framework.
+ * (Not intended for runtime use; purely for type export)
+ */
+@Deprecated("For type export only", level = DeprecationLevel.HIDDEN)
+fun _exportRestaurantCardDataType(data: RestaurantCardData): RestaurantCardData = data
+
+@Deprecated("For type export only", level = DeprecationLevel.HIDDEN)
+fun _exportRestaurantListUiStateType(state: RestaurantListUiState): RestaurantListUiState = state
+
+@Deprecated("For type export only", level = DeprecationLevel.HIDDEN)
+fun _exportRestaurantDetailUiStateType(state: RestaurantDetailUiState): RestaurantDetailUiState = state

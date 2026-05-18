@@ -22,14 +22,6 @@ struct AppNavigationView: View {
     }
     
     var body: some View {
-        TabView(selection: $navigator.activeTabId) {
-            Text("Restaurants Tab")
-                .tabItem { Label("Restaurants", systemImage: "list.bullet") }
-                .tag("restaurants")
-            
-            Text("Settings Tab")
-                .tabItem { Label("Settings", systemImage: "gear") }
-                .tag("settings")
-        }
+        TabNavigationView(navigator: navigator)
     }
 }

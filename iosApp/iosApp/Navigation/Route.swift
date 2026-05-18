@@ -6,6 +6,14 @@
 //
 import shared
 
+struct RouteConstants {
+    static let KEY_RESTAURANT_LIST = "RestaurantList"
+    static let KEY_RESTAURANT_DETAIL_PREFIX = "RestaurantDetail_"
+    
+    var KEY_RESTAURANT_LIST: String { Self.KEY_RESTAURANT_LIST }
+    var KEY_RESTAURANT_DETAIL_PREFIX: String { Self.KEY_RESTAURANT_DETAIL_PREFIX }
+}
+
 enum Route: Hashable {
     case restaurantList
     case restaurantDetail(String)

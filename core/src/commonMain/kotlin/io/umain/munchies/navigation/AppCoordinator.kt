@@ -15,6 +15,7 @@ import io.umain.munchies.core.ui.IconId
 import io.umain.munchies.logging.logError
 import io.umain.munchies.logging.logInfo
 import io.umain.munchies.navigation.persistence.NavigationPersistenceStore
+import io.umain.munchies.core.lifecycle.LifecycleOwner
 
 /**
  * Central coordinator for all navigation in the application.
@@ -31,7 +32,7 @@ open class AppCoordinator(
     initialState: NavigationState = createInitialTabNavigationState(),
     private val routeHandlers: List<RouteHandler> = emptyList(),
     private val persistenceStore: NavigationPersistenceStore? = null
-) {
+) : LifecycleOwner() {
     // INTERNAL STATE
 
     private val _navigationState = MutableStateFlow(initialState)

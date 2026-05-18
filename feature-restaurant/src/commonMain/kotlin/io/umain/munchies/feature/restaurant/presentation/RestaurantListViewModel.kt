@@ -1,9 +1,8 @@
 package io.umain.munchies.feature.restaurant.presentation
 
 import io.umain.munchies.core.lifecycle.LifecycleOwner
-import io.umain.munchies.core.localization.StringResources
-import io.umain.munchies.core.localization.StringResourceProvider
 import io.umain.munchies.core.state.ViewModelState
+import io.umain.munchies.feature.restaurant.navigation.RestaurantNavigationViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -17,7 +16,7 @@ import kotlinx.coroutines.delay
 
 class RestaurantListViewModel(
     private val repository: RestaurantRepository,
-    private val stringProvider: StringResourceProvider
+    val navigationViewModel: RestaurantNavigationViewModel
 ): LifecycleOwner(), ViewModelState<RestaurantListUiState> {
     private val _stateFlow = MutableStateFlow<RestaurantListUiState>(RestaurantListUiState.Loading)
     override val stateFlow: StateFlow<RestaurantListUiState> = _stateFlow
@@ -46,12 +45,7 @@ class RestaurantListViewModel(
                 allFilters = filterIds.mapNotNull { repository.getFilterById(it) }
                 state = RestaurantListUiState.Success(
                     restaurants = allRestaurants.map {
-                        it.toCardData(
-                            stringProvider.stringResource(
-                                StringResources.rating_format,
-                                it.rating.toDouble()
-                            )
-                        )
+                        it.toCardData(formatRating(it.rating.toDouble()))
                     },
                     filters = allFilters.map { it.toFilterChipData() }
                 )
@@ -82,12 +76,7 @@ class RestaurantListViewModel(
                 }
                 state = RestaurantListUiState.Success(
                     restaurants = restaurants.map {
-                        it.toCardData(
-                            stringProvider.stringResource(
-                                StringResources.rating_format,
-                                it.rating.toDouble()
-                            )
-                        )
+                        it.toCardData(formatRating(it.rating.toDouble()))
                     },
                     filters = allFilters.map {
                         it.toFilterChipData(
@@ -109,5 +98,10 @@ class RestaurantListViewModel(
             is RestaurantListUiState.Success -> current.copy(isFiltering = isFiltering)
             else -> current
         }
+    }
+
+    private fun formatRating(rating: Double): String {
+        val rounded = (rating * 10).toInt() / 10.0
+        return rounded.toString()
     }
 }

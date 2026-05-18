@@ -1,0 +1,1289 @@
+/* Restaurant List */
+
+position: relative;
+width: 375px;
+height: 832px;
+overflow-y: scroll;
+
+background: #F8F8F8;
+
+
+/* Filter */
+
+position: absolute;
+width: 352px;
+height: 48px;
+left: 21px;
+top: 120px;
+overflow-x: scroll;
+
+
+
+/* Filter */
+
+position: absolute;
+width: 480px;
+height: 48px;
+left: 0px;
+top: 0px;
+
+
+
+/* Frame 10 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 0px;
+gap: 16px;
+
+position: absolute;
+width: 480px;
+height: 48px;
+left: 0px;
+top: 0px;
+
+
+
+/* Filter/filter */
+
+width: 144px;
+height: 48px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Top Rated */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 0px 16px 0px 0px;
+gap: 8px;
+
+position: absolute;
+width: 144px;
+height: 48px;
+left: 0px;
+top: 0px;
+
+background: rgba(255, 255, 255, 0.4);
+box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.04);
+border-radius: 24px;
+
+
+/* filter_top_rated 1 */
+
+width: 48px;
+height: 48px;
+
+background: url(filter_top_rated.png);
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Text */
+
+width: 72px;
+height: 20px;
+
+/* title2 */
+font-family: 'Poppins';
+font-style: normal;
+font-weight: 500;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+/* picto */
+color: #000000;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* Filter/filter */
+
+width: 144px;
+height: 48px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* Take-Out */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 0px 16px 0px 0px;
+gap: 8px;
+
+position: absolute;
+width: 140px;
+height: 48px;
+left: 0px;
+top: 0px;
+
+background: rgba(255, 255, 255, 0.4);
+box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.04);
+border-radius: 24px;
+
+
+/* filter_top_rated 1 */
+
+width: 48px;
+height: 48px;
+
+background: url(filter_coffee.png);
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Text */
+
+width: 68px;
+height: 20px;
+
+/* title2 */
+font-family: 'Poppins';
+font-style: normal;
+font-weight: 500;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+/* picto */
+color: #000000;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* Filter/filter */
+
+width: 160px;
+height: 48px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+
+
+/* Fast Delivery */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 0px 16px 0px 0px;
+gap: 8px;
+
+position: absolute;
+width: 162px;
+height: 48px;
+left: 0px;
+top: 0px;
+
+background: rgba(255, 255, 255, 0.4);
+box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.04);
+border-radius: 24px;
+
+
+/* filter_top_rated 1 */
+
+width: 48px;
+height: 48px;
+
+background: url(filter_fast_delivery.png);
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Text */
+
+width: 90px;
+height: 20px;
+
+/* title2 */
+font-family: 'Poppins';
+font-style: normal;
+font-weight: 500;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+/* picto */
+color: #000000;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* Restaurant Card */
+
+position: absolute;
+width: 343px;
+height: 196px;
+left: 16px;
+top: 190px;
+
+background: #FFFFFF;
+box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.1);
+border-radius: 12px 12px 0px 0px;
+
+
+/* Restaurant Card/On */
+
+position: absolute;
+left: 0%;
+right: 0%;
+top: 0%;
+bottom: 0%;
+
+background: #FFFFFF;
+box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.1);
+border-radius: 12px 12px 0px 0px;
+
+
+/* Image */
+
+position: absolute;
+width: 343px;
+height: 132px;
+left: calc(50% - 343px/2);
+top: calc(50% - 132px/2 - 32px);
+
+background: url(foodiesfeed.com_fried-egg-with-guacamole-sandwiches.jpg);
+border-radius: 12px 12px 0px 0px;
+
+
+/* info */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 0px 8px 8px;
+gap: 18px;
+
+position: absolute;
+width: 343px;
+height: 56px;
+left: 0px;
+top: 140px;
+
+
+
+/* text */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+gap: 2px;
+
+width: 278px;
+height: 48px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Title */
+
+width: 269px;
+height: 16px;
+
+/* title1 */
+font-family: 'Helvetica';
+font-style: normal;
+font-weight: 400;
+font-size: 18px;
+line-height: 16px;
+/* identical to box height, or 89% */
+
+/* text */
+color: #1F2B2E;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Tag • Tag • Tag */
+
+width: 327px;
+height: 16px;
+
+/* subtitle1 */
+font-family: 'Helvetica';
+font-style: normal;
+font-weight: 700;
+font-size: 12px;
+line-height: 16px;
+/* identical to box height, or 133% */
+
+/* subtitle */
+color: #999999;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* time */
+
+width: 138px;
+height: 12px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+
+
+/* 30 mins - 1.2 km */
+
+position: absolute;
+width: 125px;
+height: 12px;
+left: 13px;
+top: 36px;
+
+/* footer1 */
+font-family: 'Inter';
+font-style: normal;
+font-weight: 500;
+font-size: 10px;
+line-height: 12px;
+
+color: #50555C;
+
+
+
+/* clock icon */
+
+position: absolute;
+width: 10px;
+height: 10px;
+left: 0px;
+top: 37px;
+
+
+
+/* Vector */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 10px;
+left: 0px;
+top: 77.08%;
+bottom: 2.08%;
+
+/* Bright Red */
+border: 1px solid #FF5252;
+
+
+/* Vector */
+
+position: absolute;
+width: 2px;
+left: 5px;
+top: 81.25%;
+bottom: 10.42%;
+
+/* Bright Red */
+border: 1px solid #FF5252;
+
+
+/* rating */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 0px;
+gap: 3px;
+
+width: 31px;
+height: 12px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* star icon */
+
+width: 12px;
+height: 12px;
+
+background: #F9CA24;
+border-radius: 0.8px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* 5.0 */
+
+width: 16px;
+height: 12px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 10px;
+line-height: 12px;
+
+color: #50555C;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* Restaurant Card */
+
+position: absolute;
+width: 343px;
+height: 196px;
+left: 16px;
+top: 402px;
+
+background: #FFFFFF;
+box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.1);
+border-radius: 12px 12px 0px 0px;
+
+
+/* Restaurant Card/On */
+
+position: absolute;
+left: 0%;
+right: 0%;
+top: 0%;
+bottom: 0%;
+
+background: #FFFFFF;
+box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.1);
+border-radius: 12px 12px 0px 0px;
+
+
+/* Image */
+
+position: absolute;
+width: 343px;
+height: 132px;
+left: calc(50% - 343px/2);
+top: calc(50% - 132px/2 - 32px);
+
+background: url(burgers.png);
+border-radius: 12px 12px 0px 0px;
+
+
+/* info */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 0px 8px 8px;
+gap: 18px;
+
+position: absolute;
+width: 343px;
+height: 56px;
+left: 0px;
+top: 140px;
+
+
+
+/* text */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+gap: 2px;
+
+width: 278px;
+height: 48px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Title */
+
+width: 269px;
+height: 16px;
+
+/* title1 */
+font-family: 'Helvetica';
+font-style: normal;
+font-weight: 400;
+font-size: 18px;
+line-height: 16px;
+/* identical to box height, or 89% */
+
+/* text */
+color: #1F2B2E;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Tag • Tag • Tag */
+
+width: 327px;
+height: 16px;
+
+/* subtitle1 */
+font-family: 'Helvetica';
+font-style: normal;
+font-weight: 700;
+font-size: 12px;
+line-height: 16px;
+/* identical to box height, or 133% */
+
+/* subtitle */
+color: #999999;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* time */
+
+width: 138px;
+height: 12px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+
+
+/* 30 mins - 1.2 km */
+
+position: absolute;
+width: 125px;
+height: 12px;
+left: 13px;
+top: 36px;
+
+/* footer1 */
+font-family: 'Inter';
+font-style: normal;
+font-weight: 500;
+font-size: 10px;
+line-height: 12px;
+
+color: #50555C;
+
+
+
+/* clock icon */
+
+position: absolute;
+width: 10px;
+height: 10px;
+left: 0px;
+top: 37px;
+
+
+
+/* Vector */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 10px;
+left: 0px;
+top: 77.08%;
+bottom: 2.08%;
+
+/* Bright Red */
+border: 1px solid #FF5252;
+
+
+/* Vector */
+
+position: absolute;
+width: 2px;
+left: 5px;
+top: 81.25%;
+bottom: 10.42%;
+
+/* Bright Red */
+border: 1px solid #FF5252;
+
+
+/* rating */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 0px;
+gap: 3px;
+
+width: 32px;
+height: 12px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* star icon */
+
+width: 12px;
+height: 12px;
+
+background: #F9CA24;
+border-radius: 0.8px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* 5.0 */
+
+width: 17px;
+height: 12px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 10px;
+line-height: 12px;
+
+color: #50555C;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* Restaurant Card */
+
+position: absolute;
+width: 343px;
+height: 196px;
+left: 16px;
+top: 614px;
+
+background: #FFFFFF;
+box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.1);
+border-radius: 12px 12px 0px 0px;
+
+
+/* Restaurant Card/On */
+
+position: absolute;
+left: 0%;
+right: 0%;
+top: 0%;
+bottom: 0%;
+
+background: #FFFFFF;
+box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.1);
+border-radius: 12px 12px 0px 0px;
+
+
+/* Image */
+
+position: absolute;
+width: 343px;
+height: 132px;
+left: calc(50% - 343px/2);
+top: calc(50% - 132px/2 - 32px);
+
+background: url(foodiesfeed.com_meal-wheel.jpg);
+border-radius: 12px 12px 0px 0px;
+
+
+/* info */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 0px 8px 8px;
+gap: 18px;
+
+position: absolute;
+width: 343px;
+height: 56px;
+left: 0px;
+top: 140px;
+
+
+
+/* text */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+gap: 2px;
+
+width: 278px;
+height: 48px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Title */
+
+width: 269px;
+height: 16px;
+
+/* title1 */
+font-family: 'Helvetica';
+font-style: normal;
+font-weight: 400;
+font-size: 18px;
+line-height: 16px;
+/* identical to box height, or 89% */
+
+/* text */
+color: #1F2B2E;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Tag • Tag • Tag */
+
+width: 327px;
+height: 16px;
+
+/* subtitle1 */
+font-family: 'Helvetica';
+font-style: normal;
+font-weight: 700;
+font-size: 12px;
+line-height: 16px;
+/* identical to box height, or 133% */
+
+/* subtitle */
+color: #999999;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* time */
+
+width: 138px;
+height: 12px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+
+
+/* 30 mins - 1.2 km */
+
+position: absolute;
+width: 125px;
+height: 12px;
+left: 13px;
+top: 36px;
+
+/* footer1 */
+font-family: 'Inter';
+font-style: normal;
+font-weight: 500;
+font-size: 10px;
+line-height: 12px;
+
+color: #50555C;
+
+
+
+/* clock icon */
+
+position: absolute;
+width: 10px;
+height: 10px;
+left: 0px;
+top: 37px;
+
+
+
+/* Vector */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 10px;
+left: 0px;
+top: 77.08%;
+bottom: 2.08%;
+
+/* Bright Red */
+border: 1px solid #FF5252;
+
+
+/* Vector */
+
+position: absolute;
+width: 2px;
+left: 5px;
+top: 81.25%;
+bottom: 10.42%;
+
+/* Bright Red */
+border: 1px solid #FF5252;
+
+
+/* rating */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 0px;
+gap: 3px;
+
+width: 31px;
+height: 12px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* star icon */
+
+width: 12px;
+height: 12px;
+
+background: #F9CA24;
+border-radius: 0.8px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* 5.0 */
+
+width: 16px;
+height: 12px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 10px;
+line-height: 12px;
+
+color: #50555C;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* Gradient */
+
+position: absolute;
+width: 375px;
+height: 9px;
+left: 0px;
+top: 98px;
+
+background: linear-gradient(180deg, #F8F8F8 0%, rgba(248, 248, 248, 0) 100%);
+
+
+/* Header */
+
+position: absolute;
+width: 375px;
+height: 98px;
+left: 0px;
+top: 0px;
+
+
+
+/* Rectangle 23 */
+
+position: absolute;
+width: 375px;
+height: 98px;
+left: 0px;
+top: 0px;
+
+
+
+/* Header */
+
+position: absolute;
+width: 54.52px;
+height: 54px;
+left: 16px;
+top: 44px;
+
+
+
+/* Logo */
+
+position: absolute;
+width: 54.52px;
+height: 54px;
+left: 16px;
+top: 44px;
+
+
+
+/* Vector */
+
+position: absolute;
+left: 13.97%;
+right: 38.84%;
+top: 23.37%;
+bottom: 24.36%;
+
+background: #000000;
+
+
+/* Vector */
+
+position: absolute;
+left: 74.86%;
+right: 11.43%;
+top: 23.37%;
+bottom: 63.34%;
+
+background: #000000;
+
+
+/* Adress */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 8px;
+
+position: absolute;
+width: 278.56px;
+height: 37px;
+left: 75px;
+top: 57px;
+
+
+
+/* Icon */
+
+display: none;
+width: 24px;
+height: 24px;
+
+transform: matrix(-1, 0, 0, 1, 0, 0);
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Frame 111 */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+gap: 1px;
+
+display: none;
+width: 218px;
+height: 37px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* Status Bar */
+
+position: absolute;
+width: 375px;
+height: 44px;
+left: 0px;
+top: 0px;
+
+
+
+/* Battery */
+
+position: absolute;
+width: 24.33px;
+height: 11.33px;
+left: 336.33px;
+top: 17.33px;
+
+
+
+/* Border */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 22px;
+height: 11.33px;
+right: 16.67px;
+top: 17.33px;
+
+mix-blend-mode: normal;
+opacity: 0.35;
+border: 1px solid #000000;
+border-radius: 2.66667px;
+
+
+/* Cap */
+
+position: absolute;
+width: 1.33px;
+height: 4px;
+right: 14.34px;
+top: 21px;
+
+background: #000000;
+mix-blend-mode: normal;
+opacity: 0.4;
+
+
+/* Capacity */
+
+position: absolute;
+width: 18px;
+height: 7.33px;
+right: 18.67px;
+top: 19.33px;
+
+background: #000000;
+border-radius: 1.33333px;
+
+
+/* Wifi */
+
+position: absolute;
+width: 15.33px;
+height: 11px;
+right: 43.67px;
+top: 17.33px;
+
+background: #000000;
+
+
+/* Wifi-path */
+
+position: absolute;
+width: 15.33px;
+height: 4.76px;
+right: 43.67px;
+top: 17.33px;
+
+background: #000000;
+
+
+/* Wifi-path */
+
+position: absolute;
+width: 9.99px;
+height: 3.65px;
+right: 46.34px;
+top: 21.14px;
+
+background: #000000;
+
+
+/* Wifi-path */
+
+position: absolute;
+width: 4.64px;
+height: 3.39px;
+right: 49.01px;
+top: 24.95px;
+
+background: #000000;
+
+
+/* Cellular Connection */
+
+position: absolute;
+width: 17px;
+height: 10.67px;
+right: 64px;
+top: 17.67px;
+
+background: #000000;
+
+
+/* Cellular-Connection-path */
+
+position: absolute;
+width: 3px;
+height: 4px;
+right: 78px;
+top: 24.33px;
+
+background: #000000;
+
+
+/* Cellular-Connection-path */
+
+position: absolute;
+width: 3px;
+height: 6px;
+right: 73.33px;
+top: 22.33px;
+
+background: #000000;
+
+
+/* Cellular-Connection-path */
+
+position: absolute;
+width: 3px;
+height: 8.33px;
+right: 68.67px;
+top: 20px;
+
+background: #000000;
+
+
+/* Cellular-Connection-path */
+
+position: absolute;
+width: 3px;
+height: 10.67px;
+right: 64px;
+top: 17.67px;
+
+background: #000000;
+
+
+/* Time Style */
+
+position: absolute;
+width: 54px;
+height: 21px;
+left: 21px;
+top: 7px;
+
+
+
+/* Time */
+
+position: absolute;
+width: 54px;
+height: 18px;
+left: 0px;
+top: calc(50% - 18px/2 + 5.5px);
+
+font-family: 'SF Pro Text';
+font-style: normal;
+font-weight: 600;
+font-size: 15px;
+line-height: 18px;
+/* identical to box height */
+text-align: center;
+letter-spacing: -0.3px;
+
+color: #000000;
+
+

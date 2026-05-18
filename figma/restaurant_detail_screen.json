@@ -1,0 +1,91 @@
+{
+  "type": "Screen",
+  "id": "restaurant_detail_screen",
+  "backgroundColor": "#F8F8F8",
+  "scroll": "vertical",
+
+  "children": [
+    {
+      "type": "ZStack",
+      "id": "hero_section",
+      "height": 220,
+
+      "children": [
+        {
+          "type": "Image",
+          "id": "banner_image",
+          "bind": "restaurant.image",
+          "contentMode": "fill",
+          "height": 220
+        },
+
+        {
+          "type": "IconButton",
+          "id": "back_button",
+          "icon": "chevron",
+          "size": 24,
+          "color": "#1F2B2E",
+          "padding": 8,
+          "shadow": { "blur": 4, "opacity": 0.25 },
+          "alignment": "topStart",
+          "offset": { "x": 16, "y": 40 },
+          "action": "navigateBack"
+        }
+      ]
+    },
+
+    {
+      "type": "Spacer",
+      "height": 16
+    },
+
+    {
+      "type": "Card",
+      "id": "restaurant_info_card",
+      "margin": { "horizontal": 16 },
+      "cornerRadius": 12,
+      "backgroundColor": "#FFFFFF",
+      "shadow": { "y": 4, "blur": 4, "opacity": 0.1 },
+
+      "children": [
+        {
+          "type": "Column",
+          "spacing": 12,
+          "padding": 16,
+
+          "children": [
+            {
+              "type": "Text",
+              "id": "restaurant_name",
+              "bind": "restaurant.name",
+              "style": "headline1",
+              "color": "#1F2B2E"
+            },
+
+            {
+              "type": "Text",
+              "id": "restaurant_tags",
+              "bind": "restaurant.tags",
+              "style": "subtitle",
+              "color": "#999999"
+            },
+
+            {
+              "type": "Text",
+              "id": "restaurant_status",
+              "bind": "restaurant.status",
+              "style": "title1",
+              "color": "#2ECC71"
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "type": "Spacer",
+      "height": 24
+    }
+  ]
+}
+

@@ -19,6 +19,8 @@ abstract class LifecycleOwner : Closeable {
     protected val scope =
         CoroutineScope(job + Dispatchers.Main.immediate)
 
+    internal fun getScope(): CoroutineScope = scope
+
     // Swift-friendly StateFlow adapter
     fun <T> StateFlow<T>.subscribeState(onEach: (T) -> Unit): kotlinx.coroutines.Job =
         scope.launch {

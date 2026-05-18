@@ -6,37 +6,31 @@
 //
 import SwiftUI
 import shared
+import os.log
+
+typealias RestaurantListUiState = Feature_restaurantRestaurantListUiState
+
+private let logger = Logger(subsystem: "com.munchies.ios", category: "RestaurantListView")
 
 struct RestaurantListView: View {
-    let navigationViewModel: Feature_restaurantRestaurantNavigationViewModel
-    let viewModel: Feature_restaurantRestaurantListViewModel
+    let navigationViewModel: RestaurantNavigationViewModel
+    let viewModel: RestaurantListViewModel
     
-    @State private var uiState: RestaurantListUiState = RestaurantListUiState.Loading()
+    @State private var uiState: RestaurantListUiState = IosAggregatorExportsKt.RestaurantListUiStateLoading()
+    @State private var observationTask: Task<Void, Never>?
 
-    private var filteredRestaurants: [RestaurantCardData] {
-        guard let sharedState = uiState as? RestaurantListUiState.Success else {
-            return []
-        }
-        return sharedState.restaurants.map { r in
-            RestaurantCardData(
-                id: r.id,
-                restaurantName: r.name,
-                tags: r.filterIds.map { $0 },
-                deliveryTime: "",
-                distance: "",
-                rating: Double(r.rating),
-                imageUrl: r.imageUrl,
-                contentDescription: "Restaurant: \(r.name)"
-            )
-        }
-    }
-    private let R = StringResources.shared
+    private var filteredRestaurants: [Feature_restaurantRestaurantCardData] {
+          guard let success = IosAggregatorExportsKt.getRestaurantListUiStateAsSuccess(state: uiState) else {
+              return []
+          }
+          return success.restaurants
+      }
     
     var body: some View {
         VStack(spacing: .zero) {
-            if uiState is RestaurantListUiState.Loading {
+            if IosAggregatorExportsKt.isRestaurantListUiStateLoading(state: uiState) {
                 ProgressView()
-            } else if uiState is RestaurantListUiState.Error {
+            } else if IosAggregatorExportsKt.isRestaurantListUiStateError(state: uiState) {
                 VStack {
                     Text("No restaurants found")
                         .font(.title2)
@@ -57,31 +51,45 @@ struct RestaurantListView: View {
                 }
             }
         }
-        .navigationTitle(stringResource(key: R.restaurant_list_title))
+        .navigationTitle(stringResource(key: "restaurant_list_title"))
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: {
-                    let selectedFilterIds = (uiState as? RestaurantListUiState.Success)?.filters.map { $0.id } ?? []
-                    navigationViewModel.showFilterModal(preSelectedFilters: selectedFilterIds as [String])
+                    if let success = IosAggregatorExportsKt.getRestaurantListUiStateAsSuccess(state: uiState) {
+                        let selectedFilterIds = success.filters.map { $0.id }
+                        navigationViewModel.showFilterModal(preSelectedFilters: selectedFilterIds as [String])
+                    }
                 }) {
                     Text("Filters")
                 }
             }
         }
-        .onAppear {
-            viewModel.load()
-        }
         .task(id: viewModel) {
-            await observe()
+            let task = Task {
+                await observe()
+            }
+            self.observationTask = task
+        }
+        .onDisappear {
+            logger.debug("RestaurantListView: onDisappear - cancelling observation task")
+            observationTask?.cancel()
+            observationTask = nil
         }
     }
     
-    // MARK: - Observe StateFlow
-    
     @MainActor
     private func observe() async {
-        for await state in asyncStateStream(viewModel) as AsyncStream<RestaurantListUiState> {
+        logger.debug("observe: Starting to observe StateFlow")
+        var count = 0
+        let stream: AsyncStream<RestaurantListUiState> = asyncStateStream(viewModel)
+        for await state in stream {
+            count += 1
+            logger.debug("observe: ✓ Received state update #\(count)")
+            logger.debug("observe: state type: \(String(describing: type(of: state)))")
+            logger.debug("observe: uiState before update: \(String(describing: self.uiState))")
             self.uiState = state
+            logger.debug("observe: uiState after update: \(String(describing: self.uiState))")
         }
+        logger.debug("observe: AsyncStream completed (unsubscribed)")
     }
 }
