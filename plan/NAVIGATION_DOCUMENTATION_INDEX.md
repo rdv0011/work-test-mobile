@@ -1,7 +1,7 @@
 # Navigation Documentation - Index & Roadmap
 
 **Location:** `/plan/`  
-**Last Updated:** May 18, 2026
+**Last Updated:** May 19, 2026
 
 ---
 
@@ -99,6 +99,8 @@
 | **Redux Pattern** | Pure reducers, immutable state, predictable flow | GUIDE § 2 |
 | **Platform Independence** | Identical logic Android/iOS | GUIDE § 1 |
 | **Scope Management** | Koin scope lifecycle, creation/destruction | GUIDE § 3 |
+| **State Persistence** | Always written after every event; read path gated by `RestoreConditionDetector` | RESTORATION ANALYSIS |
+| **Restoration Gate** | Restore only on crash/OS-kill/config-change; clean exit produces fresh launch | RESTORATION ANALYSIS |
 
 ---
 
@@ -138,6 +140,12 @@
 2. Check: § Testing Navigation
 3. Reference: **NAVIGATION_ARCHITECTURE_GUIDE.md** § Components
 
+### Scenario 7: "I need to understand restoration behaviour"
+1. Overview: **NAVIGATION_QUICK_REFERENCE.md** § State Persistence capability
+2. Deep dive: `plan/navigation_restoration/KMM_NAVIGATION_RESTORATION_ANALYSIS.md` § Restoration Trigger Detection
+3. Diagrams: `plan/navigation_restoration/ARCHITECTURE_PATTERNS.md` § Crash/Clean-Exit/Config-Change flows
+4. Code: `plan/navigation_restoration/IMPLEMENTATION_GUIDE.md` § Priority 1
+
 ---
 
 ## 🏗️ System Architecture at a Glance
@@ -165,16 +173,18 @@
 │  - Dispatches events                    │
 │  - Manages state                        │
 │  - Coordinates observers                │
+│  - initializeNavigation(detector)       │
 └──────────────────┬──────────────────────┘
                    │
-    ┌──────────────┼──────────────┐
-    │              │              │
-    ▼              ▼              ▼
-┌──────────┐ ┌──────────┐ ┌──────────┐
-│NavigNav  │ │Analytics │ │Persistce │
-│Reducer   │ │ Listener │ │  Store   │
-│(Pure fn) │ │(Observer)│ │          │
-└──────────┘ └──────────┘ └──────────┘
+    ┌──────────────┼──────────────┬──────────────┐
+    │              │              │              │
+    ▼              ▼              ▼              ▼
+┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────────┐
+│NavigNav  │ │Analytics │ │Persistce │ │RestoreCondition  │
+│Reducer   │ │ Listener │ │  Store   │ │Detector          │
+│(Pure fn) │ │(Observer)│ │(always   │ │(crash vs. clean) │
+│          │ │          │ │ write)   │ │                  │
+└──────────┘ └──────────┘ └──────────┘ └──────────────────┘
 ```
 
 ---
@@ -192,6 +202,13 @@
 - **Observer:** `NavigationAnalyticsListener` (independent)
 - **Decoupled:** No coupling between observer and coordinator
 - **Thread-safe:** Coroutine-based collection
+
+### Restoration Contract (Native NavController Semantics)
+- **Write path:** State is persisted after **every** navigation event
+- **Read path:** State is restored **only** when `RestoreConditionDetector.shouldRestoreNavigation()` returns `true`
+- **Android trigger:** `savedInstanceState` Bundle present in `Activity.onCreate` (config change or process death)
+- **iOS trigger:** Absence of a "clean exit" flag written in `applicationWillTerminate`
+- **Clean exit:** `onDestroy(isFinishing=true)` / `applicationWillTerminate` → clear snapshot, next launch is fresh
 
 ### Abstraction Layers
 1. **UI Layer** → Feature Navigation ViewModels
@@ -221,6 +238,9 @@
 | **Route** | `Routes.kt` | Sealed Class | Core |
 | **DeepLinkHandler** | `DeepLinkHandler.kt` | Interface | Core |
 | **DeepLinkProcessor** | `DeepLinkProcessor.kt` | Object | Core |
+| **RestoreConditionDetector** | `RestoreConditionDetector.kt` | Interface | Restoration |
+| **AndroidRestoreConditionDetector** | `AndroidRestoreConditionDetector.kt` | Class | Restoration (Android) |
+| **IosRestoreConditionDetector** | `IosRestoreConditionDetector.kt` | Class | Restoration (iOS) |
 | **NavigationAnalyticsListener** | `NavigationAnalyticsListener.kt` | Class | Analytics |
 | **RestaurantNavigationViewModel** | `RestaurantNavigationViewModel.kt` | Class | Feature |
 | **SettingsDeepLinkHandler** | `SettingsDeepLinkHandler.kt` | Class | Feature |
@@ -264,7 +284,8 @@ Event emitted to Firebase/backend
 - ✅ **Redux Pattern** - Pure, predictable state management
 - ✅ **Platform Independence** - Same logic on Android & iOS
 - ✅ **Scope Management** - Automatic Koin scope lifecycle
-- ✅ **State Persistence** - Optional state restoration
+- ✅ **State Persistence** - Written after every event; read path gated
+- ✅ **Restoration Gate** - Restore only on crash/config-change; clean exit = fresh launch
 - ✅ **Error Handling** - Graceful deep link parsing failures
 - ✅ **Data Safety** - Sensitive data filtering for analytics
 - ✅ **Logging** - Detailed navigation logs
@@ -309,10 +330,10 @@ Event emitted to Firebase/backend
 
 | Document | Status | Last Updated | Lines | Size |
 |----------|--------|---|---|---|
-| NAVIGATION_ARCHITECTURE_GUIDE.md | ✅ Complete | May 18, 2026 | 1285 | 41 KB |
-| NAVIGATION_MERMAID_DIAGRAMS.md | ✅ Complete | May 18, 2026 | 620+ | 18 KB |
-| NAVIGATION_QUICK_REFERENCE.md | ✅ Complete | May 18, 2026 | 366 | 13 KB |
-| NAVIGATION_DOCUMENTATION_INDEX.md | ✅ This File | May 18, 2026 | - | - |
+| NAVIGATION_ARCHITECTURE_GUIDE.md | ✅ Revised | May 19, 2026 | ~1340 | ~42 KB |
+| NAVIGATION_MERMAID_DIAGRAMS.md | ✅ Revised | May 19, 2026 | 640+ | ~19 KB |
+| NAVIGATION_QUICK_REFERENCE.md | ✅ Revised | May 19, 2026 | ~390 | ~14 KB |
+| NAVIGATION_DOCUMENTATION_INDEX.md | ✅ This File | May 19, 2026 | - | - |
 
 ---
 

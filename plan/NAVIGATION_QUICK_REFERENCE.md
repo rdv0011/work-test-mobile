@@ -13,6 +13,7 @@
 ✅ **Modal System** - Multiple modal destinations with conditional dismissal  
 ✅ **Redux Pattern** - Pure state transformations, predictable behavior  
 ✅ **Platform Independent** - Identical logic on Android & iOS  
+✅ **State Persistence** - Written after every event; restored **only** on crash/config-change (never on clean exit)
 
 ---
 
@@ -52,6 +53,11 @@
     ▼          ▼         ▼          ▼
   State       UI       Scope    Analytics
   Updated    Renders  Created   Tracked
+    │
+    ▼
+  Persist state async (always)
+  ← Restoration on next launch only if:
+    crash / OS kill / config change
 ```
 
 ---
@@ -277,8 +283,10 @@ core/
     │   ├── RouteNavigationMapper.kt             # Mapper
     │   ├── RouteConstants.kt                    # Route constants
     │   └── persistence/
-    │       ├── NavigationStateRestorer.kt       # State restoration
-    │       └── NavigationPersistenceStore.kt    # Persistence interface
+│       ├── NavigationStateRestorer.kt       # State restoration (gated by detector)
+│       └── NavigationPersistenceStore.kt    # Persistence interface (always-write, gated-read)
+│   ├── restoration/
+│   │   └── RestoreConditionDetector.kt      # Restoration gate (crash vs. clean exit)
     ├── core/
     │   ├── navigation/
     │   │   └── NavigationDispatcher.kt          # Navigation abstraction
@@ -293,10 +301,15 @@ feature-restaurant/
         ├── RestaurantDeepLinkHandler.kt         # Deep link handler
         └── ReviewsDeepLinkHandler.kt            # Reviews handler
 
-feature-settings/
-  src/commonMain/kotlin/io/umain/munchies/feature/settings/
+androidApp/
+  src/main/kotlin/io/umain/munchies/android/
     └── navigation/
-        └── SettingsDeepLinkHandler.kt           # Settings handler
+        ├── AndroidRestoreConditionDetector.kt   # Bundle-based detector
+        └── MainActivity.kt                      # onSaveInstanceState + onDestroy cleanup
+
+core/src/iosMain/kotlin/io/umain/munchies/
+    └── navigation/
+        └── IosRestoreConditionDetector.kt       # Clean-exit-flag detector
 ```
 
 ---
@@ -307,9 +320,9 @@ feature-settings/
 - **NavigationReducerTest.kt** - Test state transformations
 - **DeepLinkProcessorTest.kt** - Test deep link parsing
 - **NavigationAnalyticsListenerTest.kt** - Test analytics events
-- **NavigationStateRestorerTest.kt** - Test state restoration
+- **NavigationRestorationTest.kt** - Test both crash-restore and clean-exit-no-restore paths
 
-### Example Test
+### Example Test — Navigation Reducer
 
 ```kotlin
 @Test
@@ -320,6 +333,30 @@ fun testPushNavigationEvent() {
     val newState = NavigationReducer.reduce(state, event)
     
     assert(newState.tabNavigation.stacksByTab["restaurants"]?.size == 2)
+}
+```
+
+### Example Tests — Restoration Gate
+
+```kotlin
+// Crash → restore
+@Test
+fun testRestorationAfterCrash() = runTest {
+    store.saveNavigationState(savedState.toSnapshot())
+    // No markCleanExit() → simulates crash
+
+    val restored = restorer.restoreNavigationState(IosRestoreConditionDetector(store))
+    assertEquals(savedState, restored)
+}
+
+// Clean exit → fresh start
+@Test
+fun testFreshStartAfterCleanExit() = runTest {
+    store.saveNavigationState(savedState.toSnapshot())
+    store.markCleanExit()
+
+    val restored = restorer.restoreNavigationState(IosRestoreConditionDetector(store))
+    assertEquals(defaultState, restored)  // Not the saved state
 }
 ```
 
@@ -363,4 +400,4 @@ assert(state contains RestaurantDetailRoute("123"))
 
 ---
 
-**Last Updated:** May 18, 2026
+**Last Updated:** May 19, 2026
