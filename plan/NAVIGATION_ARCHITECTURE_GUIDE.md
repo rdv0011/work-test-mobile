@@ -1,6 +1,6 @@
 # Navigation Architecture Guide
 
-**Last Updated:** May 18, 2026  
+**Last Updated:** May 19, 2026  
 **Status:** Current Implementation Analysis  
 **Framework:** Kotlin Multiplatform Mobile (KMM) with Compose/SwiftUI
 
@@ -25,10 +25,11 @@ The Munchies mobile app uses a **Redux-inspired, platform-agnostic navigation ar
 
 - ✅ **Centralize navigation state** in a single source of truth (`AppCoordinator`)
 - ✅ **Support multiple navigation patterns**: screen stacks, tab switching, modals, and deep links
-- ✅ **Enable deep link handling** with full navigation state restoration
+- ✅ **Enable deep link handling** with full navigation state application
 - ✅ **Gather navigation analytics** about screen transitions and user flows
 - ✅ **Trigger navigation from shared view models** using a clean abstraction layer
 - ✅ **Work identically across Android and iOS** with native UI frameworks
+- ✅ **Restore navigation state only when appropriate** — after a crash, OS kill, or configuration change; not on deliberate user exit
 
 ---
 
@@ -68,7 +69,7 @@ The navigation system follows these key patterns:
           │           │           │
           ▼           ▼           ▼
      Platform UI   Analytics   Persistence
-    (Android/iOS)  Listener    Store
+    (Android/iOS)  Listener    Store (write always; read gated)
 ```
 
 **Mermaid Diagram: Full Navigation Flow**
@@ -136,6 +137,7 @@ graph TB
 | **Platform Layer** | Platform-specific UI receives state updates, not navigation commands |
 | **Coupling** | Loose: Analytics and persistence are decoupled from coordinator |
 | **Scope Management** | Koin scopes created/destroyed per route lifecycle |
+| **Restoration** | Gated: state restored only on crash/config-change; clean exit always starts fresh |
 
 ---
 
@@ -164,7 +166,8 @@ graph LR
     
     subgraph "Observers"
         AAL["NavigationAnalyticsListener<br/>trackScreenView()<br/>trackModalOpen()"]
-        NPS["NavigationPersistenceStore<br/>saveNavigationState()"]
+        NPS["NavigationPersistenceStore<br/>saveNavigationState() ← always<br/>loadNavigationState() ← gated"]
+        RCD["RestoreConditionDetector<br/>shouldRestoreNavigation()"]
     end
     
     AC -->|emits| NE
@@ -187,6 +190,7 @@ graph LR
     style MR fill:#fce4ec,stroke:#c2185b
     style AAL fill:#fff9c4,stroke:#f57f17
     style NPS fill:#f5f5f5,stroke:#424242
+    style RCD fill:#e8eaf6,stroke:#3949ab
 ```
 
 ### 1. **AppCoordinator** (`AppCoordinator.kt`)
@@ -198,7 +202,9 @@ graph LR
 - Dispatches navigation events
 - Reduces events to new state via `NavigationReducer`
 - Creates/destroys Koin scopes for routes
-- Persists navigation state (optional)
+- Persists navigation state after every event (write path is always-on)
+- Restores navigation state on startup **only when** crash/OS-kill/config-change is detected (via `RestoreConditionDetector`)
+- Clears persisted snapshot on deliberate user exit
 - Provides listener readiness callbacks for platform layers
 
 **Key Methods:**
@@ -228,6 +234,10 @@ fun applyNavigationState(newState: NavigationState, clearCurrentStack: Boolean =
 
 // State access
 fun getCurrentState(): NavigationState
+
+// Restoration (called at startup with platform-specific detector)
+suspend fun initializeNavigation(restoreConditionDetector: RestoreConditionDetector)
+suspend fun clearPersistedNavigationState()
 
 // Listener readiness (for platform layers)
 fun onListenerReady(action: () -> Unit)
@@ -1255,32 +1265,48 @@ graph TD
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Initial: App Starts
-    
-    Initial --> RestaurantList: Initial State
+    [*] --> Decision: App Starts
+
+    Decision --> Restored: RestoreConditionDetector = true\n(crash / config-change)
+    Decision --> Initial: RestoreConditionDetector = false\n(clean launch)
+
+    Restored --> RestaurantList: Apply persisted state
+    Initial --> RestaurantList: Default state
+
     RestaurantList --> RestaurantDetail: dispatch(Push)
     RestaurantDetail --> FilterModal: dispatch(ShowModal)
     FilterModal --> RestaurantDetail: dispatch(DismissModal)
     RestaurantDetail --> RestaurantList: dispatch(Pop)
     RestaurantList --> SettingsTab: dispatch(SelectTab)
     SettingsTab --> RestaurantList: dispatch(SelectTab)
-    
+
+    note right of Decision
+        Android: savedInstanceState Bundle present?
+        iOS: clean-exit flag absent?
+    end note
+
     note right of Initial
         tabNavigation.activeTabId = "restaurants"
         stacksByTab["restaurants"] = [RestaurantListRoute]
         stacksByTab["settings"] = [SettingsRoute]
         modalStack = []
     end note
-    
+
+    note right of Restored
+        Same state as last session
+        (tabs, stacks, open modals)
+        restoredFromCrash = true if crash
+    end note
+
     note right of RestaurantDetail
         Stack: [RestaurantListRoute, RestaurantDetailRoute]
     end note
-    
+
     note right of FilterModal
         modalStack: [FilterRoute]
         Tab stack unchanged
     end note
-    
+
     note right of SettingsTab
         activeTabId = "settings"
         Restaurants stack preserved
@@ -1301,6 +1327,8 @@ stateDiagram-v2
 | **Platform Independence** | Same navigation logic on Android/iOS; UI layer is platform-specific |
 | **Testability** | Pure reducers, decoupled listeners, mockable services → easy to unit test |
 | **Scope Lifecycle** | Koin scopes created when routes enter state, destroyed when they leave |
+| **State Persistence** | Written after every navigation event; read path gated by `RestoreConditionDetector` |
+| **Restoration** | Fires only on crash, OS kill, or configuration change — never on deliberate user exit |
 
 ---
 
@@ -1316,6 +1344,11 @@ stateDiagram-v2
 | `core/src/commonMain/kotlin/io/umain/munchies/navigation/Routes.kt` | Serializable route models |
 | `core/src/commonMain/kotlin/io/umain/munchies/navigation/DeepLinkHandler.kt` | Deep link interface |
 | `core/src/commonMain/kotlin/io/umain/munchies/navigation/DeepLinkProcessor.kt` | Deep link processor |
+| `core/src/commonMain/kotlin/io/umain/munchies/navigation/persistence/NavigationStateRestorer.kt` | Restoration logic (gated) |
+| `core/src/commonMain/kotlin/io/umain/munchies/navigation/persistence/NavigationPersistenceStore.kt` | Persistence interface |
+| `core/src/commonMain/kotlin/io/umain/munchies/navigation/restoration/RestoreConditionDetector.kt` | Restoration gate interface |
+| `androidApp/.../navigation/AndroidRestoreConditionDetector.kt` | Android: Bundle-based detector |
+| `core/src/iosMain/.../navigation/IosRestoreConditionDetector.kt` | iOS: clean-exit-flag detector |
 | `core/src/commonMain/kotlin/io/umain/munchies/core/analytics/NavigationAnalyticsListener.kt` | Analytics observer |
 | `core/src/commonMain/kotlin/io/umain/munchies/core/navigation/NavigationDispatcher.kt` | Navigation abstraction |
 | `feature-restaurant/src/commonMain/kotlin/.../RestaurantNavigationViewModel.kt` | Feature navigation VM |

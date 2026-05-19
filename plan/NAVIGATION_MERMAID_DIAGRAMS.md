@@ -1,7 +1,7 @@
 # Navigation Architecture - Mermaid Diagrams Reference
 
 **Location:** `/plan/NAVIGATION_MERMAID_DIAGRAMS.md`  
-**Last Updated:** May 18, 2026
+**Last Updated:** May 19, 2026
 
 ---
 
@@ -15,6 +15,7 @@
 6. [State Structure](#state-structure)
 7. [Event Processing](#event-processing)
 8. [Feature Integration](#feature-integration)
+9. [Restoration Decision](#restoration-decision)
 
 ---
 
@@ -47,7 +48,8 @@ graph TB
     subgraph "Observers"
         PUI["🎨 Platform UI<br/>(Compose/SwiftUI)"]
         ANA["📊 Analytics Listener<br/>(Tracks Events)"]
-        PS["💿 Persistence Store<br/>(Saves State)"]
+        PS["💿 Persistence Store<br/>(Writes always;<br/>reads gated by detector)"]
+        RCD["🔑 RestoreConditionDetector<br/>(crash vs. clean exit)"]
     end
     
     U -->|triggers| FVM1
@@ -61,6 +63,7 @@ graph TB
     AC -->|emits| PUI
     AC -->|emits| ANA
     AC -->|emits| PS
+    AC -->|uses on startup| RCD
     
     style U fill:#e1f5ff
     style FVM fill:#f3e5f5
@@ -73,6 +76,7 @@ graph TB
     style PUI fill:#e0f2f1
     style ANA fill:#fff9c4
     style PS fill:#f5f5f5
+    style RCD fill:#e8eaf6
 ```
 
 ---
@@ -102,7 +106,8 @@ graph LR
     
     subgraph "Observers"
         AAL["NavigationAnalyticsListener<br/>trackScreenView()<br/>trackModalOpen()"]
-        NPS["NavigationPersistenceStore<br/>saveNavigationState()"]
+        NPS["NavigationPersistenceStore<br/>saveNavigationState() ← always<br/>loadNavigationState() ← gated"]
+        RCD["RestoreConditionDetector<br/>shouldRestoreNavigation()"]
     end
     
     AC -->|emits| NE
@@ -125,6 +130,7 @@ graph LR
     style MR fill:#fce4ec,stroke:#c2185b
     style AAL fill:#fff9c4,stroke:#f57f17
     style NPS fill:#f5f5f5,stroke:#424242
+    style RCD fill:#e8eaf6,stroke:#3949ab
 ```
 
 ### Component Dependencies
@@ -456,7 +462,7 @@ graph LR
     
     subgraph "Effects"
         KS["Koin Scope<br/>Create/Destroy"]
-        PS["Persist<br/>State"]
+        PS["Persist State<br/>(always; async)"]
         UI["UI Update<br/>StateFlow"]
     end
     
@@ -596,36 +602,124 @@ graph TB
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Initial: App Starts
-    
-    Initial --> RestaurantList: Initial State
+    [*] --> Decision: App Starts
+
+    Decision --> Restored: RestoreConditionDetector = true\n(crash / config-change)
+    Decision --> Initial: RestoreConditionDetector = false\n(clean launch)
+
+    Restored --> RestaurantList: Apply persisted state
+    Initial --> RestaurantList: Default state
+
     RestaurantList --> RestaurantDetail: dispatch(Push)
     RestaurantDetail --> FilterModal: dispatch(ShowModal)
     FilterModal --> RestaurantDetail: dispatch(DismissModal)
     RestaurantDetail --> RestaurantList: dispatch(Pop)
     RestaurantList --> SettingsTab: dispatch(SelectTab)
     SettingsTab --> RestaurantList: dispatch(SelectTab)
-    
+
+    note right of Decision
+        Android: savedInstanceState Bundle present?
+        iOS: clean-exit flag absent?
+    end note
+
     note right of Initial
         tabNavigation.activeTabId = "restaurants"
         stacksByTab["restaurants"] = [RestaurantListRoute]
         stacksByTab["settings"] = [SettingsRoute]
         modalStack = []
     end note
-    
+
+    note right of Restored
+        Same state as last session
+        (tabs, stacks, open modals)
+        restoredFromCrash = true if crash
+    end note
+
     note right of RestaurantDetail
         Stack: [RestaurantListRoute, RestaurantDetailRoute]
     end note
-    
+
     note right of FilterModal
         modalStack: [FilterRoute]
         Tab stack unchanged
     end note
-    
+
     note right of SettingsTab
         activeTabId = "settings"
         Restaurants stack preserved
     end note
+```
+
+---
+
+## Restoration Decision
+
+### When to Restore vs. Start Fresh
+
+```mermaid
+flowchart TD
+    START(["App Starts"])
+    DET{"RestoreConditionDetector\n.shouldRestoreNavigation()"}
+
+    START --> DET
+
+    DET -->|true| LOAD["Load persisted snapshot"]
+    DET -->|false| FRESH["createDefaultNavigationState()"]
+
+    LOAD --> VALID{"isValidSnapshot?"}
+    VALID -->|yes| APPLY["Apply restored NavigationState\n(tabs, stacks, modals)"]
+    VALID -->|no| FRESH
+
+    FRESH --> INIT["Start from root\n(RestaurantListRoute)"]
+    APPLY --> UI(["UI renders"])
+    INIT --> UI
+
+    subgraph "Android detector"
+        AND_CHECK{"savedInstanceState\nBundle present?"}
+        AND_YES["true — config change\nor process death"]
+        AND_NO["false — cold start\nor clean exit"]
+        AND_CHECK -->|yes| AND_YES
+        AND_CHECK -->|no| AND_NO
+    end
+
+    subgraph "iOS detector"
+        IOS_CHECK{"clean-exit flag\nabsent?"}
+        IOS_YES["true — crash\nor OS kill"]
+        IOS_NO["false — applicationWillTerminate\nwas called"]
+        IOS_CHECK -->|yes| IOS_YES
+        IOS_CHECK -->|no| IOS_NO
+    end
+
+    style START fill:#e8f5e9,stroke:#2e7d32
+    style DET fill:#fff9c4,stroke:#f9a825,stroke-width:2px
+    style LOAD fill:#e3f2fd,stroke:#1565c0
+    style FRESH fill:#fce4ec,stroke:#c62828
+    style VALID fill:#fff3e0,stroke:#e65100
+    style APPLY fill:#e8f5e9,stroke:#2e7d32
+    style INIT fill:#fce4ec,stroke:#c62828
+    style UI fill:#ede7f6,stroke:#512da8,stroke-width:2px
+```
+
+### Clean Exit Cleanup Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Platform
+    participant Coordinator as AppCoordinator
+    participant Store as PersistenceStore
+
+    User->>Platform: Swipe app from recents (Android)\nor force-quit from switcher (iOS)
+
+    alt Android
+        Platform->>Coordinator: onDestroy(isFinishing=true,\nisChangingConfigurations=false)
+        Coordinator->>Store: clearNavigationState()
+        Note over Store: Snapshot deleted —\nnext launch gets fresh start
+    else iOS
+        Platform->>Coordinator: onApplicationWillTerminate()
+        Coordinator->>Store: markCleanExit()
+        Note over Store: Clean-exit flag written —\nIosRestoreConditionDetector\nreturns false on next launch
+    end
 ```
 
 ---
