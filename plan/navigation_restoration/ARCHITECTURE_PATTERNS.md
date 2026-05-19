@@ -1,7 +1,8 @@
 # KMM Navigation: Architecture Patterns & Diagrams
 
 **Document**: Visual architecture guide and pattern reference  
-**Purpose**: Quick reference for understanding and extending navigation system
+**Purpose**: Quick reference for understanding and extending the navigation system  
+**Date**: May 19, 2026 (Revised — Crash/Config-Change-Only Restoration)
 
 ---
 
@@ -17,6 +18,7 @@
 │  │  - AppNavigation.kt      │  │  - NavigationController.swift   │ │
 │  │  - RouteRenderer.kt      │  │  - StateObserver.swift          │ │
 │  │  - Navigation Effects    │  │  - DeepLinkHandler.swift        │ │
+│  │  - MainActivity          │  │  - AppDelegate (terminate hook) │ │
 │  └──────────────────────────┘  └─────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────────┘
                                  ↑
@@ -31,50 +33,48 @@
 │  │  - Dispatch events                                          │ │
 │  │  - Manage scope lifecycle                                   │ │
 │  │  - Trigger persistence                                      │ │
+│  │  - clearPersistedNavigationState() on clean exit           │ │
 │  └──────────────────────────────────────────────────────────────┘ │
 │                                                                    │
 │  ┌──────────────────────────────────────────────────────────────┐ │
 │  │  NavigationReducer (Pure State Machine)                      │ │
 │  │  - (State, Event) → State (deterministic)                   │ │
-│  │  - Route resolution via handlers                            │ │
-│  │  - No side effects                                          │ │
 │  └──────────────────────────────────────────────────────────────┘ │
 │                                                                    │
 │  ┌──────────────────────────────────────────────────────────────┐ │
 │  │  NavigationState (Observable State)                          │ │
 │  │  - TabNavigationState (per-tab stacks)                      │ │
 │  │  - ModalStack (overlay routes)                              │ │
-│  │  - NavigationDirection (animation hint)                     │ │
-│  └──────────────────────────────────────────────────────────────┘ │
-│                                                                    │
-│  ┌──────────────────────────────────────────────────────────────┐ │
-│  │  Specialized Handlers                                        │ │
-│  │  - RouteHandler (Destination → Route)                       │ │
-│  │  - ScopedRouteHandler (+ scope lifecycle)                   │ │
-│  │  - DeepLinkHandler (URL → Navigation State)                 │ │
 │  └──────────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────────┘
                                  ↑
                     Observes and reduces events
                                  ↑
 ┌─────────────────────────────────────────────────────────────────────┐
-│                     PERSISTENCE LAYER (KMM)                        │
+│                     RESTORATION LAYER (KMM)                        │
+│                                                                    │
+│  ┌──────────────────────────────────────────────────────────────┐ │
+│  │  RestoreConditionDetector (NEW)                              │ │
+│  │  - shouldRestoreNavigation(): Boolean                       │ │
+│  │  - Android: checks savedInstanceState Bundle presence      │ │
+│  │  - iOS:     checks absence of "clean exit" flag            │ │
+│  └──────────────────────────────────────────────────────────────┘ │
 │                                                                    │
 │  ┌──────────────────────────────────────────────────────────────┐ │
 │  │  NavigationStateRestorer                                     │ │
-│  │  - Loads snapshot from storage                              │ │
-│  │  - Validates state structure                                │ │
-│  │  - Falls back to default state                              │ │
+│  │  - Accepts RestoreConditionDetector                         │ │
+│  │  - If shouldRestore → loads snapshot                        │ │
+│  │  - If !shouldRestore → returns default state               │ │
 │  └──────────────────────────────────────────────────────────────┘ │
 │                                                                    │
 │  ┌──────────────────────────────────────────────────────────────┐ │
 │  │  NavigationStateSnapshot (Serializable)                      │ │
 │  │  - toSnapshot() / toNavigationState() converters            │ │
-│  │  - Tab stacks, modal stacks, metadata                       │ │
 │  └──────────────────────────────────────────────────────────────┘ │
 │                                                                    │
 │  ┌──────────────────────────────────────────────────────────────┐ │
 │  │  NavigationPersistenceStore (Interface)                      │ │
+│  │  + hasCleanExitFlag() / markCleanExit() / clearCleanExitFlag│ │
 │  └──────────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────────┘
                                  ↑
@@ -91,6 +91,36 @@
 
 ---
 
+## Restoration Decision Flow
+
+```
+APP STARTUP
+│
+├─ RestoreConditionDetector.shouldRestoreNavigation()
+│
+│  Android:
+│  ├─ savedInstanceState Bundle present?
+│  │  ├─ YES (config change or process death) ──────────────────→ RESTORE
+│  │  └─ NO  (cold start / clean launch) ──────────────────────→ FRESH
+│
+│  iOS:
+│  ├─ "clean exit" flag absent?
+│  │  ├─ YES (crash, OS kill, first launch) ───────────────────→ RESTORE
+│  │  └─ NO  (applicationWillTerminate was called) ────────────→ FRESH
+│
+├─ RESTORE path:
+│  ├─ Load snapshot from storage
+│  ├─ Validate (tabs, stacks, active tab)
+│  ├─ Valid? → deserialize to NavigationState
+│  └─ Invalid? → createDefaultNavigationState()
+│
+└─ FRESH path:
+   ├─ createDefaultNavigationState()
+   └─ (optionally clear stale snapshot from disk)
+```
+
+---
+
 ## State Flow Diagram
 
 ```
@@ -101,57 +131,34 @@
                                ↓
 ┌─────────────────────────────────────────────────────────────────┐
 │                  AppCoordinator.dispatch()                      │
-│              (emits event to _navigationEvents)                 │
 └──────────────────────────────┬──────────────────────────────────┘
                                ↓
 ┌─────────────────────────────────────────────────────────────────┐
 │              AppCoordinator.reduceState()                       │
 │                                                                 │
-│  1. Get current state from _navigationState                     │
+│  1. Get current state                                           │
 │  2. Call NavigationReducer.reduce(state, event)                │
 │  3. Create/destroy Koin scopes via NavigationEffects           │
-│  4. Update _navigationState with new state                     │
-│  5. Trigger async persistence                                  │
+│  4. Update _navigationState                                    │
+│  5. Enqueue async persistence (Channel.CONFLATED)             │
 └──────────────────────────────┬──────────────────────────────────┘
                                ↓
 ┌─────────────────────────────────────────────────────────────────┐
 │           NavigationReducer.reduce() [PURE]                    │
-│                                                                 │
-│  Input:  (state, event, routeHandlers)                         │
-│  Output: newState                                              │
-│                                                                 │
-│  Switch on event type:                                         │
-│  - Push: append route to active tab stack                      │
-│  - Pop: remove route from active tab stack                     │
-│  - ShowModal: append to modal stack                            │
-│  - DismissModal: remove from modal stack                       │
-│  - SelectTab: change activeTabId                              │
-│  - ApplyNavigationState: return new state entirely            │
 └──────────────────────────────┬──────────────────────────────────┘
                                ↓
 ┌─────────────────────────────────────────────────────────────────┐
 │        NavigationState (Observable via StateFlow)              │
-│                                                                 │
 │  ┌─────────────────────┐                                        │
-│  │ TabNavigationState  │                                        │
-│  │ ┌────────────────┐  │                                        │
-│  │ │ activeTabId    │  │                                        │
-│  │ ├────────────────┤  │                                        │
-│  │ │ stacksByTab    │  │  Map<TabId, List<Route>>              │
-│  │ │ - restaurants: │  │  [RestaurantListRoute, DetailRoute]  │
-│  │ │ - settings:    │  │  [SettingsRoute]                     │
-│  │ └────────────────┘  │                                        │
+│  │ TabNavigationState  │  Map<TabId, List<Route>>              │
 │  └─────────────────────┘                                        │
-│                                                                 │
 │  ┌──────────────────────┐                                       │
 │  │ modalStack           │  List<ModalRoute>                    │
-│  │ [FilterModalRoute]   │                                       │
 │  └──────────────────────┘                                       │
 └──────────────────────────────┬──────────────────────────────────┘
                                ↓
 ┌─────────────────────────────────────────────────────────────────┐
 │           UI Layer (Android/iOS)                                │
-│                                                                 │
 │  collectAsState(navigationState) { state ->                    │
 │    render(state.tabNavigation.getActiveTabStack())             │
 │    if (state.modalStack.isNotEmpty()) {                        │
@@ -199,12 +206,12 @@
         │  Settings                    │  (activeTab switched)
         │  → SettingsRoute             │  Restaurants stack preserved
         └──────┬───────────────────────┘
-               │ selectTab("restaurants")  (return to restaurants)
+               │ selectTab("restaurants")
                ↓
         ┌──────────────────────────────┐
         │  Restaurants                 │
         │  - ListRoute                 │
-        │  → DetailRoute               │  (same state as before!)
+        │  → DetailRoute               │  ← same state as before
         └──────────────────────────────┘
 ```
 
@@ -239,7 +246,6 @@ Current Screen: RestaurantDetailRoute
    ┌────────────────────────────────────┐
    │ Screen: RestaurantDetailRoute       │
    │ Modal:  FilterModalRoute            │
-   │ ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲│
    └────────────────────────────────────┘
            │ dismissAllModals()
            ↓
@@ -251,180 +257,110 @@ Current Screen: RestaurantDetailRoute
 
 ---
 
-## Scope Lifecycle Diagram
-
-```
-┌─────────────────────────────────────────┐
-│ Navigation Event: Push(DetailRoute(123))│
-└──────────────┬──────────────────────────┘
-               ↓
-    NavigationReducer.reduce()
-    Creates: Route = DetailRoute(123)
-               ↓
-    ┌──────────────────────────────────────┐
-    │ Route created with key: detail_123   │
-    └──────────────────────────────────────┘
-               ↓
-    AppCoordinator.reduceState()
-    Detects: Route added to navigation
-               ↓
-    ┌──────────────────────────────────────┐
-    │ Find handler that can handle          │
-    │ Destination.RestaurantDetail(123)     │
-    └──────────────┬───────────────────────┘
-                   ↓
-    ┌──────────────────────────────────────┐
-    │ ScopedRouteHandler.createScope()      │
-    │ - scopeId = "detail_123"              │
-    │ - Creates Koin scope with qualifier   │
-    │ - Registers ViewModel factory         │
-    │ - ViewModel created and cached        │
-    └──────────────┬───────────────────────┘
-                   ↓
-    ┌──────────────────────────────────────┐
-    │ Scope persists in Koin container     │
-    │ (until explicitly closed)             │
-    └──────────────────────────────────────┘
-                   ↓
-    UI Layer: remember(route.key) {
-        getKoin().getScope(route.key).get<ViewModel>()
-    }
-    ↓
-    Same ViewModel returned across recompositions
-    (survives config changes)
-
-─────────────────────────────────────────
-
-    Navigation Event: Pop
-    Route removed from navigation
-               ↓
-    AppCoordinator.reduceState()
-    Detects: Route removed
-               ↓
-    NavigationEffects.handleNavigationSideEffects()
-    Finds: detail_123 scope no longer in state
-               ↓
-    Closes scope: scope.close()
-    - ViewModel cleanup called
-    - Resources released
-    - Scope removed from Koin
-```
-
----
-
-## Event Dispatch Sequence
-
-```
-User Action: Taps "Restaurant Detail" in list
-
-    UI Layer (Compose)
-    └─ RestaurantListScreen
-       └─ Button(onClick = { ... })
-          └─ navigateToRestaurantDetail("123")
-             ↓
-    AppCoordinator.navigateToRestaurantDetail("123")
-    └─ navigateToScreen(Destination.RestaurantDetail("123"))
-       ↓
-    AppCoordinator.dispatch(NavigationEvent.Push(destination))
-    └─ Emits to _navigationEvents (StateFlow)
-    └─ Calls reduceState(event)
-       ↓
-    AppCoordinator.reduceState(event)
-    ├─ Get current state
-    ├─ Call NavigationReducer.reduce()
-    │  └─ Resolve Destination → Route
-    │  └─ Create new state with route added
-    ├─ Create Koin scopes for new routes
-    ├─ Close Koin scopes for removed routes
-    ├─ Update _navigationState (StateFlow)
-    └─ Persist state async
-       ↓
-    UI Layer (Compose)
-    ├─ navigationState.collectAsState() triggered
-    ├─ RenderTabContent() recomposes
-    │  └─ AnimatedContent(targetState = newRoute)
-    │     └─ Renders RestaurantDetailScreen
-    ├─ Scope retrieved: getKoin().getScope(route.key)
-    └─ ViewModel created/retrieved from scope
-       ↓
-    Screen Rendered with Latest State
-```
-
----
-
-## Deep Link Processing Flow
-
-```
-Browser/Notification
-└─ "munchies://restaurants/123/reviews"
-   ↓
-Android: Intent.ACTION_VIEW
-iOS: UISceneDelegate.scene(_:openURLContexts:)
-   ↓
-AppNavigation/NavigationController
-└─ processPendingDeepLink(uri)
-   ↓
-DeepLinkParser.parse(deepLink)
-├─ Find handler where canHandle(deepLink) == true
-├─ Call handler.parseDeepLink(deepLink)
-└─ Return DeepLinkResult
-   ├─ navigationState (full state to apply)
-   ├─ strategy (how to apply it)
-   ├─ isValid (was parsing successful)
-   ↓
-DeepLinkResult enum:
-├─ Success: navigationState + clearCurrentStack
-├─ Partial: navigationState (incomplete) + strategy
-├─ NotFound: No handler matched
-└─ Error: Handler threw exception
-   ↓
-AppCoordinator.applyDeepLink(result)
-├─ Apply navigation state
-├─ Create necessary scopes
-└─ UI renders new state
-   ↓
-User sees: RestaurantDetail → ReviewsScreen
-(from deep link, starting from scratch)
-```
-
----
-
-## Crash Recovery Flow
+## Crash Recovery Flow (Revised)
 
 ```
 APP RUNNING
 │
 ├─ User navigates: RestaurantList → Detail → Modal
 │
-├─ persistNavigationStateAsync() saves state
+├─ persistNavigationStateAsync() saves state after each event
 │  └─ Snapshot written to DataStore/UserDefaults
 │
-└─ USER FORCE-QUITS APP (crash)
+└─ CRASH (or OS kills process without warning)
+   └─ applicationWillTerminate / onDestroy NOT called
+      └─ No "clean exit" flag written (iOS)
+      └─ savedInstanceState written by system (Android)
 
 
 APP RESTART
 │
-├─ MainActivity.onCreate() / AppDelegate.didFinishLaunching
+├─ MainActivity.onCreate(savedInstanceState) ← Bundle present (Android)
+│   └─ AndroidRestoreConditionDetector(bundle).shouldRestoreNavigation() = true
 │
-├─ NavigationStateRestorer.restoreNavigationState()
+│ (iOS: IosRestoreConditionDetector sees no clean-exit flag → true)
+│
+├─ NavigationStateRestorer.restoreNavigationState(detector)
+│  ├─ detector.shouldRestoreNavigation() → TRUE
 │  ├─ Load snapshot from persistence store
-│  ├─ Deserialize to NavigationStateSnapshot
-│  ├─ Validate snapshot structure
-│  └─ Convert to NavigationState
-│
-├─ Check crash indicator flag
-│  └─ Mark restoredFromCrash = true
+│  ├─ Validate snapshot
+│  └─ Deserialize to NavigationState
 │
 ├─ AppCoordinator.applyNavigationState(restoredState)
 │
 ├─ Create Koin scopes for all routes in state
-│  ├─ DetailRoute scope
-│  └─ ModalRoute scope
 │
 ├─ UI renders from restored state
-│  └─ Same screens, modals as before crash
+│  └─ Same screens + modals as before crash
 │
-└─ USER SEES: App recovered exactly to previous state ✓
+└─ USER SEES: App recovered to previous state ✓
+```
+
+---
+
+## Clean Exit Flow (Revised)
+
+```
+APP RUNNING
+│
+├─ User navigates: RestaurantList → Detail
+│
+├─ State persisted: [ListRoute, DetailRoute]
+│
+└─ USER SWIPES APP FROM RECENTS
+   │
+   ├─ Android: onDestroy(isFinishing=true, isChangingConfigurations=false)
+   │  └─ coordinator.clearPersistedNavigationState()
+   │
+   └─ iOS: applicationWillTerminate
+      └─ persistenceStore.markCleanExit()
+
+
+APP RESTART (fresh launch)
+│
+├─ Android: savedInstanceState = null
+│  └─ AndroidRestoreConditionDetector(null).shouldRestoreNavigation() = false
+│
+│ iOS: clean-exit flag present
+│  └─ IosRestoreConditionDetector.shouldRestoreNavigation() = false
+│
+├─ NavigationStateRestorer.restoreNavigationState(detector)
+│  └─ detector.shouldRestoreNavigation() → FALSE
+│  └─ return createDefaultNavigationState()
+│
+└─ USER SEES: Fresh app launch ✓  (no stale state)
+```
+
+---
+
+## Configuration Change Flow (Revised)
+
+```
+APP RUNNING (Android)
+│
+├─ User navigates: RestaurantList → Detail → Modal
+│
+└─ USER ROTATES DEVICE
+   │
+   ├─ Activity.onSaveInstanceState(bundle)
+   │  └─ bundle.putBoolean(KEY_RESTORE_NAV, true)
+   │
+   ├─ Activity.onDestroy(isFinishing=false, isChangingConfigurations=true)
+   │  └─ isChangingConfigurations=true → do NOT clear snapshot
+   │
+   └─ Activity recreated immediately
+
+
+ACTIVITY RECREATED
+│
+├─ MainActivity.onCreate(savedInstanceState ← bundle with KEY_RESTORE_NAV=true)
+│  └─ AndroidRestoreConditionDetector(bundle).shouldRestoreNavigation() = true
+│
+├─ NavigationStateRestorer.restoreNavigationState(detector)
+│  └─ Deserialize → same state
+│
+└─ USER SEES: Rotation preserved navigation state ✓
+   └─ Koin scopes already exist (ViewModel survived via Koin)
 ```
 
 ---
@@ -434,67 +370,68 @@ APP RESTART
 ```
 NavigationState (in-memory)
 │
-├─ Contains:
-│  ├─ TabNavigationState
-│  │  ├─ tabDefinitions: List<TabDefinition>
-│  │  ├─ activeTabId: String
-│  │  └─ stacksByTab: Map<String, List<Route>>
-│  │
-│  ├─ modalStack: List<ModalRoute>
-│  │
-│  └─ originDeepLink: String?
+├─ May contain lambdas → not serializable
 │
-└─ Not serializable because:
-   └─ May contain lambdas, non-serializable objects
-      ↓
-      
-CONVERT via toSnapshot()
-      ↓
-
+└─ CONVERT via toSnapshot()
+       ↓
 NavigationStateSnapshot (@Serializable)
 │
-├─ Contains same data as NavigationState
-├─ All fields are serializable primitives
-├─ Uses kotlinx.serialization.Serializable
-│
-└─ Registered routes in SerializersModule:
-   ├─ RestaurantListRoute
-   ├─ RestaurantDetailRoute
-   ├─ SettingsRoute
-   ├─ FilterModalRoute
-   ├─ ConfirmActionModalRoute
-   └─ (all route subclasses)
-      ↓
-
-JSON String
-(via navigationJson instance)
-      ↓
-      
+├─ tabNavigation: TabNavigationStateSnapshot
+├─ modalStack: List<ModalRoute>
+├─ originDeepLink: String?
+├─ restoredFromCrash: Boolean
+└─ restorationTimestamp: Long
+       ↓
+JSON String  (via navigationJson)
+       ↓
 Write to Disk
-├─ Android: DataStore → /data/.../.../prefs.pb
-└─ iOS: UserDefaults → ~/Library/Preferences/...
-      ↓
-
-APP RESTART
-      ↓
-
+├─ Android: DataStore
+└─ iOS: UserDefaults
+       ↓
+APP RESTART  (only if RestoreConditionDetector fires)
+       ↓
 Read from Disk
-      ↓
-
+       ↓
 Deserialize JSON
-(via navigationJson instance)
-      ↓
-
+       ↓
 NavigationStateSnapshot
-      ↓
-
+       ↓
 CONVERT via toNavigationState()
-      ↓
+       ↓
+NavigationState → Apply to UI
+```
 
-NavigationState
-      ↓
+---
 
-Apply to UI
+## Scope Lifecycle Diagram
+
+```
+Navigation Event: Push(DetailRoute(123))
+       ↓
+NavigationReducer creates: Route = DetailRoute(123)
+       ↓
+AppCoordinator.reduceState()
+Detects: Route added to navigation
+       ↓
+ScopedRouteHandler.createScope()
+- scopeId = "detail_123"
+- Creates Koin scope
+- Registers ViewModel factory
+       ↓
+Scope persists until route exits navigation state
+       ↓
+UI: remember(route.key) { koin.getScope(key).get<ViewModel>() }
+Same ViewModel returned across recompositions (survives rotation)
+
+─────────────────────────────────────────
+
+Navigation Event: Pop
+Route removed
+       ↓
+NavigationEffects.handleNavigationSideEffects()
+Finds detail_123 no longer in state
+       ↓
+scope.close()  →  ViewModel cleaned up
 ```
 
 ---
@@ -504,129 +441,42 @@ Apply to UI
 ### Android Platform
 
 ```
-┌─────────────────────────────────────┐
-│ androidApp/                         │
-└─────────────────────────────────────┘
-         ↓
-┌─────────────────────────────────────┐
-│ MainActivity.onCreate()              │
-│                                     │
-│ 1. Initialize AppCoordinator        │
-│ 2. Restore navigation state         │
-│ 3. Set content to @Composable       │
-│    AppNavigation()                  │
-└─────────────────────────────────────┘
-         ↓
-┌─────────────────────────────────────┐
-│ AppNavigation.kt (Composable)       │
-│                                     │
-│ 1. Collect navigationState          │
-│ 2. Process pending deep link        │
-│ 3. Render TabNavigationScaffold     │
-│ 4. Render RenderTabContent()        │
-│    (with animations)                │
-│ 5. Render RenderModalsIfNeeded()    │
-└─────────────────────────────────────┘
-         ↓
-┌─────────────────────────────────────┐
-│ Platform-Specific Storage           │
-│                                     │
-│ AndroidNavigationStore              │
-│ ├─ DataStore<Preferences>           │
-│ ├─ Navigation state proto buffer    │
-│ └─ Async read/write                 │
-└─────────────────────────────────────┘
+MainActivity.onCreate(savedInstanceState)
+│
+├─ AndroidRestoreConditionDetector(savedInstanceState)
+├─ coordinator.initializeNavigation(detector)
+└─ setContent { AppNavigation(coordinator) }
+
+MainActivity.onSaveInstanceState(bundle)
+└─ bundle.putBoolean(KEY_RESTORE_NAV, true)
+
+MainActivity.onDestroy()
+└─ if (isFinishing && !isChangingConfigurations)
+   └─ coordinator.clearPersistedNavigationState()
+
+AppNavigation.kt (Composable)
+├─ Collect navigationState
+├─ Process pending deep link
+├─ Render TabNavigationScaffold
+└─ Render modals if needed
 ```
 
 ### iOS Platform
 
 ```
-┌─────────────────────────────────────┐
-│ iosApp/                             │
-└─────────────────────────────────────┘
-         ↓
-┌─────────────────────────────────────┐
-│ AppDelegate / App (SwiftUI @main)   │
-│                                     │
-│ 1. Initialize AppCoordinator        │
-│ 2. Restore navigation state         │
-│ 3. Create @StateObject              │
-│    navigationObserver               │
-│ 4. Create NavigationView            │
-└─────────────────────────────────────┘
-         ↓
-┌─────────────────────────────────────┐
-│ NavigationController.swift          │
-│ (Observes navigationState)          │
-│                                     │
-│ @StateObject navigationState:       │
-│   coordinator.navigationState       │
-│   .toObservable()                   │
-│                                     │
-│ NavigationStack(@binding) {         │
-│   RenderScreen(navigationState)     │
-│   .sheet(isPresented:...) {         │
-│     RenderModal(navigationState)    │
-│   }                                 │
-│ }                                   │
-└─────────────────────────────────────┘
-         ↓
-┌─────────────────────────────────────┐
-│ Platform-Specific Storage           │
-│                                     │
-│ IosUserDefaultsPersistence          │
-│ ├─ NSUserDefaults.standardDefaults  │
-│ ├─ Navigation state as JSON         │
-│ └─ Async read/write                 │
-└─────────────────────────────────────┘
-```
+AppDelegate.applicationWillTerminate
+└─ coordinator.onApplicationWillTerminate()
+   └─ persistenceStore.markCleanExit()
 
----
+App launch
+└─ IosRestoreConditionDetector(persistenceStore)
+   └─ shouldRestoreNavigation() = !hasCleanExitFlag()
+      └─ clearCleanExitFlag() (consume flag)
 
-## Error Recovery Strategies
-
-```
-┌─────────────────────────────────────────────┐
-│        Serialization Failure                │
-│  (Route type not registered)                │
-└──────────────────┬──────────────────────────┘
-                   ↓
-        Catch SerializationException
-                   ↓
-    ┌───────────────────────────────┐
-    │ Log error with details        │
-    │ Load default state instead    │
-    │ User sees app in safe state   │
-    └───────────────────────────────┘
-
-
-┌─────────────────────────────────────────────┐
-│        Corrupted Snapshot File              │
-│  (Disk read error)                          │
-└──────────────────┬──────────────────────────┘
-                   ↓
-        Catch IOException
-                   ↓
-    ┌───────────────────────────────┐
-    │ Log error                     │
-    │ Clear corrupted file          │
-    │ Load default state            │
-    │ Create new snapshot next time │
-    └───────────────────────────────┘
-
-
-┌─────────────────────────────────────────────┐
-│        Validation Failure                   │
-│  (Snapshot has missing tabs/stacks)         │
-└──────────────────┬──────────────────────────┘
-                   ↓
-        isValidSnapshot() returns false
-                   ↓
-    ┌───────────────────────────────┐
-    │ Snapshot is stale/corrupted   │
-    │ Load default state            │
-    │ Keep old snapshot (for debug) │
-    └───────────────────────────────┘
+NavigationController.swift
+└─ @StateObject navigationState: coordinator.navigationState.toObservable()
+   └─ NavigationStack { RenderScreen(...) }
+      └─ .sheet(isPresented:) { RenderModal(...) }
 ```
 
 ---
@@ -641,23 +491,32 @@ fun testReducerPush() {
     val state = initialState()
     val event = NavigationEvent.Push(DetailDestination("123"))
     val newState = NavigationReducer.reduce(state, event)
-    
-    assert(newState != state)  // New object
-    assert(newState.currentStack.size == 2)
-    assert(newState.currentStack.last() is DetailRoute)
+
+    assertEquals(2, newState.currentStack.size)
+    assertTrue(newState.currentStack.last() is DetailRoute)
 }
 ```
 
-### Integration Test Pattern
+### Restoration Test Patterns (Revised)
 ```kotlin
-// State restoration testing
+// Crash path — should restore
 @Test
-fun testStateRestoration() {
-    val snapshot = state.toSnapshot()
-    persistenceStore.save(snapshot)
-    
-    val restored = restorer.restore()
-    assertEquals(state, restored)
+fun testRestorationAfterCrash() = runTest {
+    store.saveNavigationState(stateWithDetail().toSnapshot())
+    // No markCleanExit → crash
+
+    val restored = restorer.restoreNavigationState(crashDetector())
+    assertEquals(2, restored.currentStack.size)
+}
+
+// Clean exit path — should NOT restore
+@Test
+fun testNoRestorationAfterCleanExit() = runTest {
+    store.saveNavigationState(stateWithDetail().toSnapshot())
+    store.markCleanExit()  // Deliberate exit
+
+    val restored = restorer.restoreNavigationState(cleanDetector())
+    assertEquals(1, restored.currentStack.size)  // Default: root only
 }
 ```
 
@@ -667,12 +526,51 @@ fun testStateRestoration() {
 @Test
 fun testViewModelSurvivesRotation() {
     val vm1 = getViewModelFromScope(scopeId)
-    triggerRecomposition()  // Simulate rotation
+    triggerRecomposition()
     val vm2 = getViewModelFromScope(scopeId)
-    
     assert(vm1 === vm2)  // Same object
 }
 ```
 
 ---
 
+## Error Recovery Strategies
+
+```
+┌─────────────────────────────────────────────────┐
+│        Serialization Failure                    │
+│  (Route type not registered)                    │
+└──────────────────┬──────────────────────────────┘
+                   ↓
+        Catch SerializationException
+                   ↓
+    ┌───────────────────────────────┐
+    │ Log error with details        │
+    │ Load default state instead    │
+    │ User sees app in safe state   │
+    └───────────────────────────────┘
+
+
+┌─────────────────────────────────────────────────┐
+│        Validation Failure                       │
+│  (Snapshot missing tabs/stacks)                 │
+└──────────────────┬──────────────────────────────┘
+                   ↓
+        isValidSnapshot() = false
+                   ↓
+    ┌───────────────────────────────┐
+    │ Load default state            │
+    │ Log reason for skipping       │
+    └───────────────────────────────┘
+
+
+┌─────────────────────────────────────────────────┐
+│        shouldRestoreNavigation() = false        │
+│  (Clean exit detected)                          │
+└──────────────────┬──────────────────────────────┘
+                   ↓
+    ┌───────────────────────────────┐
+    │ Skip restoration entirely     │
+    │ Return fresh default state    │
+    └───────────────────────────────┘
+```

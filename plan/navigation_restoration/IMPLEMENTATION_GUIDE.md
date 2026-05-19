@@ -1,135 +1,212 @@
 # KMM Navigation Restoration: Implementation Guide
 
 **Document**: Step-by-step implementation guide for recommended improvements  
-**Audience**: Backend engineers, navigation system maintainers  
-**Date**: May 18, 2026
+**Audience**: Developers implementing navigation system  
+**Date**: May 19, 2026 (Revised — Crash/Config-Change-Only Restoration)
 
 ---
 
-## Quick Start: Implementing Priority 1 Improvements
+## Core Principle
 
-### 1. Enable `restoredFromCrash` Flag
+Navigation state must be restored **only** when the OS or a crash forced the app to restart, not when the user deliberately exited. This mirrors what Android's `NavController` and iOS's `UINavigationController` do natively.
 
-**File**: `core/src/commonMain/.../navigation/persistence/NavigationPersistenceStore.kt`
+```
+Restore?  YES  ← crash, OS kill, configuration change (rotation/locale)
+Restore?  NO   ← user swiped app away, pressed back to root, force-quit
+```
 
-**Current State**:
+---
+
+## Priority 1: Correct Restoration Semantics
+
+### 1.1 Add `RestoreConditionDetector` Interface
+
+**File**: `core/src/commonMain/.../navigation/restoration/RestoreConditionDetector.kt`
+
 ```kotlin
-interface NavigationPersistenceStore {
-    suspend fun saveNavigationState(snapshot: NavigationStateSnapshot): Result<Unit>
-    suspend fun loadNavigationState(): Result<NavigationStateSnapshot?>
+/**
+ * Determines whether navigation state should be restored on this launch.
+ *
+ * Restoration fires ONLY for:
+ *   - Configuration changes (rotation, locale, multi-window): Activity recreated with Bundle
+ *   - Process death / crash: Activity recreated with Bundle by the system
+ *
+ * Restoration does NOT fire for:
+ *   - User deliberately swiping app away from recents
+ *   - User pressing back to root and relaunching
+ *   - Fresh install
+ */
+interface RestoreConditionDetector {
+    fun shouldRestoreNavigation(): Boolean
 }
 ```
 
-**Add to Interface**:
-```kotlin
-interface NavigationPersistenceStore {
-    suspend fun saveNavigationState(snapshot: NavigationStateSnapshot): Result<Unit>
-    suspend fun loadNavigationState(): Result<NavigationStateSnapshot?>
-    
-    // NEW: Track clean shutdown
-    suspend fun markCleanShutdown(): Result<Unit>
-    suspend fun hasUncleanShutdown(): Result<Boolean>
-    suspend fun clearCrashIndicator(): Result<Unit>
-}
-```
+---
 
-**Android Implementation** (`androidApp/.../persistence/AndroidNavigationStore.kt`):
+### 1.2 Android Implementation
+
+**How Android signals "restore vs. fresh":**
+
+Android passes a non-null `savedInstanceState` Bundle to `Activity.onCreate` **only** when the Activity is being recreated (configuration change or process death). A cold start always receives `null`. This is identical to how `NavController` decides whether to restore its back-stack.
+
+**File**: `androidApp/.../navigation/AndroidRestoreConditionDetector.kt`
+
 ```kotlin
-class AndroidNavigationStore(
-    private val dataStore: DataStore<Preferences>
-) : NavigationPersistenceStore {
-    
+class AndroidRestoreConditionDetector(
+    private val savedInstanceState: Bundle?
+) : RestoreConditionDetector {
+
+    override fun shouldRestoreNavigation(): Boolean =
+        savedInstanceState?.getBoolean(KEY_RESTORE_NAV, false) ?: false
+
     companion object {
-        private val CLEAN_SHUTDOWN_KEY = booleanPreferencesKey("nav_clean_shutdown")
-    }
-    
-    override suspend fun markCleanShutdown(): Result<Unit> = runCatching {
-        dataStore.edit { prefs ->
-            prefs[CLEAN_SHUTDOWN_KEY] = true
-        }
-    }
-    
-    override suspend fun hasUncleanShutdown(): Result<Boolean> = runCatching {
-        dataStore.data.first().let { prefs ->
-            !(prefs[CLEAN_SHUTDOWN_KEY] ?: false)
-        }
-    }
-    
-    override suspend fun clearCrashIndicator(): Result<Unit> = runCatching {
-        dataStore.edit { prefs ->
-            prefs[CLEAN_SHUTDOWN_KEY] = false
-        }
+        const val KEY_RESTORE_NAV = "nav_restore_requested"
     }
 }
 ```
 
-**iOS Implementation** (`core/src/iosMain/.../persistence/IosUserDefaultsPersistence.kt`):
+**File**: `androidApp/.../MainActivity.kt`
+
 ```kotlin
-class IosUserDefaultsPersistence : NavigationPersistenceStore {
-    
-    private val userDefaults = NSUserDefaults.standardUserDefaults
-    private val CLEAN_SHUTDOWN_KEY = "nav_clean_shutdown"
-    
-    override suspend fun markCleanShutdown(): Result<Unit> = runCatching {
-        userDefaults.setBool(true, CLEAN_SHUTDOWN_KEY)
-        userDefaults.synchronize()
+class MainActivity : ComponentActivity() {
+
+    private lateinit var coordinator: AppCoordinator
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        val detector = AndroidRestoreConditionDetector(savedInstanceState)
+        coordinator = AppCoordinator(/* ... */)
+
+        lifecycleScope.launch {
+            coordinator.initializeNavigation(restoreConditionDetector = detector)
+        }
+
+        setContent { AppNavigation(coordinator) }
     }
-    
-    override suspend fun hasUncleanShutdown(): Result<Boolean> = runCatching {
-        !userDefaults.boolForKey(CLEAN_SHUTDOWN_KEY)
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        // Write the restore marker. The system will deliver this Bundle back
+        // after a config change or process death — but NOT after a clean exit.
+        outState.putBoolean(AndroidRestoreConditionDetector.KEY_RESTORE_NAV, true)
     }
-    
-    override suspend fun clearCrashIndicator(): Result<Unit> = runCatching {
-        userDefaults.removeObjectForKey(CLEAN_SHUTDOWN_KEY)
-        userDefaults.synchronize()
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // When the user deliberately dismisses the app, clear the snapshot
+        // so the next cold start is a fresh launch.
+        if (isFinishing && !isChangingConfigurations) {
+            lifecycleScope.launch {
+                coordinator.clearPersistedNavigationState()
+            }
+        }
     }
 }
 ```
 
-**Update NavigationStateRestorer**:
+> **Why `onDestroy` and not `onStop`?**  
+> `onStop` fires even when the app is backgrounded normally; the process might still be alive. `onDestroy` with `isFinishing == true` is the reliable signal that the Activity stack is being torn down by the user.
+
+---
+
+### 1.3 iOS Implementation
+
+iOS has no equivalent of `savedInstanceState`. The closest reliable signal is:
+
+- **`applicationWillTerminate`** is called when the user force-quits from the app switcher. We write a "clean exit" flag and clear it on the next launch.
+- If `applicationWillTerminate` was **not** called (OS killed silently, crash), the flag is absent → restore.
+
+**File**: `core/src/iosMain/.../navigation/IosRestoreConditionDetector.kt`
+
+```kotlin
+class IosRestoreConditionDetector(
+    private val persistenceStore: NavigationPersistenceStore
+) : RestoreConditionDetector {
+
+    override fun shouldRestoreNavigation(): Boolean {
+        val hadCleanExit = persistenceStore.hasCleanExitFlag()
+        // Consume the flag so it doesn't influence a second restart
+        persistenceStore.clearCleanExitFlag()
+        return !hadCleanExit
+    }
+}
+```
+
+**File**: `iosApp/.../AppDelegate.swift` (or bridged Kotlin equivalent)
+
+```swift
+func applicationWillTerminate(_ application: UIApplication) {
+    // User explicitly killed the app — mark clean exit
+    coordinator.onApplicationWillTerminate()
+}
+```
+
+```kotlin
+// Kotlin side (called from Swift bridge)
+fun onApplicationWillTerminate() {
+    persistenceStore.markCleanExit()
+}
+```
+
+**Add to `NavigationPersistenceStore` interface**:
+```kotlin
+interface NavigationPersistenceStore {
+    // ... existing methods ...
+
+    fun hasCleanExitFlag(): Boolean
+    fun markCleanExit()
+    fun clearCleanExitFlag()
+}
+```
+
+---
+
+### 1.4 Update `NavigationStateRestorer`
+
+**File**: `core/src/commonMain/.../navigation/restoration/NavigationStateRestorer.kt`
+
 ```kotlin
 class NavigationStateRestorer(
     private val persistenceStore: NavigationPersistenceStore
 ) {
 
-    suspend fun restoreNavigationState(): NavigationState {
+    suspend fun restoreNavigationState(
+        detector: RestoreConditionDetector
+    ): NavigationState {
+        // Gate: only restore when crash or config-change demands it
+        if (!detector.shouldRestoreNavigation()) {
+            logInfo(TAG, "Clean start — skipping restoration")
+            return createDefaultNavigationState()
+        }
+
         return try {
-            // Check if we're recovering from a crash
-            val hadCrash = persistenceStore.hasUncleanShutdown()
-                .getOrElse { false }
-            
             val result = persistenceStore.loadNavigationState()
-            if (result.isSuccess) {
-                val snapshot = result.getOrNull()
-                when {
-                    snapshot == null -> {
-                        logInfo("NavigationStateRestorer", "No persisted state found")
-                        createDefaultNavigationState()
-                    }
-                    isValidSnapshot(snapshot) -> {
-                        logInfo("NavigationStateRestorer", "Restored state (crash=$hadCrash)")
-                        val restoredState = snapshot.toNavigationState()
-                        
-                        // Add crash metadata
-                        if (hadCrash) {
-                            persistenceStore.clearCrashIndicator()
-                        }
-                        
-                        restoredState
-                    }
-                    else -> {
-                        logInfo("NavigationStateRestorer", "Snapshot invalid, using default")
-                        createDefaultNavigationState()
-                    }
+
+            when {
+                result.isFailure -> {
+                    logError(TAG, "Load failed: ${result.exceptionOrNull()?.message}")
+                    createDefaultNavigationState()
                 }
-            } else {
-                logError("NavigationStateRestorer", 
-                    "Failed to load: ${result.exceptionOrNull()?.message}")
-                createDefaultNavigationState()
+
+                result.getOrNull() == null -> {
+                    logInfo(TAG, "No persisted state — using default")
+                    createDefaultNavigationState()
+                }
+
+                !isValidSnapshot(result.getOrNull()!!) -> {
+                    logInfo(TAG, "Snapshot invalid — using default")
+                    createDefaultNavigationState()
+                }
+
+                else -> {
+                    val snapshot = result.getOrNull()!!
+                    logInfo(TAG, "Restoring navigation state (timestamp=${snapshot.restorationTimestamp})")
+                    snapshot.toNavigationState()
+                }
             }
         } catch (e: Exception) {
-            logError("NavigationStateRestorer", 
-                "Unexpected error: ${e.message}")
+            logError(TAG, "Unexpected error during restoration: ${e.message}")
             createDefaultNavigationState()
         }
     }
@@ -140,476 +217,202 @@ class NavigationStateRestorer(
             tabNav.tabDefinitions.any { it.id == tabNav.activeTabId } &&
             tabNav.stacksByTab.values.all { it.isNotEmpty() }
     }
+
+    companion object {
+        private const val TAG = "NavigationStateRestorer"
+    }
 }
 ```
 
-**Usage in AppCoordinator**:
+**Update `AppCoordinator`**:
 ```kotlin
-// On app lifecycle ready
-suspend fun onAppInitialized() {
+suspend fun initializeNavigation(restoreConditionDetector: RestoreConditionDetector) {
     val restorer = NavigationStateRestorer(persistenceStore)
-    val restoredState = restorer.restoreNavigationState()
-    applyNavigationState(restoredState)
+    val state = restorer.restoreNavigationState(restoreConditionDetector)
+    applyNavigationState(state)
 }
 
-// On app going to background (Android, iOS app delegate)
-suspend fun onAppGoingToBackground() {
-    persistenceStore?.markCleanShutdown()
+suspend fun clearPersistedNavigationState() {
+    persistenceStore.clearNavigationState()
 }
 ```
 
 ---
 
-### 2. Add Modal Restoration Test
+### 1.5 Add Modal Restoration Tests (Both Paths)
 
-**File**: `core/src/commonTest/.../navigation/ModalRestorationTest.kt`
+**File**: `core/src/commonTest/.../navigation/NavigationRestorationTest.kt`
 
 ```kotlin
-class ModalRestorationTest {
-    
-    private lateinit var persistenceStore: NavigationPersistenceStore
+class NavigationRestorationTest {
+
+    private lateinit var store: FakeNavigationPersistenceStore
     private lateinit var restorer: NavigationStateRestorer
-    
-    @Before
+
+    @BeforeTest
     fun setup() {
-        // Use in-memory test store
-        persistenceStore = InMemoryNavigationPersistenceStore()
-        restorer = NavigationStateRestorer(persistenceStore)
+        store = FakeNavigationPersistenceStore()
+        restorer = NavigationStateRestorer(store)
     }
-    
+
+    // ── Crash path ────────────────────────────────────────────────────────────
+
     @Test
-    fun testModalStackRestoredAfterCrash() {
-        // 1. Create state with modal stack
-        val restaurantListRoute = RestaurantListRoute()
-        val filterModalRoute = FilterModalRoute(preSelectedFilters = listOf("vegan"))
-        
-        val originalState = NavigationState(
-            tabNavigation = TabNavigationState(
-                tabDefinitions = listOf(
-                    TabDefinition(
-                        id = "restaurants",
-                        label = "Restaurants",
-                        icon = IconId.Restaurant,
-                        rootRoute = restaurantListRoute
-                    )
-                ),
-                activeTabId = "restaurants",
-                stacksByTab = mapOf("restaurants" to listOf(restaurantListRoute)),
-                navigationDirection = NavigationDirection.Forward
-            ),
-            modalStack = listOf(filterModalRoute)
-        )
-        
-        // 2. Save state (simulate app session)
-        val snapshot = originalState.toSnapshot(restoredFromCrash = false)
-        persistenceStore.saveNavigationState(snapshot)
-        
-        // 3. Mark as unclean shutdown (simulate crash)
-        persistenceStore.hasUncleanShutdown() // Returns true
-        
-        // 4. Restore state (simulate app restart)
-        val restoredState = restorer.restoreNavigationState()
-        
-        // 5. Assertions
-        assertEquals(originalState.modalStack.size, restoredState.modalStack.size)
-        assertEquals(1, restoredState.modalStack.size)
-        
-        val restoredModal = restoredState.modalStack[0]
-        assertTrue(restoredModal is FilterModalRoute)
-        assertEquals(
-            (restoredModal as FilterModalRoute).preSelectedFilters,
-            listOf("vegan")
-        )
+    fun testStateRestoredAfterCrash() = runTest {
+        store.saveNavigationState(stateWithModal().toSnapshot())
+        // No markCleanExit() — simulates crash or OS kill
+
+        val detector = IosRestoreConditionDetector(store)
+        val restored = restorer.restoreNavigationState(detector)
+
+        assertEquals(1, restored.modalStack.size)
+        assertTrue(restored.modalStack[0] is FilterModalRoute)
     }
-    
+
     @Test
-    fun testMultipleModalsRestoredInOrder() {
-        // Create state with multiple modals stacked
-        val filters = FilterModalRoute(listOf("vegetarian"))
-        val confirmDialog = ConfirmActionModalRoute(
-            message = "Delete restaurant?",
-            confirmText = "Delete",
-            cancelText = "Cancel"
-        )
-        
+    fun testStateRestoredAfterConfigChange() = runTest {
+        store.saveNavigationState(stateWithModal().toSnapshot())
+
+        // Android config-change: savedInstanceState Bundle is present
+        val bundle = Bundle().apply {
+            putBoolean(AndroidRestoreConditionDetector.KEY_RESTORE_NAV, true)
+        }
+        val detector = AndroidRestoreConditionDetector(bundle)
+        val restored = restorer.restoreNavigationState(detector)
+
+        assertEquals(1, restored.modalStack.size)
+    }
+
+    // ── Clean-exit path ───────────────────────────────────────────────────────
+
+    @Test
+    fun testNoRestorationAfterCleanExit_iOS() = runTest {
+        store.saveNavigationState(stateWithModal().toSnapshot())
+        store.markCleanExit()  // Simulates applicationWillTerminate
+
+        val detector = IosRestoreConditionDetector(store)
+        val restored = restorer.restoreNavigationState(detector)
+
+        assertEquals(0, restored.modalStack.size)  // Fresh start
+    }
+
+    @Test
+    fun testNoRestorationAfterCleanExit_Android() = runTest {
+        store.saveNavigationState(stateWithModal().toSnapshot())
+
+        // Android cold start: savedInstanceState is null
+        val detector = AndroidRestoreConditionDetector(savedInstanceState = null)
+        val restored = restorer.restoreNavigationState(detector)
+
+        assertEquals(0, restored.modalStack.size)  // Fresh start
+    }
+
+    @Test
+    fun testCleanExitFlagConsumedOnNextLaunch() = runTest {
+        store.markCleanExit()
+
+        val detector = IosRestoreConditionDetector(store)
+        detector.shouldRestoreNavigation()  // First call consumes the flag
+
+        // Second launch without a new markCleanExit() → treated as crash → restore
+        assertTrue(detector.shouldRestoreNavigation())
+    }
+
+    // ── Modal ordering ────────────────────────────────────────────────────────
+
+    @Test
+    fun testMultipleModalsRestoredInOrder() = runTest {
         val state = NavigationState(
-            tabNavigation = TabNavigationState(
-                tabDefinitions = listOf(/* ... */),
-                activeTabId = "restaurants",
-                stacksByTab = mapOf(/* ... */),
-                navigationDirection = NavigationDirection.Forward
-            ),
-            modalStack = listOf(filters, confirmDialog)
+            tabNavigation = defaultTabState(),
+            modalStack = listOf(
+                FilterModalRoute(listOf("vegetarian")),
+                ConfirmActionModalRoute("Delete?", "Yes", "No")
+            )
         )
-        
-        // Save and restore
-        val snapshot = state.toSnapshot()
-        persistenceStore.saveNavigationState(snapshot)
-        val restored = restorer.restoreNavigationState()
-        
-        // Assert order is preserved (FIFO)
+        store.saveNavigationState(state.toSnapshot())
+
+        val bundle = Bundle().apply {
+            putBoolean(AndroidRestoreConditionDetector.KEY_RESTORE_NAV, true)
+        }
+        val restored = restorer.restoreNavigationState(AndroidRestoreConditionDetector(bundle))
+
         assertEquals(2, restored.modalStack.size)
         assertTrue(restored.modalStack[0] is FilterModalRoute)
         assertTrue(restored.modalStack[1] is ConfirmActionModalRoute)
     }
-    
-    @Test
-    fun testModalRestorationWithTabStack() {
-        // Ensure modals are restored independently of tab stack
-        val tabStack = listOf(
-            RestaurantListRoute(),
-            RestaurantDetailRoute(restaurantId = "123")
-        )
-        
-        val modal = SubmitReviewModalRoute(restaurantId = "123")
-        
-        val state = NavigationState(
-            tabNavigation = TabNavigationState(
-                tabDefinitions = listOf(/* ... */),
-                activeTabId = "restaurants",
-                stacksByTab = mapOf("restaurants" to tabStack),
-                navigationDirection = NavigationDirection.Forward
-            ),
-            modalStack = listOf(modal)
-        )
-        
-        // Save and restore
-        persistenceStore.saveNavigationState(state.toSnapshot())
-        val restored = restorer.restoreNavigationState()
-        
-        // Both tab stack and modal should be restored
-        assertEquals(2, restored.currentStack.size)
-        assertEquals(1, restored.modalStack.size)
-        assertTrue(restored.topModal is SubmitReviewModalRoute)
-    }
 }
 
-/**
- * In-memory implementation for testing
- */
-class InMemoryNavigationPersistenceStore : NavigationPersistenceStore {
-    
+// ── Test double ──────────────────────────────────────────────────────────────
+
+class FakeNavigationPersistenceStore : NavigationPersistenceStore {
+
     private var snapshot: NavigationStateSnapshot? = null
-    private var isUnclean = false
-    
-    override suspend fun saveNavigationState(
-        snapshot: NavigationStateSnapshot
-    ) = Result.success(Unit.also {
-        this.snapshot = snapshot
-        isUnclean = true  // Assume crash until markCleanShutdown() called
-    })
-    
-    override suspend fun loadNavigationState() = 
+    private var cleanExitFlag = false
+
+    override suspend fun saveNavigationState(snapshot: NavigationStateSnapshot) =
+        Result.success(Unit.also { this.snapshot = snapshot })
+
+    override suspend fun loadNavigationState() =
         Result.success(snapshot)
-    
-    override suspend fun clearNavigationState() = 
+
+    override suspend fun clearNavigationState() =
         Result.success(Unit.also { snapshot = null })
-    
-    override suspend fun hasPersistedState() = 
+
+    override suspend fun hasPersistedState() =
         Result.success(snapshot != null)
-    
-    override suspend fun markCleanShutdown() = 
-        Result.success(Unit.also { isUnclean = false })
-    
-    override suspend fun hasUncleanShutdown() = 
-        Result.success(isUnclean)
-    
-    override suspend fun clearCrashIndicator() = 
-        Result.success(Unit.also { isUnclean = false })
+
+    override fun hasCleanExitFlag() = cleanExitFlag
+    override fun markCleanExit() { cleanExitFlag = true }
+    override fun clearCleanExitFlag() { cleanExitFlag = false }
 }
 ```
 
 ---
 
-### 3. Document Deep Link State Application Strategy
+## Priority 2: Robustness Improvements
 
-**File**: `core/src/commonMain/.../navigation/DeepLinkStrategy.kt`
+### 2.1 Persistence Ordering with Channel
+
+Prevents a rapid-navigation scenario where an older state is persisted last.
 
 ```kotlin
-/**
- * Strategy for applying deep link navigation states.
- *
- * When a deep link arrives, we must decide:
- * 1. Should we clear existing navigation stack?
- * 2. Should we navigate within current tab or switch tabs?
- * 3. What happens to modals?
- */
-sealed class DeepLinkApplicationStrategy {
-    
-    /**
-     * FULL_REPLACE: Clear entire app navigation, start fresh from deep link
-     *
-     * Use case: External deep links (push notifications, browser links)
-     * Behavior: All tabs reset, active tab determined by deep link
-     * Modals: Dismissed
-     *
-     * Example: Notification tap while browsing → Go to detail screen
-     */
-    object FullReplace : DeepLinkApplicationStrategy()
-    
-    /**
-     * PRESERVE_TAB: Keep current active tab stack, but apply deep link within tab
-     *
-     * Use case: App-to-app deep links during active session
-     * Behavior: Current tab stack preserved, new route appended to active tab
-     * Modals: Dismissed (new navigation takes precedence)
-     *
-     * Example: Deep link to restaurant detail while on restaurants tab
-     *         → Append detail to existing tab stack, user can navigate back
-     */
-    object PreserveTabStack : DeepLinkApplicationStrategy()
-    
-    /**
-     * APPEND_TO_TAB: Append deep link destination to current tab stack
-     *
-     * Use case: Contextual deep links within current session
-     * Behavior: Switch to linked tab, append route to that tab's stack
-     * Modals: Dismissed
-     *
-     * Example: Link to another tab's route → Switch to that tab, user can navigate back
-     */
-    object AppendToTab : DeepLinkApplicationStrategy()
-    
-    /**
-     * MODAL_OVERLAY: Show deep link as modal on top of current state
-     *
-     * Use case: Modal deep links (e.g., deep link to a dialog)
-     * Behavior: Current navigation untouched, route shown as modal
-     * Modals: Stacked on top
-     *
-     * Example: Deep link to feedback form → Show as modal, user can dismiss
-     */
-    object ModalOverlay : DeepLinkApplicationStrategy()
-}
+// In AppCoordinator
+private val persistenceQueue = Channel<NavigationState>(capacity = Channel.CONFLATED)
 
-/**
- * Deep link result with strategy metadata
- */
-data class DeepLinkResult(
-    val navigationState: NavigationState,
-    val strategy: DeepLinkApplicationStrategy,
-    val isValid: Boolean = true,
-    val error: String? = null
-)
-
-/**
- * Base interface for deep link handlers with strategy support
- */
-interface DeepLinkHandler {
-    
-    fun canHandle(deepLink: String): Boolean
-    
-    /**
-     * Parse deep link with explicit strategy
-     */
-    fun parseDeepLink(deepLink: String): DeepLinkResult
-    
-    // Default: Use FullReplace (safest for external links)
-}
-```
-
-**Update AppCoordinator to use strategy**:
-```kotlin
-open class AppCoordinator(
-    // ... existing params
-) {
-    
-    fun applyDeepLink(deepLink: String) {
-        val parser = DeepLinkParser(routeHandlers.filterIsInstance<DeepLinkHandler>())
-        val result = parser.parse(deepLink)
-        
-        if (!result.isValid) {
-            logInfo("AppCoordinator", "Deep link invalid: $deepLink")
-            return
+init {
+    persistenceScope.launch {
+        for (state in persistenceQueue) {
+            persistenceStore.saveNavigationState(state.toSnapshot())
+                .onFailure { logError(TAG, "Persistence failed: ${it.message}") }
         }
-        
-        val currentState = _navigationState.value
-        val newState = when (result.strategy) {
-            DeepLinkApplicationStrategy.FullReplace -> {
-                // Completely replace navigation
-                result.navigationState.copy(modalStack = emptyList())
-            }
-            DeepLinkApplicationStrategy.PreserveTabStack -> {
-                // Keep current tab stack, switch tab if needed
-                val currentTabStack = currentState.tabNavigation.getActiveTabStack()
-                result.navigationState.copy(
-                    tabNavigation = result.navigationState.tabNavigation.copy(
-                        stacksByTab = result.navigationState.tabNavigation.stacksByTab.toMutableMap().apply {
-                            this[currentState.tabNavigation.activeTabId] = currentTabStack
-                        }
-                    ),
-                    modalStack = emptyList()
-                )
-            }
-            DeepLinkApplicationStrategy.AppendToTab -> {
-                // Append to target tab's existing stack
-                val targetTabId = result.navigationState.tabNavigation.activeTabId
-                val targetStack = result.navigationState.tabNavigation.stacksByTab[targetTabId] ?: emptyList()
-                val currentTabStack = currentState.tabNavigation.getActiveTabStack()
-                
-                result.navigationState.copy(
-                    tabNavigation = result.navigationState.tabNavigation.copy(
-                        stacksByTab = result.navigationState.tabNavigation.stacksByTab.toMutableMap().apply {
-                            this[targetTabId] = currentTabStack + targetStack
-                        }
-                    ),
-                    modalStack = emptyList()
-                )
-            }
-            DeepLinkApplicationStrategy.ModalOverlay -> {
-                // Show as modal on top of current state
-                currentState.copy(
-                    modalStack = currentState.modalStack + 
-                        result.navigationState.modalStack
-                )
-            }
-        }
-        
-        logInfo("AppCoordinator", "Applying deep link with ${result.strategy::class.simpleName}")
-        applyNavigationState(newState, clearCurrentStack = false)
     }
 }
+
+// In reduceState()
+persistenceQueue.trySend(newState)  // Latest state always wins
 ```
+
+`Channel.CONFLATED` drops older values automatically — only the latest state is written.
 
 ---
 
-### 4. Add Stack Size Monitoring
-
-**File**: `core/src/commonMain/.../navigation/NavigationStateExtensions.kt`
+### 2.2 Stack Depth Monitoring
 
 ```kotlin
-/**
- * Extensions for monitoring navigation state metrics
- */
-
 object NavigationMetrics {
     const val MAX_SAFE_STACK_DEPTH = 20
     const val WARN_STACK_DEPTH = 15
 }
 
-fun NavigationState.currentStackDepth(): Int {
-    return tabNavigation.stacksByTab.values
-        .maxOrNull()?.size ?: 0
-}
+fun NavigationState.maxStackDepth(): Int =
+    tabNavigation.stacksByTab.values.maxOfOrNull { it.size } ?: 0
 
-fun NavigationState.maxStackDepthPerTab(): Map<String, Int> {
-    return tabNavigation.stacksByTab.mapValues { it.value.size }
-}
-
-fun NavigationState.totalRoutesInState(): Int {
-    return tabNavigation.stacksByTab.values.sumOf { it.size } + modalStack.size
-}
-
-fun NavigationState.toMetricsString(): String {
-    return buildString {
-        appendLine("=== Navigation Metrics ===")
-        appendLine("Total depth: ${currentStackDepth()}")
-        appendLine("Total routes: ${totalRoutesInState()}")
-        appendLine("Modal count: ${modalStack.size}")
-        appendLine("\nPer-tab breakdown:")
-        maxStackDepthPerTab().forEach { (tabId, depth) ->
-            val icon = if (depth > NavigationMetrics.WARN_STACK_DEPTH) "⚠️" else "✓"
-            appendLine("$icon Tab '$tabId': $depth routes")
-        }
-    }
-}
-
-/**
- * In AppCoordinator.reduceState()
- */
-open fun reduceState(event: NavigationEvent) {
-    val currentState = _navigationState.value
-    val newState = NavigationReducer.reduce(currentState, event, routeHandlers)
-    
-    // Check stack depth
-    val depth = newState.currentStackDepth()
-    when {
-        depth > NavigationMetrics.MAX_SAFE_STACK_DEPTH -> {
-            logError(
-                "AppCoordinator",
-                "⚠️ Stack depth CRITICAL: $depth (max=${NavigationMetrics.MAX_SAFE_STACK_DEPTH})\n${newState.toMetricsString()}"
-            )
-            // Optionally: Auto-pop to reasonable depth
-        }
-        depth > NavigationMetrics.WARN_STACK_DEPTH -> {
-            logInfo(
-                "AppCoordinator",
-                "⚠️ Stack depth elevated: $depth\n${newState.toMetricsString()}"
-            )
-        }
-    }
-    
-    // ... rest of reduction logic
-}
-```
-
----
-
-## Testing All Improvements
-
-**File**: `core/src/commonTest/.../navigation/Priority1ImprovementsTest.kt`
-
-```kotlin
-class Priority1ImprovementsTest {
-    
-    private lateinit var persistenceStore: NavigationPersistenceStore
-    private lateinit var coordinator: AppCoordinator
-    
-    @Before
-    fun setup() {
-        persistenceStore = InMemoryNavigationPersistenceStore()
-        coordinator = AppCoordinator(persistenceStore = persistenceStore)
-    }
-    
-    @Test
-    fun testCrashRecoveryFullWorkflow() {
-        // 1. Navigate to detail screen
-        coordinator.navigateToScreen(Destination.RestaurantDetail("123"))
-        
-        // 2. Show filter modal
-        coordinator.showFilterModal(listOf("vegan"))
-        
-        // 3. Simulate mark clean shutdown (graceful)
-        runBlocking {
-            persistenceStore.markCleanShutdown()
-        }
-        
-        // 4. Simulate app restart - load persisted state
-        val restorer = NavigationStateRestorer(persistenceStore)
-        val restoredState = runBlocking { restorer.restoreNavigationState() }
-        
-        // 5. Apply restored state
-        coordinator.applyNavigationState(restoredState)
-        
-        // 6. Verify state matches
-        val currentState = coordinator.getCurrentState()
-        assertEquals(1, currentState.currentStack.size)  // Has detail route
-        assertEquals(1, currentState.modalStack.size)    // Has filter modal
-    }
-    
-    @Test
-    fun testStackMonitoringWarnings() {
-        // Manually create state with deep stack
-        val deepStack = (0..25).map { i ->
-            RestaurantDetailRoute("$i")
-        }
-        
-        val state = NavigationState(
-            tabNavigation = TabNavigationState(
-                tabDefinitions = listOf(/* ... */),
-                activeTabId = "restaurants",
-                stacksByTab = mapOf("restaurants" to deepStack),
-                navigationDirection = NavigationDirection.Forward
-            )
-        )
-        
-        // Check metrics
-        assertEquals(25, state.currentStackDepth())
-        assertTrue(state.currentStackDepth() > NavigationMetrics.WARN_STACK_DEPTH)
-        
-        val metrics = state.toMetricsString()
-        assertTrue(metrics.contains("⚠️"))
-    }
+// In AppCoordinator.reduceState()
+val depth = newState.maxStackDepth()
+if (depth > NavigationMetrics.MAX_SAFE_STACK_DEPTH) {
+    logError(TAG, "Navigation stack depth CRITICAL: $depth")
+} else if (depth > NavigationMetrics.WARN_STACK_DEPTH) {
+    logInfo(TAG, "Navigation stack depth elevated: $depth")
 }
 ```
 
@@ -617,43 +420,55 @@ class Priority1ImprovementsTest {
 
 ## Rollout Checklist
 
-- [ ] Implement all Priority 1 items
-- [ ] Add comprehensive tests
-- [ ] Run test suite to ensure no regressions
-- [ ] Update documentation
-- [ ] Code review
-- [ ] Merge to main
-- [ ] Deploy to staging
-- [ ] Monitor crash reports for improvement
-- [ ] Plan Phase 2 improvements
+- [ ] Add `RestoreConditionDetector` interface to common module
+- [ ] Implement `AndroidRestoreConditionDetector`
+- [ ] Implement `IosRestoreConditionDetector`
+- [ ] Add `hasCleanExitFlag / markCleanExit / clearCleanExitFlag` to `NavigationPersistenceStore`
+- [ ] Update `MainActivity.onSaveInstanceState` and `onDestroy`
+- [ ] Bridge `applicationWillTerminate` on iOS
+- [ ] Update `NavigationStateRestorer` to accept `RestoreConditionDetector`
+- [ ] Update `AppCoordinator.initializeNavigation` to pass detector
+- [ ] Add `clearPersistedNavigationState()` to `AppCoordinator`
+- [ ] Write tests for crash path (restore) and clean-exit path (no restore)
+- [ ] Run full test suite — no regressions
+- [ ] Code review + merge
+- [ ] Deploy to staging, verify manually:
+  - [ ] Rotate device → state preserved ✅
+  - [ ] Kill from recents → fresh launch ✅
+  - [ ] Force-stop via adb → state restored on relaunch ✅
 
 ---
 
 ## Common Issues & Solutions
 
-### Issue: Crash indicator not being set on Android
+### Issue: State still restored after user swipes from recents (Android)
 
-**Problem**: App crashes before `markCleanShutdown()` is called
+**Check**: Is `onDestroy` being called with `isFinishing == true`?  
+Some OEM launchers delay or skip `onDestroy`. Use `ProcessLifecycleOwner` as a fallback:
 
-**Solution**: Use app process death listener:
 ```kotlin
-class CrashHandler : Thread.UncaughtExceptionHandler {
-    override fun uncaughtException(t: Thread, e: Throwable) {
-        // Don't call markCleanShutdown()
-        // Leave crash indicator set
-        defaultHandler.uncaughtException(t, e)
+ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
+    override fun onStop(owner: LifecycleOwner) {
+        if (activity.isFinishing) {
+            // Fallback clear
+            lifecycleScope.launch { coordinator.clearPersistedNavigationState() }
+        }
     }
-}
+})
 ```
+
+### Issue: iOS not calling `applicationWillTerminate` reliably
+
+**Note**: `applicationWillTerminate` is only called when the app is in the foreground or recently suspended. Apps suspended for a long time are killed silently. This is the **correct** behaviour for our model — silent kill = potential crash = restore.
 
 ### Issue: Modal doesn't restore on iOS
 
-**Problem**: Modal routing isn't exported to Swift
-
-**Solution**: Add to `NavigationExports.ios.kt`:
+Ensure modal route types are exported to Swift in `NavigationExports.ios.kt`:
 ```kotlin
 fun _exportModalRoutesForSwift() {
-    // Force include in Swift framework
+    // Forces Swift linker to include modal route classes
+    FilterModalRoute::class
+    ConfirmActionModalRoute::class
 }
 ```
 
@@ -661,8 +476,7 @@ fun _exportModalRoutesForSwift() {
 
 ## Next Steps
 
-1. Implement these 4 Priority 1 improvements
-2. Gather feedback from team
-3. Move to Phase 2 (history limits, navigation IDs)
-4. Create runbooks for crash debugging
-
+1. Implement Priority 1 items (restoration gate + cleanup)
+2. Gather feedback from QA: test both paths manually on device
+3. Move to Priority 2 (persistence ordering, history limits)
+4. Create runbooks for diagnosing unexpected restoration or non-restoration

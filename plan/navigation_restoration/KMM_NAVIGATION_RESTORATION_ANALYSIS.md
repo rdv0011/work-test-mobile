@@ -1,15 +1,21 @@
 # KMM Navigation Restoration Without Native Navigation Controller
 
 **Document**: Navigation Architecture Analysis & Improvement Plan  
-**Date**: May 18, 2026  
+**Date**: May 19, 2026  
 **Project**: Umain Munchies Mobile (KMM)  
-**Status**: Analysis Complete
+**Status**: Revised — Crash/Config-Change-Only Restoration
 
 ---
 
 ## Executive Summary
 
-Kotlin Multiplatform Mobile (KMM) provides no native navigation controller. The current implementation successfully **manually mimics native navigation controller behavior** through a Redux-based state management pattern. This document analyzes the current architecture, identifies strengths/gaps, and proposes improvements.
+Kotlin Multiplatform Mobile (KMM) provides no native navigation controller. The current implementation successfully **manually mimics native navigation controller behavior** through a Redux-based state management pattern.
+
+This revision aligns the restoration strategy with **native Android `NavController` semantics**:
+
+> **Navigation state is restored ONLY when the process is killed unexpectedly (crash / OS-initiated kill) or a configuration change (rotation, locale, multi-window) triggers Activity recreation. Normal user-initiated exits clear the saved state.**
+
+This is the contract Android's back-stack and `SavedStateHandle` honour by default and what users expect.
 
 ### Current State: ✅ Solid Foundation
 - Redux-based navigation state management
@@ -19,12 +25,15 @@ Kotlin Multiplatform Mobile (KMM) provides no native navigation controller. The 
 - State persistence mechanism
 - Platform-specific scope lifecycle management (Koin)
 
-### Key Challenges
-- State restoration edge cases during crashes
-- Complex navigation state serialization
-- Deep link state reconstruction
-- Modal stack restoration completeness
-- Platform-specific lifecycle synchronization
+### Key Change from Previous Version
+The old design **always** restored navigation state on every app launch. The revised design introduces **restoration conditions** — restoration only fires when one of these triggers is detected:
+
+| Trigger | Restore? | Rationale |
+|---------|----------|-----------|
+| Process crash / OS kill | ✅ Yes | User lost context involuntarily |
+| Configuration change (rotation, locale) | ✅ Yes | Same user session, UI reborn |
+| Normal user exit (home button, swipe away) | ❌ No | User intentionally left; start fresh |
+| Fresh install / first launch | ❌ No | No prior state |
 
 ---
 
@@ -33,11 +42,12 @@ Kotlin Multiplatform Mobile (KMM) provides no native navigation controller. The 
 1. [Architecture Overview](#architecture-overview)
 2. [How Navigation is Currently Managed](#how-navigation-is-currently-managed)
 3. [State Restoration Mechanism](#state-restoration-mechanism)
-4. [Platform-Specific Implementation](#platform-specific-implementation)
-5. [Current Strengths](#current-strengths)
-6. [Identified Gaps & Issues](#identified-gaps--issues)
-7. [Recommended Improvements](#recommended-improvements)
-8. [Implementation Roadmap](#implementation-roadmap)
+4. [Restoration Trigger Detection](#restoration-trigger-detection)
+5. [Platform-Specific Implementation](#platform-specific-implementation)
+6. [Current Strengths](#current-strengths)
+7. [Identified Gaps & Issues](#identified-gaps--issues)
+8. [Recommended Improvements](#recommended-improvements)
+9. [Implementation Roadmap](#implementation-roadmap)
 
 ---
 
@@ -62,7 +72,7 @@ The navigation system follows Redux principles:
 │  ├─ Events Dispatch                                        │
 │  ├─ State Reduction                                        │
 │  ├─ Scope Lifecycle                                        │
-│  └─ Persistence                                            │
+│  └─ Conditional Persistence                                │
 │  ↓                                                          │
 │  NavigationReducer (Pure State Transformation)             │
 │  ├─ Push/Pop/PopToRoot (Screen Navigation)                │
@@ -77,14 +87,14 @@ The navigation system follows Redux principles:
 │  │  └─ Stack per Tab                                       │
 │  └─ Modal Stack                                            │
 │  ↓                                                          │
-│  Persistence Layer                                         │
+│  Persistence Layer (conditional, see below)               │
 │  ├─ Serialization (NavigationStateSnapshot)               │
 │  ├─ Storage (Platform-specific: DataStore/UserDefaults)   │
 │  └─ Restoration (NavigationStateRestorer)                 │
 │  ↓                                                          │
-│  Platform-Specific Effects                                 │
-│  ├─ Koin Scope Lifecycle (Route → Scope)                  │
-│  └─ DeepLink Processing                                    │
+│  RestoreConditionDetector                                  │
+│  ├─ Android: Activity.isFinishing + process death flag    │
+│  └─ iOS: UIApplication termination reason flag            │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -143,12 +153,6 @@ data class TabNavigationState(
 )
 ```
 
-**Why This Structure?**
-- **Tabbed Navigation**: Support modern bottom/top tab UI pattern
-- **Per-Tab Stacks**: Each tab maintains its own navigation history
-- **Modal Overlay**: Modals display independently of tab stacks
-- **Multi-platform**: Both Android (Compose) and iOS (SwiftUI) use same state
-
 ### 3. Scope Lifecycle Management (Koin Integration)
 
 **Problem**: ViewModels must survive configuration changes (rotation, locale change)
@@ -159,46 +163,67 @@ data class TabNavigationState(
 - Scope persists across recompositions (via `remember(scopeId)`)
 - Scope is closed when route exits navigation state
 
-**Implementation**:
-```kotlin
-// When route ENTERS navigation state
-val handler = routeHandlers
-    .filterIsInstance<ScopedRouteHandler>()
-    .firstOrNull { it.canHandle(destination) }
-if (handler != null) {
-    handler.createScope(route)
-}
-
-// When route EXITS navigation state
-NavigationEffects.handleNavigationSideEffects(currentState, newState)
-```
-
-**Platform-Specific Scope Binding** (`NavigationEffects.ios.kt` / AndroidApp):
-- iOS: Wraps Koin scope in `IOSKoinScopeCloseable`
-- Android: Directly accesses Koin scope via `getKoin()`
-
 ---
 
 ## State Restoration Mechanism
 
-### Current Restoration Flow
+### Revised Restoration Contract (Android NavController Semantics)
+
+The restored state should behave exactly like the Android `NavController` back-stack:
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│               Restoration Decision Gate                      │
+│                                                              │
+│  On app startup, BEFORE loading any UI:                      │
+│                                                              │
+│  1. Was the process killed while the user was NOT inside     │
+│     the app (crash / OS memory pressure)?  → RESTORE        │
+│                                                              │
+│  2. Is this Activity recreated due to a configuration        │
+│     change (rotation, locale, dark mode toggle)?  → RESTORE │
+│                                                              │
+│  3. Did the user explicitly dismiss the app                  │
+│     (recent-apps swipe, Finish(), home button tap)?  → SKIP │
+│                                                              │
+│  4. Is this a cold start with no prior session?  → SKIP     │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### Revised Restoration Flow
 
 ```
 1. APP STARTUP
    ↓
-2. NavigationStateRestorer.restoreNavigationState()
+2. RestoreConditionDetector.shouldRestore()
+   ├─ Android: check Activity.isChangingConfigurations OR process-death flag
+   └─ iOS:     check UIApplication.applicationState transition reason
    ↓
-3a. Persistence Store has saved snapshot?
-   ├─ YES → Validate snapshot
+3a. shouldRestore == true?
+   ├─ YES → NavigationStateRestorer.restoreNavigationState()
+   │       ├─ Validate snapshot
    │       ├─ Valid? → Deserialize to NavigationState
    │       └─ Invalid? → Use default state
-   └─ NO → Use default state
+   └─ NO  → NavigationStateRestorer.createDefaultNavigationState()
+            + Clear any stale persisted snapshot
    ↓
-4. Apply restored state to AppCoordinator
+4. Apply resulting state to AppCoordinator
    ↓
-5. Create Koin scopes for all routes in restored state
+5. Create Koin scopes for all routes in state
    ↓
-6. UI renders from restored NavigationState
+6. UI renders from NavigationState
+```
+
+### What Persistence Looks Like Now
+
+State is still saved **after every navigation event** (so crash recovery is always possible).  
+The difference is in the **read path** — restoration is gated, not unconditional.
+
+```
+WRITE path (unchanged):  every NavigationEvent → persist snapshot async
+READ  path (revised):    startup → check condition → restore OR start fresh
+                                                              ↑
+                                             NEW: this gate did not exist before
 ```
 
 ### Snapshot Serialization
@@ -210,7 +235,7 @@ data class NavigationStateSnapshot(
     val tabNavigation: TabNavigationStateSnapshot,
     val modalStack: List<ModalRoute> = emptyList(),
     val originDeepLink: String? = null,
-    val restoredFromCrash: Boolean = false,
+    val restoredFromCrash: Boolean = false,          // set true when restoring after crash
     val restorationTimestamp: Long = 0L
 )
 ```
@@ -220,29 +245,75 @@ data class NavigationStateSnapshot(
 - Snapshots use only serializable primitives
 - `toSnapshot()` / `toNavigationState()` convert bidirectionally
 
-**Serialization Module** (`NavigationSerialization.kt`):
+---
+
+## Restoration Trigger Detection
+
+### Android
+
+On Android, the distinction between crash/config-change and deliberate exit maps directly to Activity lifecycle:
+
+| Scenario | `isFinishing` | `isChangingConfigurations` | Action |
+|----------|---------------|----------------------------|--------|
+| Rotation / locale change | false | **true** | Restore |
+| Process killed by OS (low memory, crash) | — | — (no `onDestroy`) | Restore via saved instance state / flag |
+| User swipes app from recents | **true** | false | Start fresh + clear snapshot |
+| User presses back to root | **true** | false | Start fresh + clear snapshot |
+| Normal home button | false | false | Keep snapshot (may crash later) |
+
+**Implementation strategy for Android**:
+1. Use `Activity.onSaveInstanceState` to write a `RESTORE_REQUESTED = true` marker into the Bundle. This is what `NavController` does internally.
+2. On `Activity.onCreate`, check `savedInstanceState?.getBoolean(RESTORE_REQUESTED)`.
+3. If the Bundle is present → restore. If absent → fresh start.
+4. For **process death** (crash, OS kill): the Bundle is delivered by the system automatically when the process is re-created; the marker is already inside it.
+
 ```kotlin
-val navigationSerializersModule = SerializersModule {
-    polymorphic(Route::class) {
-        subclass(RestaurantListRoute::class)
-        subclass(RestaurantDetailRoute::class)
-        subclass(SettingsRoute::class)
-        // ... all route subclasses
-    }
-    polymorphic(ModalRoute::class) {
-        // ... all modal route subclasses
+// In MainActivity
+private const val KEY_RESTORE_NAV = "nav_restore_requested"
+
+override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    val shouldRestore = savedInstanceState?.getBoolean(KEY_RESTORE_NAV, false) ?: false
+    coordinator.initializeNavigation(restoreState = shouldRestore)
+}
+
+override fun onSaveInstanceState(outState: Bundle) {
+    super.onSaveInstanceState(outState)
+    outState.putBoolean(KEY_RESTORE_NAV, true)
+    // State is already persisted asynchronously on every navigation event
+}
+
+override fun onDestroy() {
+    super.onDestroy()
+    if (isFinishing && !isChangingConfigurations) {
+        // Deliberate exit — clear snapshot so next launch starts fresh
+        lifecycleScope.launch { coordinator.clearPersistedNavigationState() }
     }
 }
 ```
 
-### Validation During Restoration
+### iOS
+
+iOS has no direct equivalent of `isChangingConfigurations`. The closest pattern:
+
+| Scenario | Action |
+|----------|--------|
+| App process terminated by OS / crash | Restore (no `applicationWillTerminate` called) |
+| User force-quits from app switcher | `applicationWillTerminate` IS called → write "clean exit" flag → on next launch, skip restore |
+| Scene disconnected (multi-window dismissed) | `sceneDidDisconnect` called → treat as config change if scene reconnects → restore |
 
 ```kotlin
-private fun isValidSnapshot(snapshot: NavigationStateSnapshot): Boolean {
-    val tabNav = snapshot.tabNavigation
-    return tabNav.tabDefinitions.isNotEmpty() &&              // Has tabs
-        tabNav.tabDefinitions.any { it.id == tabNav.activeTabId } &&  // Active tab exists
-        tabNav.stacksByTab.values.all { it.isNotEmpty() }    // All stacks non-empty
+// In AppDelegate equivalent (Kotlin side bridged to Swift)
+fun onApplicationWillTerminate() {
+    // User explicitly killed the app — clear snapshot
+    persistenceStore.clearNavigationSnapshot()
+}
+
+// On launch without "clean exit" flag → restore (crash or OS kill occurred)
+fun shouldRestoreNavigation(): Boolean {
+    return !persistenceStore.hasCleanExitFlag().also {
+        persistenceStore.clearCleanExitFlag()
+    }
 }
 ```
 
@@ -264,7 +335,7 @@ private fun isValidSnapshot(snapshot: NavigationStateSnapshot): Boolean {
 Test Strategy:
 1. Define route with specific scope ID
 2. Retrieve ViewModel via Koin scope
-3. Trigger recomposition (state change)
+3. Trigger recomposition (state change / rotation)
 4. Retrieve ViewModel again
 5. Assert: Same object reference (ViewModel survived)
 ```
@@ -307,11 +378,11 @@ actual fun getKoinScopeOrNull(scopeId: String): Closeable? {
 ### ✅ 4. Tab Navigation Foundation
 - Per-tab stacks prevent "cross-tab contamination"
 - Tab switching is efficient (just change activeTabId)
-- Stack history preserved per tab (back to previous state)
+- Stack history preserved per tab
 
 ### ✅ 5. Modal Overlay System
-- Independent modal stack (doesn't interfere with screens)
-- Multiple presentation styles (sheet, full-screen, dialog)
+- Independent modal stack
+- Multiple presentation styles
 - Dismissal predicates for conditional modal removal
 
 ### ✅ 6. Scope Lifecycle Integration
@@ -328,17 +399,29 @@ actual fun getKoinScopeOrNull(scopeId: String): Closeable? {
 
 ## Identified Gaps & Issues
 
-### ⚠️ 1. Incomplete Modal Stack Restoration
+### ⚠️ 1. Always-Restoring on Every Launch (CRITICAL — New)
 
-**Issue**: Modal stack is restored but UI may not render it correctly after crash
+**Issue**: Previous design restores state unconditionally on every app launch.
 
-**Scenario**:
-```
-1. App has modal open: RestaurantDetail → RestaurantList → FilterModal
-2. App crashes
-3. App restarts and restores state
-4. Issue: Was FilterModal part of navigation state? Is it restored?
-```
+**Problem**: This violates user expectations. When a user deliberately dismisses the app and relaunches, they expect a fresh start — not their previous session. This is the behaviour both `UINavigationController` (iOS) and `NavController` (Android) implement by default.
+
+**Fix**: Gate restoration on `savedInstanceState` Bundle presence (Android) and the absence of a "clean exit" flag (iOS), as detailed in the [Restoration Trigger Detection](#restoration-trigger-detection) section.
+
+---
+
+### ⚠️ 2. Missing `onDestroy` / `applicationWillTerminate` Cleanup
+
+**Issue**: Saved snapshot is never cleared on deliberate exit.
+
+**Gap**: If the user swipes the app away from recents, the snapshot persists. On next launch, the old design would incorrectly restore it.
+
+**Fix**: In `onDestroy` (when `isFinishing && !isChangingConfigurations`), clear the persisted snapshot. On iOS, clear in `applicationWillTerminate`.
+
+---
+
+### ⚠️ 3. Incomplete Modal Stack Restoration
+
+**Issue**: Modal stack is restored but UI may not render it correctly after crash.
 
 **Current Behavior**:
 - Modal routes are serialized in snapshot
@@ -349,280 +432,172 @@ actual fun getKoinScopeOrNull(scopeId: String): Closeable? {
 
 ---
 
-### ⚠️ 2. Deep Link State Reconstruction with Stack
+### ⚠️ 4. Missing Crash Context Metadata
 
-**Issue**: When deep link arrives with existing stack, what happens?
+**Issue**: `restoredFromCrash` flag exists in snapshot but is never set to `true`.
 
-**Scenario**:
-```
-Deep Link: munchies://restaurants/123 (view restaurant detail)
-
-Option A: Replace entire navigation state
-  Result: User loses current context, can't navigate back
-
-Option B: Append to current stack
-  Result: Navigation history becomes unclear
-
-Current Implementation: Uses `clearCurrentStack` parameter
-  - DeepLinkResult.Success: May clear or preserve
-  - DeepLinkResult.Partial: Clears by default
-  - No explicit strategy for "preserve stack but navigate"
-```
-
-**Gap**: Deep link strategy not documented; behavior unclear
+**Fix**: Set the flag when restoration fires because of an unclean shutdown (no "clean exit" marker found).
 
 ---
 
-### ⚠️ 3. Missing Crash Context Metadata
+### ⚠️ 5. No Navigation History Limits
 
-**Issue**: No way to distinguish normal shutdown from crash
+**Issue**: No maximum stack depth enforcement.
 
-**Scenario**:
-```
-1. User navigates to: RestaurantList → FilterModal (showing modal)
-2. Normal app exit: State is persisted
-3. User force-quits app: State should be persisted but might indicate crash
-
-Current State: restoredFromCrash flag exists but is never set to true
-```
-
-**Gap**: Can't differentiate between clean exit and crash recovery
-
----
-
-### ⚠️ 4. No Navigation History Limits
-
-**Issue**: No maximum stack depth enforcement
-
-**Scenario**:
-```
-User navigates: R1 → R2 → R3 → ... → R100
-- Memory bloat: All 100 routes stored in state + Koin scopes
-- Serialization overhead: Snapshot becomes huge
-- Slow restoration: Deserializing 100 routes takes time
-
-Current: No stack size limits, no pruning strategy
-```
-
-**Gap**: Unbounded stack growth possible in edge cases
-
----
-
-### ⚠️ 5. DeepLink Route Matching Ambiguity
-
-**Issue**: Multiple routes might match the same deep link pattern
-
-**Scenario**:
-```
-Routes:
-- munchies://restaurants
-- munchies://restaurants/{id}
-- munchies://restaurants/{id}/reviews
-
-Deep Link: munchies://restaurants/123/reviews
-
-Question: Which route handler processes this?
-Current: First handler that returns canHandle(deepLink) == true
-```
-
-**Gap**: Handler ordering is implicit, priority undefined
+**Gap**: Unbounded stack growth possible in edge cases, bloating the persisted snapshot.
 
 ---
 
 ### ⚠️ 6. Async Persistence Race Condition
 
-**Issue**: Rapid navigation might outpace persistence
+**Issue**: Rapid navigation might outpace persistence.
 
 **Scenario**:
 ```
 1. User navigates rapidly: A → B → C → D
 2. Each navigation triggers persistNavigationStateAsync()
-3. Persistence queue might still be processing state C
-4. App crashes before all states persisted
-5. Recovery loads incomplete state
-
-Current: Uses persistenceScope with Default dispatcher
-         No guarantees about persistence order/completion
+3. App crashes before all states persisted
+4. Recovery loads incomplete state
 ```
 
-**Gap**: Concurrent navigation + persistence not synchronized
+**Gap**: Concurrent navigation + persistence not synchronized.
 
 ---
 
 ### ⚠️ 7. No Validation During Route Resolution
 
-**Issue**: Routes resolved via handlers but not validated
-
-**Scenario**:
-```
-RouteHandler.destinationToRoute(destination) might return:
-- Valid route with all required data
-- Route with missing/invalid data
-- Exception thrown
-
-Current: Reducer catches no exceptions, assumes handler is correct
-```
-
-**Gap**: Silent failures if route handler returns invalid state
+**Issue**: Routes resolved via handlers but not validated. Silent failures possible if a route handler returns invalid state.
 
 ---
 
-### ⚠️ 8. Missing Analytics Integration Point
+### ⚠️ 8. Incomplete Error Recovery Logging
 
-**Issue**: No standard way to track navigation changes
-
-**Scenario**:
-```
-Need to know:
-- What routes were visited (funnel analysis)
-- Time spent on each route
-- Navigation drop-off points
-- Deep link attribution
-
-Current: NavigationState is observable but no analytics hook
-```
-
-**Gap**: Manual observer needed for each platform
-
----
-
-### ⚠️ 9. No Navigation Cancellation Mechanism
-
-**Issue**: Ongoing navigation can't be cancelled cleanly
-
-**Scenario**:
-```
-1. User navigates to DetailScreen
-2. Before DetailScreen loads, user navigates back
-3. DetailScreen ViewModel continues to fetch data
-4. Data arrives and is rendered (wrong screen)
-
-Current: No cancellation token or navigation ID
-         Scope exists but ViewModel lifecycle continues
-```
-
-**Gap**: Can't gracefully cancel pending operations
-
----
-
-### ⚠️ 10. Incomplete Error Recovery
-
-**Issue**: Errors during restoration not handled gracefully
-
-**Scenario**:
-```
-Deserialization fails:
-1. Corrupted snapshot file
-2. Schema mismatch (old version format)
-3. Missing route subclass
-
-Current: Falls back to default state
-         But no logging of why deserialization failed
-```
-
-**Gap**: Hard to diagnose why restoration failed
+**Issue**: Deserialization failures fall back to default state but the reason is never logged.
 
 ---
 
 ## Recommended Improvements
 
-### Priority 1: High Impact, Low Effort
+### Priority 1: Crash/Config-Change-Only Restoration Gate
 
-#### 1.1 Enable `restoredFromCrash` Flag
+#### 1.1 Add `RestoreConditionDetector`
 ```kotlin
-// In AppCoordinator initialization
-suspend fun loadNavigationStateWithCrashDetection(): NavigationState {
-    val hadCrashLock = persistenceStore.hasUncleanShutdown()
-    val snapshot = persistenceStore.loadNavigationState()
-    
-    return snapshot.toNavigationState().copy(
-        restoredFromCrash = hadCrashLock
-    )
+interface RestoreConditionDetector {
+    /**
+     * Returns true ONLY if the app should restore navigation state:
+     *   - Configuration change (Android: savedInstanceState present + isChangingConfigurations)
+     *   - Process death / crash (Android: savedInstanceState present, iOS: no clean-exit flag)
+     *
+     * Returns false for deliberate user exits and cold starts.
+     */
+    fun shouldRestoreNavigation(): Boolean
 }
-
-// In persistenceStore implementation
-hasUncleanShutdown(): Boolean
-  - Check for lock file that indicates clean shutdown
-  - Delete lock file on successful save
 ```
 
-**Benefit**: Can log/analyze crash recovery; trigger special UI (e.g., "App recovered")
+**Android implementation**:
+```kotlin
+class AndroidRestoreConditionDetector(
+    private val savedInstanceState: Bundle?
+) : RestoreConditionDetector {
+    override fun shouldRestoreNavigation(): Boolean =
+        savedInstanceState?.getBoolean(KEY_RESTORE_NAV, false) ?: false
+}
+```
+
+**iOS implementation**:
+```kotlin
+class IosRestoreConditionDetector(
+    private val persistenceStore: NavigationPersistenceStore
+) : RestoreConditionDetector {
+    override fun shouldRestoreNavigation(): Boolean {
+        val hadCleanExit = persistenceStore.hasCleanExitFlag()
+        persistenceStore.clearCleanExitFlag()
+        return !hadCleanExit
+    }
+}
+```
 
 ---
 
-#### 1.2 Add Modal Restoration Test
+#### 1.2 Clear Snapshot on Deliberate Exit
+
+**Android** (in `MainActivity`):
+```kotlin
+override fun onDestroy() {
+    super.onDestroy()
+    if (isFinishing && !isChangingConfigurations) {
+        lifecycleScope.launch {
+            coordinator.clearPersistedNavigationState()
+        }
+    }
+}
+```
+
+**iOS** (bridged from Swift `AppDelegate`):
+```kotlin
+fun onApplicationWillTerminate() {
+    persistenceStore.markCleanExit()
+}
+```
+
+---
+
+#### 1.3 Enable `restoredFromCrash` Flag
+```kotlin
+suspend fun restoreNavigationState(
+    detector: RestoreConditionDetector
+): NavigationState {
+    if (!detector.shouldRestoreNavigation()) {
+        return createDefaultNavigationState()
+    }
+
+    val snapshot = persistenceStore.loadNavigationState().getOrNull()
+        ?: return createDefaultNavigationState()
+
+    if (!isValidSnapshot(snapshot)) {
+        return createDefaultNavigationState()
+    }
+
+    val isCrashRecovery = !persistenceStore.hadCleanShutdown()
+    return snapshot.toNavigationState().also {
+        if (isCrashRecovery) {
+            logInfo("NavigationStateRestorer", "Restored after crash")
+        }
+    }
+}
+```
+
+---
+
+#### 1.4 Add Modal Restoration Test
 ```kotlin
 @Test
 fun testModalStackRestoredAfterCrash() {
-    // Setup: Create state with modal stack
-    val state = NavigationState(
-        modalStack = listOf(FilterModalRoute(...)),
-        tabNavigation = ...
-    )
-    
-    // Save & restore
-    val snapshot = state.toSnapshot(restoredFromCrash = true)
-    persistenceStore.save(snapshot)
-    
-    val restored = persistenceStore.load().toNavigationState()
-    
-    // Assert: Modal stack preserved
-    assert(restored.modalStack.size == 1)
-    assert(restored.modalStack[0] is FilterModalRoute)
+    // Given: state with open modal saved, no clean-exit flag
+    val state = stateWithModal(FilterModalRoute(listOf("vegan")))
+    persistenceStore.saveNavigationState(state.toSnapshot())
+    // no markCleanExit() call → simulates crash
+
+    val detector = IosRestoreConditionDetector(persistenceStore)
+    val restored = restorer.restoreNavigationState(detector)
+
+    assertEquals(1, restored.modalStack.size)
+    assertTrue(restored.modalStack[0] is FilterModalRoute)
+}
+
+@Test
+fun testNoRestorationOnCleanExit() {
+    // Given: state saved AND clean exit marked
+    persistenceStore.saveNavigationState(someState.toSnapshot())
+    persistenceStore.markCleanExit()
+
+    val detector = IosRestoreConditionDetector(persistenceStore)
+    val restored = restorer.restoreNavigationState(detector)
+
+    // Should start fresh
+    assertEquals(defaultState, restored)
 }
 ```
-
-**Benefit**: Catches modal restoration regressions early
-
----
-
-#### 1.3 Document Deep Link State Application Strategy
-```kotlin
-/**
- * Deep Link Application Strategy:
- *
- * FULL_REPLACE (default):
- *   - Clears current stack entirely
- *   - Applies deep link state fresh
- *   - Use case: External deep links (notifications, links)
- *
- * PRESERVE_TAB:
- *   - Keeps current tab stack
- *   - Only replaces content within deep linked tab
- *   - Use case: App-to-app deep links during session
- *
- * APPEND_TO_TAB:
- *   - Appends to current tab stack
- *   - User can navigate back through history
- *   - Use case: Contextual deep links
- */
-enum class DeepLinkApplicationStrategy {
-    FULL_REPLACE,
-    PRESERVE_TAB,
-    APPEND_TO_TAB
-}
-```
-
-**Benefit**: Clear contract for deep link handling; prevents bugs
-
----
-
-#### 1.4 Add Stack Size Monitoring
-```kotlin
-fun NavigationState.currentStackDepth(): Int {
-    return tabNavigation.stacksByTab.values
-        .maxOrNull()?.size ?: 0
-}
-
-// In AppCoordinator.reduceState()
-val depth = newState.currentStackDepth()
-if (depth > MAX_SAFE_STACK_DEPTH) {  // e.g., 20
-    logWarning("Navigation stack exceeds safe depth: $depth")
-    // Option: Auto-pop to reasonable depth, or just log
-}
-```
-
-**Benefit**: Early warning for unbounded stack growth
 
 ---
 
@@ -634,456 +609,100 @@ data class NavigationConfig(
     val maxStackDepthPerTab: Int = 20,
     val pruningStrategy: StackPruningStrategy = StackPruningStrategy.KEEP_ROOT_PLUS_N(10)
 )
-
-enum class StackPruningStrategy {
-    KEEP_ROOT_PLUS_N(n: Int),  // Keep root + N most recent
-    KEEP_RECENT_N(n: Int),     // Keep N most recent (lose root)
-    PRUNE_OLDEST               // Remove oldest, keep recent
-}
-
-// In NavigationReducer.handlePushInTab()
-if (newStack.size > config.maxStackDepthPerTab) {
-    val pruned = pruningStrategy.prune(newStack)
-    return state.copy(tabNavigation = tabNav.updateActiveTabStack(pruned))
-}
 ```
-
-**Benefit**: Prevents memory bloat; improves performance
-
----
 
 #### 2.2 Add Navigation ID & Lifecycle Tracking
-```kotlin
-data class NavigationSnapshot {
-    val id: String = UUID.randomUUID().toString()
-    val timestamp: Long = currentTimeMillis()
-    val state: NavigationState
-    val duration: Long? = null  // Set when exiting
-}
-
-// Track currently active navigation
-val navigationLifecycle: StateFlow<NavigationSnapshot>
-
-// Use in ViewModel to know if own navigation session is still active
-class DetailViewModel {
-    fun onDataFetched() {
-        if (navigationLifecycle.value.id == myNavigationId) {
-            // Safe to render, still current navigation session
-        }
-    }
-}
-```
-
-**Benefit**: Prevents stale data rendering; handles rapid navigation
-
----
+Prevents stale data rendering during rapid navigation (e.g. quick push/pop).
 
 #### 2.3 Implement Persistence Ordering & Sync
-```kotlin
-private val persistenceQueue = Channel<NavigationState>(capacity = 1)
-
-init {
-    persistenceScope.launch {
-        for (state in persistenceQueue) {
-            try {
-                persistenceStore.save(state.toSnapshot())
-            } catch (e: Exception) {
-                logError("Persistence failed", e)
-            }
-        }
-    }
-}
-
-// In reduceState()
-persistenceQueue.trySend(newState)  // Latest state always queued
-```
-
-**Benefit**: Ensures only latest state persisted; prevents old state crashes
-
----
+Use a `Channel<NavigationState>(capacity = 1)` so that only the latest state is ever written.
 
 #### 2.4 Add Route Handler Validation
-```kotlin
-// Create a wrapper handler that validates output
-class ValidatingRouteHandler(private val delegate: RouteHandler) : RouteHandler {
-    override fun canHandle(destination: Destination) = delegate.canHandle(destination)
-    
-    override fun destinationToRoute(destination: Destination): Route? {
-        return try {
-            val route = delegate.destinationToRoute(destination)
-            
-            // Validate route
-            if (route != null && !isValidRoute(route)) {
-                logError("Handler produced invalid route: ${route.key}")
-                return null
-            }
-            
-            route
-        } catch (e: Exception) {
-            logError("Route handler exception", e)
-            null
-        }
-    }
-}
-
-private fun isValidRoute(route: Route): Boolean {
-    return route.key.isNotBlank() && 
-           route.key.length < 256  // Reasonable limit
-}
-```
-
-**Benefit**: Catches handler bugs early; improves debuggability
+Wrap handlers in a `ValidatingRouteHandler` that catches exceptions and logs invalid routes.
 
 ---
 
-### Priority 3: Medium Impact, Medium Effort
+### Priority 3: Nice to Have
 
-#### 3.1 Build Navigation Analytics Hook
-```kotlin
-interface NavigationAnalyticsListener {
-    fun onNavigationStart(state: NavigationState, event: NavigationEvent)
-    fun onNavigationComplete(fromState: NavigationState, toState: NavigationState)
-    fun onNavigationError(event: NavigationEvent, error: Exception)
-}
-
-// In AppCoordinator
-private val analyticsListeners = mutableListOf<NavigationAnalyticsListener>()
-
-fun addAnalyticsListener(listener: NavigationAnalyticsListener) {
-    analyticsListeners.add(listener)
-}
-
-// In reduceState()
-analyticsListeners.forEach { it.onNavigationStart(currentState, event) }
-try {
-    val newState = NavigationReducer.reduce(currentState, event, ...)
-    analyticsListeners.forEach { it.onNavigationComplete(currentState, newState) }
-} catch (e: Exception) {
-    analyticsListeners.forEach { it.onNavigationError(event, e) }
-}
-```
-
-**Benefit**: Enables analytics integration without core changes
-
----
-
-#### 3.2 Add Route Dependency Validation
-```kotlin
-@Serializable
-sealed class Route {
-    abstract val key: String
-    
-    // Metadata for validation
-    open val requiredNavigation: List<String> = emptyList()
-    open val requiredDeepLinks: List<String> = emptyList()
-}
-
-// Example
-class RestaurantDetailRoute(val restaurantId: String) : Route() {
-    override val key = "detail_$restaurantId"
-    // This route REQUIRES restaurantId to be fetched
-    override val requiredDeepLinks = listOf("restaurantId")
-}
-
-// Validation
-fun isValidRouteTransition(from: Route, to: Route): Boolean {
-    // Could check: Is detail route reached via list route?
-    // Are all dependencies available?
-    return true
-}
-```
-
-**Benefit**: Catches logical navigation errors; documents route requirements
-
----
-
-### Priority 4: Lower Effort, Nice to Have
-
-#### 4.1 Add Navigation State Debugging Tools
-```kotlin
-// Pretty-print navigation state for logs/debugger
-fun NavigationState.toDebugString(): String {
-    return buildString {
-        appendLine("=== Navigation State ===")
-        appendLine("Active Tab: ${tabNavigation.activeTabId}")
-        tabNavigation.stacksByTab.forEach { (tabId, stack) ->
-            appendLine("Tab '$tabId':")
-            stack.forEach { route ->
-                appendLine("  → ${route.key}")
-            }
-        }
-        if (modalStack.isNotEmpty()) {
-            appendLine("Modals:")
-            modalStack.forEach { modal ->
-                appendLine("  ⬆ ${modal.key}")
-            }
-        }
-    }
-}
-```
-
-**Benefit**: Easier debugging and crash reports
-
----
-
-#### 4.2 Document Navigation Patterns & Anti-Patterns
-```
-Create guide:
-
-✅ DO:
-- Use ApplyNavigationState for deep links
-- Validate routes before creating them
-- Clear modals before switching tabs
-- Use per-tab stacks for tab data persistence
-
-❌ DON'T:
-- Manually modify navigationState (dispatch events instead)
-- Store non-serializable data in routes
-- Create Koin scopes directly (AppCoordinator owns lifecycle)
-- Ignore route handler exceptions
-```
-
-**Benefit**: Prevents future anti-patterns; educates team
+- Analytics integration hook
+- Debugging tools
+- Navigation documentation / playbook
+- Comprehensive test coverage
 
 ---
 
 ## Implementation Roadmap
 
-### Phase 1: Foundation (Weeks 1-2)
-1. ✅ Enable `restoredFromCrash` flag
-2. ✅ Add modal restoration test
-3. ✅ Document deep link strategy
-4. ✅ Add stack size monitoring
+### Phase 1: Correct Restoration Semantics (Weeks 1-2)
+1. ✅ Add `RestoreConditionDetector` interface + platform implementations
+2. ✅ Clear snapshot on `onDestroy(isFinishing)` / `applicationWillTerminate`
+3. ✅ Enable `restoredFromCrash` flag
+4. ✅ Add modal restoration tests (crash path AND clean-exit path)
 
 **Deliverables**:
-- Test coverage for crash recovery
-- Documented deep link behavior
-- Stack depth warnings in logs
+- Navigation restored only when OS/crash demands it
+- Clean exit always produces a fresh launch
+- Test coverage for both paths
 
 ---
 
 ### Phase 2: Robustness (Weeks 3-4)
-1. ✅ Implement navigation history limits
-2. ✅ Add navigation ID tracking
+1. ✅ Navigation history limits
+2. ✅ Navigation ID tracking
 3. ✅ Sync persistence queue
-4. ✅ Add route handler validation
-
-**Deliverables**:
-- Bounded stack depths
-- Protected stale data rendering
-- Guaranteed persistence ordering
-- Route validation framework
+4. ✅ Route handler validation
 
 ---
 
 ### Phase 3: Observability (Weeks 5-6)
-1. ✅ Build analytics hook
-2. ✅ Add debugging tools
-3. ✅ Create navigation documentation
-4. ✅ Add integration tests
-
-**Deliverables**:
-- Analytics integration point
-- Debug utilities
-- Navigation playbook
-- Comprehensive test coverage
-
----
-
-## Code Examples
-
-### Example 1: Manual Navigation Controller Pattern
-
-```kotlin
-// KMM mimics native nav controller behavior via Redux:
-
-// 1. Event dispatch (user action)
-coordinator.dispatch(NavigationEvent.Push(destination))
-
-// 2. Pure state reduction (deterministic)
-val newState = NavigationReducer.reduce(currentState, event)
-
-// 3. Side effects (scope lifecycle, persistence)
-NavigationEffects.handleNavigationSideEffects(currentState, newState)
-
-// 4. State emission
-_navigationState.value = newState
-
-// 5. UI observes and recomposes
-state.navigationState.collectAsState().value
-```
-
-**Comparison to Native Navigation Controller**:
-- Native: Framework manages backstack automatically
-- KMM: We manually manage backstack via state reduction
-- Both: Observable state drives UI
-
----
-
-### Example 2: Restoring Navigation After Crash
-
-```kotlin
-// During app initialization
-suspend fun restoreNavigationOnStartup() {
-    val restorer = NavigationStateRestorer(persistenceStore)
-    val restoredState = restorer.restoreNavigationState()
-    
-    // Apply restored state to coordinator
-    coordinator.applyNavigationState(restoredState)
-    
-    // Restore all Koin scopes for routes in state
-    restoredState.getAllRoutes().forEach { route ->
-        val handler = routeHandlers
-            .filterIsInstance<ScopedRouteHandler>()
-            .firstOrNull { it.canHandle(route.toDestination()!) }
-        handler?.createScope(route)
-    }
-    
-    // UI now renders from restored state
-    // User sees exactly what they saw before crash
-}
-```
-
-**Why This Works**:
-- Redux state is deterministic: Saved state reliably restores exact UI
-- Scopes are recreated: ViewModels are reconstructed with same data
-- Persistence is automatic: Each navigation change saved asynchronously
-
----
-
-### Example 3: Deep Link with State Application
-
-```kotlin
-// Handle deep link: munchies://restaurants/123/reviews
-coordinator.applyDeepLink("munchies://restaurants/123/reviews")
-
-// Internally:
-// 1. Parse deep link → extract tab, route, params
-val parser = DeepLinkParser(...)
-val result = parser.parse(deepLink)
-// result = DeepLinkResult.Success(
-//     navigationState = NavigationState(
-//         tabNavigation = TabNavigationState(
-//             activeTabId = "restaurants",
-//             stacksByTab = mapOf(
-//                 "restaurants" to listOf(
-//                     RestaurantListRoute(),
-//                     RestaurantDetailRoute("123"),
-//                     ReviewRoute("123")
-//                 )
-//             )
-//         )
-//     ),
-//     clearCurrentStack = true
-// )
-
-// 2. Apply new state
-coordinator.applyNavigationState(result.navigationState, clearCurrentStack = true)
-
-// 3. Result: User navigates from anywhere to Reviews screen
-```
+1. ✅ Analytics hook
+2. ✅ Debugging tools
+3. ✅ Navigation documentation
+4. ✅ Integration tests
 
 ---
 
 ## Comparison to Native Navigation Controllers
 
-### iOS UINavigationController vs KMM Implementation
-
-| Feature | UINavigationController | KMM Redux Pattern |
-|---------|----------------------|-------------------|
-| **Backstack** | Automatic LIFO | Manual via reducer |
-| **State Persistence** | Manual in AppDelegate | Automatic async save |
-| **Deep Link Support** | Manual URL parsing | Built-in parser |
-| **Modal Presentation** | `present(_:)` | Modal stack in state |
-| **Lifecycle** | View controller lifecycle | Route lifecycle + Koin scopes |
-| **Testability** | Hard (framework-dependent) | Easy (pure functions) |
-| **Debugging** | Time-travel debugging via framework | Full event history |
-
-### Android NavController vs KMM Implementation
+### Android NavController vs KMM Implementation (Revised)
 
 | Feature | NavController | KMM Redux Pattern |
 |---------|--------------|-------------------|
 | **Backstack** | Automatic LIFO | Manual via reducer |
-| **Fragments** | Auto lifecycle | Manual scope lifecycle |
+| **Restoration trigger** | `savedInstanceState` Bundle | `RestoreConditionDetector` (same semantics) |
+| **Clean exit clears state** | ✅ Yes (Fragment back-stack destroyed) | ✅ Yes (after this revision) |
+| **Crash / config change restores** | ✅ Yes (Bundle survives) | ✅ Yes (after this revision) |
 | **Deep Link** | Built-in nav graph | Parser-based |
-| **Safe Args** | Compile-time type safety | Runtime route matching |
-| **State Restoration** | Auto via bundle | Manual snapshot persistence |
-| **Compose Support** | New comp navigation library | Native (works well with Compose) |
+| **State Restoration** | Auto via Bundle | Manual snapshot persistence |
 
----
+### iOS UINavigationController vs KMM Implementation (Revised)
 
-## Testing Strategy
-
-### Unit Tests
-```kotlin
-class NavigationReducerTest {
-    @Test
-    fun testPushAddsRouteToStack() { ... }
-    
-    @Test
-    fun testPopRemovesRouteFromStack() { ... }
-    
-    @Test
-    fun testModalDismissDoeNotAffectTabStack() { ... }
-}
-```
-
-### Integration Tests
-```kotlin
-class NavigationStateRestorationTest {
-    @Test
-    fun testStateRestoredFromPersistence() { ... }
-    
-    @Test
-    fun testModalStackRestoredAfterCrash() { ... }
-    
-    @Test
-    fun testDeepLinkAppliedCorrectly() { ... }
-}
-```
-
-### Platform Tests
-```kotlin
-// Android
-class ViewModelConfigChangeIntegrationTest {
-    @Test
-    fun testViewModelSurvivesRotation() { ... }
-}
-
-// iOS
-class NavigationSwiftUITest {
-    @Test
-    func testStateChangeTriggersRecompile() { ... }
-}
-```
+| Feature | UINavigationController | KMM Redux Pattern |
+|---------|----------------------|-------------------|
+| **Backstack** | Automatic LIFO | Manual via reducer |
+| **Restoration trigger** | `UIStateRestoration` (opt-in) | `IosRestoreConditionDetector` |
+| **Clean exit clears state** | ✅ Yes (no state restoration by default) | ✅ Yes (after this revision) |
+| **Crash restores** | ❌ Not by default | ✅ Yes (after this revision) |
 
 ---
 
 ## Conclusion
 
-The KMM navigation system successfully implements manual navigation controller behavior through:
-1. Redux-based state management (deterministic, testable)
-2. Tab-based architecture (modern mobile pattern)
-3. Modal overlay system (independent of navigation stack)
-4. Scope lifecycle management (ViewModel persistence across rotations)
-5. Persistence mechanism (recovery after crashes)
+The KMM navigation system is a solid, deterministic, Redux-based manual navigation controller. The primary gap identified in this revision is that **state was being unconditionally restored** on every app launch, violating the contract that users and both native platforms expect: only crash recovery and configuration changes should restore the back-stack.
 
-**Recommended next steps**:
-1. Implement high-priority improvements (Phase 1)
-2. Add comprehensive test coverage
-3. Create navigation documentation
-4. Monitor for the identified gaps
-5. Plan Phase 2 enhancements for robustness
-
-This pattern is production-ready but benefits from the proposed enhancements for edge case handling and observability.
+**Recommended immediate next steps**:
+1. Implement `RestoreConditionDetector` on both platforms (highest priority)
+2. Add `onDestroy` / `applicationWillTerminate` snapshot cleanup
+3. Enable `restoredFromCrash` flag in snapshot
+4. Test both the restoration and the non-restoration paths
 
 ---
 
 ## References
 
+- **Android NavController state restoration**: https://developer.android.com/guide/navigation/navigate#restore-state
+- **Activity.isChangingConfigurations**: https://developer.android.com/reference/android/app/Activity#isChangingConfigurations()
+- **savedInstanceState semantics**: https://developer.android.com/topic/libraries/architecture/saving-states
 - **Redux Pattern**: https://redux.js.org/understanding/thinking-in-redux
 - **Kotlin Multiplatform**: https://kotlinlang.org/docs/multiplatform.html
-- **Jetpack Compose Navigation**: https://developer.android.com/jetpack/compose/navigation
-- **SwiftUI Navigation**: https://developer.apple.com/documentation/swiftui/navigation
 - **Koin Scope Management**: https://insert-koin.io/docs/reference/koin-compose/scopes/
-

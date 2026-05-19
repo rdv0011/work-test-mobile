@@ -1,7 +1,7 @@
 # Navigation Restoration Documentation Index
 
 **Location**: `/plan/navigation_restoration/`  
-**Last Updated**: May 18, 2026
+**Last Updated**: May 19, 2026 (Revised — Crash/Config-Change-Only Restoration)
 
 ---
 
@@ -111,10 +111,11 @@
 |----------|----------|---------|
 | Should we do this work? | EXEC_SUMMARY | Investment Summary |
 | What exactly is broken? | MAIN_ANALYSIS | Identified Gaps |
-| How do I implement X? | IMPL_GUIDE | Priority 1 Improvements |
+| How do I implement restoration gate? | IMPL_GUIDE | Priority 1.1–1.4 |
 | Show me the architecture | ARCH_PATTERNS | Architecture Layers |
 | How does crash recovery work? | ARCH_PATTERNS | Crash Recovery Flow |
-| What about deep links? | MAIN_ANALYSIS | Deep Link State Reconstruction |
+| How does clean exit work? | ARCH_PATTERNS | Clean Exit Flow |
+| How does config change work? | ARCH_PATTERNS | Configuration Change Flow |
 | How are tests written? | ARCH_PATTERNS | Testing Patterns |
 | What's the timeline? | EXEC_SUMMARY | Action Plan |
 
@@ -127,27 +128,32 @@
 - Tab navigation with per-tab stacks
 - Scope lifecycle management
 - Deep link support
-- State persistence
+- State persistence (write path)
 
-### ⚠️ Gaps Identified
-1. Incomplete modal stack restoration
-2. Deep link state reconstruction ambiguity
-3. No crash context metadata
-4. Unbounded navigation stack growth
-5. Deep link route matching ambiguity
+### ⚠️ Critical Gap (Revised)
+The previous design **always** restored navigation state on every launch. This violates the contract of both native platforms:
+
+> Navigation state must only be restored after a **crash, OS kill, or configuration change**. A deliberate user exit must produce a fresh launch.
+
+### ⚠️ All Gaps Identified
+1. **Unconditional restoration (wrong semantics)** ← Critical
+2. Missing snapshot cleanup on deliberate exit ← Critical
+3. `restoredFromCrash` flag never set
+4. Modal stack restoration untested
+5. Unbounded navigation stack growth
 6. Async persistence race conditions
 7. No validation during route resolution
 8. Missing analytics integration
-9. No navigation cancellation mechanism
-10. Incomplete error recovery
+9. Deep link state application strategy unclear
+10. Incomplete error recovery logging
 
 ### 🚀 Priority 1 (Do First)
+- Add `RestoreConditionDetector` (Android + iOS)
+- Clear snapshot on `onDestroy(isFinishing)` / `applicationWillTerminate`
 - Enable `restoredFromCrash` flag
-- Add modal restoration test
-- Document deep link strategy
-- Add stack size monitoring
+- Test both crash-restore and clean-exit-no-restore paths
 
-**Total Effort**: 5-8 hours | **Total Benefit**: High
+**Total Effort**: 7-11 hours | **Total Benefit**: High
 
 ---
 
@@ -185,6 +191,7 @@
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | May 18, 2026 | Initial analysis, 4 documents |
+| 2.0 | May 19, 2026 | Revised: crash/config-change-only restoration; added RestoreConditionDetector; clean-exit cleanup; revised all 4 docs |
 
 ---
 
